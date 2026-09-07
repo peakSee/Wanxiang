@@ -297,7 +297,28 @@ class ChatViewModel @Inject constructor(
     fun gitStageAll() = runGitWrite("git add -A")
     fun gitUnstageAll() = runGitWrite("git reset HEAD")
     fun gitCommit(message: String) = runGitWrite("git commit -m ${shellQuote(message)}")
-    fun gitPull() = runGitNetworkOp(cmd = "git pull", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+    /**
+     * 本地有未提交改动时先弹确认（可能覆盖或冲突）；干净时直接 pull。
+     * 通过 [gitPanelState] 的 `pullDirtyConfirm` 字段驱动 UI 弹窗，用户在 UI 上点"继续拉取"再调 [gitPullNow]。
+     */
+    fun gitPull() {
+        val s = _gitPanelState.value
+        val dirty = s.staged.isNotEmpty() || s.unstaged.isNotEmpty()
+        if (dirty) {
+            _gitPanelState.value = s.copy(pullDirtyConfirm = true)
+        } else {
+            gitPullNow()
+        }
+    }
+
+    fun gitPullNow() {
+        _gitPanelState.value = _gitPanelState.value.copy(pullDirtyConfirm = false)
+        runGitNetworkOp(cmd = "git pull", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+    }
+
+    fun dismissPullDirtyConfirm() {
+        _gitPanelState.value = _gitPanelState.value.copy(pullDirtyConfirm = false)
+    }
     fun gitPush() = runGitNetworkOp(cmd = "git push", resolveHostFromOrigin = true, timeoutMs = 180_000L)
     fun gitCheckout(branch: String) = runGitWrite("git checkout ${shellQuote(branch)}")
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
@@ -1412,6 +1433,8 @@ data class GitPanelState(
     val diffPath: String? = null,
     val diffText: String? = null,
     val diffLoading: Boolean = false,
+    /** 本地脏时 pull 前需要用户二次确认（可能被覆盖或产生冲突）。 */
+    val pullDirtyConfirm: Boolean = false,
     val commitDetailHash: String? = null,
     val commitDetailText: String? = null,
     val commitDetailLoading: Boolean = false,

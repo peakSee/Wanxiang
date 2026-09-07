@@ -167,6 +167,7 @@ fun ChatScreen(
     val gitPanelState by viewModel.gitPanelState.collectAsStateWithLifecycle()
     val gitCredentials by viewModel.gitCredentials.collectAsStateWithLifecycle()
     val matchedCredId by viewModel.matchedCredentialId.collectAsStateWithLifecycle()
+    val gitUncommittedCount = gitPanelState.let { s -> s.staged.size + s.unstaged.size + s.untracked.size }
 
     // 弹窗开关与编辑目标：用 rememberSaveable 保存，旋转 / 进程重建后不丢失
     var showSessions by rememberSaveable { mutableStateOf(false) }
@@ -180,6 +181,8 @@ fun ChatScreen(
     var showFloatingPermissionDialog by rememberSaveable { mutableStateOf(false) }
     var branchFromMessageId by rememberSaveable { mutableStateOf<String?>(null) }
     var showGitPanel by rememberSaveable { mutableStateOf(false) }
+    // 进入 chat 时异步刷一次 git 状态（顶栏徽标要显示未提交数），不阻塞首帧
+    LaunchedEffect(Unit) { viewModel.refreshGitStatus() }
     // 编辑目标消息只保存 id，避免把不可保存的实体放进状态保存器
     var editTargetMessageId by rememberSaveable { mutableStateOf<String?>(null) }
     val editTargetMessage = remember(messages, editTargetMessageId) {
@@ -346,6 +349,7 @@ fun ChatScreen(
                 onOpenBrowser = onOpenBrowser,
                 browserHighlight = browserHighlight,
                 onOpenGit = { viewModel.refreshGitStatus(); showGitPanel = true },
+                gitUncommittedCount = gitUncommittedCount,
             )
         }
 
@@ -666,6 +670,8 @@ fun ChatScreen(
             onAddCredential = viewModel::addGitCredential,
             onDeleteCredential = viewModel::deleteGitCredential,
             onProbeCredential = viewModel::probeCredential,
+            onPullNow = viewModel::gitPullNow,
+            onDismissPullDirty = viewModel::dismissPullDirtyConfirm,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onDeleteUntracked = viewModel::gitDeleteUntracked,

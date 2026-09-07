@@ -87,6 +87,8 @@ fun GitPanel(
     onAddCredential: (name: String, host: String, username: String, token: String) -> Unit = { _, _, _, _ -> },
     onDeleteCredential: (String) -> Unit = {},
     onProbeCredential: (String) -> Unit = {},
+    onPullNow: () -> Unit = {},
+    onDismissPullDirty: () -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -265,6 +267,26 @@ fun GitPanel(
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { savePat() }),
                     )
                 }
+            },
+        )
+    }
+
+    if (state.pullDirtyConfirm) {
+        RuntimeAlertDialog(
+            onDismissRequest = onDismissPullDirty,
+            title = { Text("确认拉取") },
+            text = {
+                Text(
+                    "本地有未提交改动（已暂存 ${state.staged.size}、未暂存 ${state.unstaged.size}），" +
+                        "拉取可能覆盖工作区或产生冲突。建议先提交或暂存后再拉。要继续吗？",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            },
+            confirmButton = {
+                RuntimeButton(onClick = { onPullNow() }) { Text("仍然拉取") }
+            },
+            dismissButton = {
+                RuntimeTextButton(onClick = onDismissPullDirty) { Text("取消") }
             },
         )
     }

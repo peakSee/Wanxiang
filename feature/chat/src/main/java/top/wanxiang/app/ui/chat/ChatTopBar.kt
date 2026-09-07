@@ -54,6 +54,7 @@ internal fun ChatTopBar(
     onOpenBrowser: (() -> Unit)? = null,
     browserHighlight: Boolean = false,
     onOpenGit: () -> Unit = {},
+    gitUncommittedCount: Int = 0,
 ) {
     val context = LocalContext.current
     Column(
@@ -108,11 +109,32 @@ internal fun ChatTopBar(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 // 🌟 0. Git 面板（绑定当前会话，不跨会话共享）
-                IconButton(
-                    onClick = onOpenGit,
-                    contentDescription = stringResource(R.string.chat_open_git),
-                ) {
-                    RuntimeIcon(RuntimeIconName.GitBranch, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                androidx.compose.foundation.layout.Box {
+                    IconButton(
+                        onClick = onOpenGit,
+                        contentDescription = stringResource(R.string.chat_open_git),
+                    ) {
+                        RuntimeIcon(RuntimeIconName.GitBranch, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (gitUncommittedCount > 0) {
+                        val badgeText = if (gitUncommittedCount > 99) "99+" else gitUncommittedCount.toString()
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .align(androidx.compose.ui.Alignment.TopEnd)
+                                .padding(top = 4.dp, end = 4.dp)
+                                .background(MaterialTheme.colorScheme.error, androidx.compose.foundation.shape.CircleShape)
+                                .padding(horizontal = 4.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                badgeText,
+                                color = MaterialTheme.colorScheme.onError,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 9.sp,
+                                maxLines = 1,
+                            )
+                        }
+                    }
                 }
 
                 // 🌟 1. 智枢悬浮小窗收起按钮 (Collapse to Floating Window)
