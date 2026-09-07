@@ -75,6 +75,11 @@ screen_ocr.txt
 screen_ocr.tsv
 screen_tsv.txt
 screen_tsv.tsv
+s.png
+s_ocr.txt
+s_ocr.tsv
+s_tsv.txt
+s_tsv.tsv
 out.txt
 out.tsv
 tessdata/
