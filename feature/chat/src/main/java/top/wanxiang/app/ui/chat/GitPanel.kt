@@ -73,6 +73,7 @@ fun GitPanel(
     onCreateBranch: (String) -> Unit = {},
     onDeleteBranch: (String) -> Unit = {},
     onInitRepo: () -> Unit = {},
+    onClone: (String) -> Unit = {},
     onConfigIdentity: (String, String) -> Unit = { _, _ -> },
     onRevert: (String) -> Unit = {},
     onDeleteUntracked: (String) -> Unit = {},
@@ -94,6 +95,8 @@ fun GitPanel(
     var showCredentialDialog by rememberSaveable { mutableStateOf(false) }
     var credentialName by rememberSaveable { mutableStateOf("") }
     var credentialEmail by rememberSaveable { mutableStateOf("") }
+    var showCloneDialog by rememberSaveable { mutableStateOf(false) }
+    var cloneUrl by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -125,7 +128,7 @@ fun GitPanel(
                 RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
             }
 
-            state.notARepo -> NotARepoView(onInit = onInitRepo)
+            state.notARepo -> NotARepoView(onInit = onInitRepo, onOpenClone = { showCloneDialog = true })
 
             state.error != null -> CenterHint(state.error, isError = true)
 
@@ -158,6 +161,39 @@ fun GitPanel(
             },
         )
     }
+
+    if (showCloneDialog) {
+        RuntimeAlertDialog(
+            onDismissRequest = { showCloneDialog = false },
+            confirmButton = {
+                RuntimeButton(onClick = {
+                    val url = cloneUrl.trim()
+                    if (url.isNotBlank()) {
+                        showCloneDialog = false
+                        onClone(url)
+                    }
+                }) { Text("克隆") }
+            },
+            dismissButton = { RuntimeTextButton(onClick = { showCloneDialog = false }) { Text("取消") } },
+            title = { Text("克隆远程仓库") },
+            text = {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "输入远程仓库地址，克隆到当前工作区。例如万象源码：\nhttps://github.com/peakSee/Wanxiang.git",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = cloneUrl,
+                        onValueChange = { cloneUrl = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("https://github.com/...") },
+                        singleLine = true,
+                    )
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -172,7 +208,7 @@ private fun CenterHint(text: String, isError: Boolean = false) {
 }
 
 @Composable
-private fun NotARepoView(onInit: () -> Unit) {
+private fun NotARepoView(onInit: () -> Unit, onOpenClone: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -185,9 +221,13 @@ private fun NotARepoView(onInit: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         RuntimeButton(
-            onClick = onInit,
+            onClick = onOpenClone,
             modifier = Modifier.padding(top = 16.dp),
-        ) { Text("初始化 Git 仓库", fontWeight = FontWeight.SemiBold) }
+        ) { Text("克隆远程仓库", fontWeight = FontWeight.SemiBold) }
+        RuntimeTextButton(
+            onClick = onInit,
+            modifier = Modifier.padding(top = 8.dp),
+        ) { Text("初始化空仓库") }
     }
 }
 

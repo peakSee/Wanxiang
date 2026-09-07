@@ -300,6 +300,7 @@ class ChatViewModel @Inject constructor(
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
     fun gitInit() = runGitWrite("git init")
+    fun gitClone(url: String) = runGitWrite("git clone --depth 1 ${shellQuote(url)} .")
     fun gitConfigIdentity(name: String, email: String) = runGitWrite("git config user.name ${shellQuote(name)} && git config user.email ${shellQuote(email)}")
     fun gitRevert(path: String) = runGitWrite("git checkout -- ${shellQuote(path)}")
     fun gitDeleteUntracked(path: String) = runGitWrite("rm -- ${shellQuote(path)}")

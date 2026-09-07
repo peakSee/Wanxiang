@@ -658,6 +658,7 @@ fun ChatScreen(
             onCreateBranch = viewModel::gitCreateBranch,
             onDeleteBranch = viewModel::gitDeleteBranch,
             onInitRepo = viewModel::gitInit,
+            onClone = viewModel::gitClone,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onDeleteUntracked = viewModel::gitDeleteUntracked,
