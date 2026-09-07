@@ -17,6 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -947,26 +952,49 @@ private fun LogTab(state: GitPanelState, onCommitDetail: (String) -> Unit) {
         return
     }
     LazyColumn(Modifier.fillMaxSize()) {
-        items(state.commits) { commit ->
+        itemsIndexed(state.commits) { index, commit ->
             val parts = commit.split('\u001f')
             val hash = parts.getOrNull(0) ?: ""
             val subject = parts.getOrNull(1) ?: ""
             val author = parts.getOrNull(2) ?: ""
             val date = parts.getOrNull(3) ?: ""
+            val avatarColor = colorForAuthor(author)
+            val isLast = index == state.commits.lastIndex
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { onCommitDetail(hash) }.padding(horizontal = 16.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().clickable { onCommitDetail(hash) }.padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    hash,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                    ),
-                )
-                Column(Modifier.weight(1f)) {
+                // 左侧：竖线 + 头像圆点
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.width(30.dp).fillMaxHeight(),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    if (!isLast) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .offset(y = 28.dp)
+                                .width(2.dp)
+                                .height(60.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        ) {}
+                    }
+                    Surface(
+                        modifier = Modifier.size(24.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = avatarColor,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                author.take(1).uppercase().ifBlank { "?" },
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         subject.ifBlank { "(无提交信息)" },
                         style = MaterialTheme.typography.bodySmall,
@@ -974,19 +1002,50 @@ private fun LogTab(state: GitPanelState, onCommitDetail: (String) -> Unit) {
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
-                    if (author.isNotBlank() || date.isNotBlank()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            listOf(author, date).filter { it.isNotBlank() }.joinToString(" · "),
+                            author.ifBlank { "?" },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Text("·", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        Text(
+                            date,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Text(
+                        hash,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    )
+                }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         }
     }
+}
+
+/** 根据作者字符串哈希出一个稳定色，用于头像圆点。 */
+private val authorPalette = listOf(
+    Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFD84315), Color(0xFF6A1B9A),
+    Color(0xFF00838F), Color(0xFFC62828), Color(0xFF558B2F), Color(0xFF4527A0),
+    Color(0xFF00695C), Color(0xFFEF6C00),
+)
+private fun colorForAuthor(author: String): Color {
+    if (author.isBlank()) return Color(0xFF757575)
+    return authorPalette[(author.hashCode() and 0x7FFFFFFF) % authorPalette.size]
 }
 
 // ======================= 状态配色 =======================

@@ -238,7 +238,7 @@ class ChatViewModel @Inject constructor(
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
             val tags = runGitRead(ws, "git tag --list")
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
-            val commits = runGitRead(ws, "git log --pretty=format:%h%x1f%s%x1f%an%x1f%ad --date=short -30")
+            val commits = runGitRead(ws, "git log --pretty=format:%h%x1f%s%x1f%an%x1f%ar -30")
                 ?.lines()?.filter { it.isNotBlank() } ?: emptyList()
             val hasIdentity = runGitRead(ws, "git config user.name")?.isNotBlank() == true &&
                 runGitRead(ws, "git config user.email")?.isNotBlank() == true
