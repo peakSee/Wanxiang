@@ -1,0 +1,22 @@
+0:45心回国 8” …                   囊 2 会 Good 4
+
+   ，
+
+连接 Al 大模型
+
+配置你所喜爱的模型服务商与 API Key, 开启智能结对编程。
+
+服务商预设                               切换
+自定义 OpenAl 兼容接口
+接口地址 (Base URL)
+https://api.openai.com/v1                      G
+
+API Key 凭据
+
+sk-...
+
+选择模型 (ModelID)
+
+例如: gpt-4o / deepseek-chat
+
+稍后配置
