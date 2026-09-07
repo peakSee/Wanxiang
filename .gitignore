@@ -89,3 +89,6 @@ tessdata/
 t.png
 t_*.txt
 t_*.tsv
+q.png
+q_ocr.txt
+q_tsv.tsv

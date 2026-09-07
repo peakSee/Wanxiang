@@ -113,6 +113,7 @@ class ChatViewModel @Inject constructor(
     private val privilegeManager: top.wanxiang.app.runtime.privilege.PrivilegeManager,
     private val pathManager: top.wanxiang.app.runtime.RuntimePathManager,
     private val providerClient: top.wanxiang.app.harness.ProviderClient,
+    private val debugActionBus: top.wanxiang.app.runtime.debug.DebugActionBus,
 ) : ViewModel() {
 
     /**
@@ -155,6 +156,30 @@ class ChatViewModel @Inject constructor(
                 }
                 if (event is HarnessEvent.PermissionRequired) {
                     _permissionRequests.tryEmit(event)
+                }
+            }
+        }
+        // Debug 广播总线：ChatViewModel 收到 CloneRepo 就直接调 gitClone，绕过 adb+IME 不可靠问题
+        viewModelScope.launch {
+            debugActionBus.flow.collect { action ->
+                when (action) {
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.CloneRepo -> gitClone(action.url)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.Diagnostic -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val r = runCatching {
+                                linuxRuntime.execute(
+                                    top.wanxiang.app.runtime.shell.ShellCommand(
+                                        commandLine = action.command + " 2>&1",
+                                        workingDirectory = "/root",
+                                        timeoutMs = 30_000L,
+                                    ),
+                                )
+                            }.getOrNull()
+                            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim().take(2000)
+                            android.util.Log.i("WanxiangDiag", "CMD=${action.command} → EXIT=${r?.exitCode} OUT=$out")
+                            _gitOpMessage.value = GitOpMessage.Error("诊断：exit=${r?.exitCode}\n$out")
+                        }
+                    }
                 }
             }
         }
