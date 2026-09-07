@@ -85,3 +85,7 @@ out.tsv
 tessdata/
 
 
+
+t.png
+t_*.txt
+t_*.tsv
