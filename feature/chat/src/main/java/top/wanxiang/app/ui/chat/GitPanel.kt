@@ -152,33 +152,38 @@ fun GitPanel(
             Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("凭证") })
         }
 
-        when {
-            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
-            }
-
-            // 凭证标签页始终可访问（不必先有仓库）；其余分支需要仓库
-            selectedTab == 3 -> CredentialsTab(
-                credentials = credentials,
-                onAdd = { showAddPatDialog = true },
-                onDelete = onDeleteCredential,
-                health = credentialHealth,
-                onVerify = onVerifyCredential,
-            )
-
-            // notARepo（明确不是仓库）与 branch=null（有 git status 但拿不到分支，
-            // 例如 chat 未绑工作区 / 空仓库）两种情况都给「克隆 / 初始化」入口。
-            state.notARepo || state.branch == null -> NotARepoView(
-                onInit = onInitRepo,
-                onOpenClone = { showCloneDialog = true },
-            )
-
-            state.error != null -> CenterHint(state.error, isError = true)
-
-            else -> when (selectedTab) {
-                0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate)
-                1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
-                2 -> LogTab(state, onCommitDetail)
+        // 横向 Pager：左右滑切换 4 页；TabRow 与 Pager 双向同步。
+        // 每一页自己处理"仓库状态不足"分支（凭证页永远可用；其它三页无仓库时显示 NotARepoView）
+        val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = selectedTab) { 4 }
+        LaunchedEffect(pagerState.currentPage) { selectedTab = pagerState.currentPage }
+        LaunchedEffect(selectedTab) {
+            if (pagerState.currentPage != selectedTab) pagerState.animateScrollToPage(selectedTab)
+        }
+        androidx.compose.foundation.pager.HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { page ->
+            when (page) {
+                3 -> CredentialsTab(
+                    credentials = credentials,
+                    onAdd = { showAddPatDialog = true },
+                    onDelete = onDeleteCredential,
+                    health = credentialHealth,
+                    onVerify = onVerifyCredential,
+                )
+                else -> when {
+                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+                    }
+                    state.notARepo || state.branch == null -> NotARepoView(
+                        onInit = onInitRepo,
+                        onOpenClone = { showCloneDialog = true },
+                    )
+                    state.error != null -> CenterHint(state.error, isError = true)
+                    page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate)
+                    page == 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
+                    page == 2 -> LogTab(state, onCommitDetail)
+                }
             }
         }
     }
