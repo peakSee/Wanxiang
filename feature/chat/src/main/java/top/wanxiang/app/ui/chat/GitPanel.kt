@@ -3,6 +3,7 @@ package top.wanxiang.app.ui.chat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -662,8 +663,16 @@ private fun FileRow(
     onSecondaryAction: (() -> Unit)? = null,
 ) {
     val color = statusColor(change.status)
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = {
+                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(change.path))
+                android.widget.Toast.makeText(context, "已复制：${change.path}", android.widget.Toast.LENGTH_SHORT).show()
+            })
+            .padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
