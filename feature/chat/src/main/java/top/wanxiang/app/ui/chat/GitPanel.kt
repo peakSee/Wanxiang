@@ -138,7 +138,9 @@ fun GitPanel(
         RuntimeTopBar(
             title = stringResource(R.string.chat_git_panel_title),
             onBack = onDismiss,
-            statusText = state.branch,
+            statusText = state.branch?.let { b ->
+                state.aheadBehind?.let { (a, bh) -> "$b  ↑$a ↓$bh" } ?: b
+            },
             actions = {
                 RuntimeIconButton(onClick = { showCredentialDialog = true }) {
                     RuntimeIcon(RuntimeIconName.Key, Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)

@@ -1,0 +1,10 @@
+5:47(回8 5 …             Tl > Goo) 4
+
+和 Git - 当前会话        oe Cc
+状态    分支    历史    凭证
+
+已保存的 HTTPS 凭证 (加密存储, 运行时一次性使用不   新增
+落盘)                                                     =
+
+还没有凭证。添加一个 GitHub/Gitee/GitLab 的 Personal
+Access Token, 就能克隆或推送私有仓库。

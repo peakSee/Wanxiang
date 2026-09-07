@@ -211,13 +211,19 @@ class ChatViewModel @Inject constructor(
                 return@launch
             }
             val lines = statusOut.lines().filter { it.isNotBlank() }
-            val branch = lines.firstOrNull { it.startsWith("## ") }
-                ?.removePrefix("## ")
-                ?.substringBefore("...")
-                ?.substringBefore(" [")
-                ?.trim()
-                ?.removePrefix("No commits yet on ")
-                ?.takeIf { it.isNotBlank() }
+            val branchHeader = lines.firstOrNull { it.startsWith("## ") }?.removePrefix("## ") ?: ""
+            val branch = branchHeader
+                .substringBefore("...")
+                .substringBefore(" [")
+                .trim()
+                .removePrefix("No commits yet on ")
+                .takeIf { it.isNotBlank() }
+            // 解析形如 `[ahead 2, behind 5]` 或 `[ahead 2]` / `[behind 3]`
+            val aheadBehind = Regex("""\[([^\]]+)\]""").find(branchHeader)?.groupValues?.get(1)?.let { inner ->
+                val ahead = Regex("ahead (\\d+)").find(inner)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                val behind = Regex("behind (\\d+)").find(inner)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                if (ahead == 0 && behind == 0) null else ahead to behind
+            }
             val staged = mutableListOf<GitFileChange>()
             val unstaged = mutableListOf<GitFileChange>()
             val untracked = mutableListOf<String>()
@@ -246,6 +252,7 @@ class ChatViewModel @Inject constructor(
             _gitPanelState.value = GitPanelState(
                 loading = false,
                 branch = branch,
+                aheadBehind = aheadBehind,
                 staged = staged,
                 unstaged = unstaged,
                 untracked = untracked,
@@ -1611,6 +1618,8 @@ data class GitFileChange(
 data class GitPanelState(
     val loading: Boolean = false,
     val branch: String? = null,
+    /** 相对 upstream 的 ahead/behind 计数（无 upstream 或未同步为 null）。 */
+    val aheadBehind: Pair<Int, Int>? = null,
     val staged: List<GitFileChange> = emptyList(),
     val unstaged: List<GitFileChange> = emptyList(),
     val untracked: List<String> = emptyList(),
