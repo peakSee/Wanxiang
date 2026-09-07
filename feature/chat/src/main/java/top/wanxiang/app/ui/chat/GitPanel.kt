@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -96,6 +97,8 @@ fun GitPanel(
     onDismissPullDirty: () -> Unit = {},
     aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
     onAiGenerate: () -> Unit = {},
+    credentialHealth: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
+    onVerifyCredential: (String) -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -154,6 +157,8 @@ fun GitPanel(
                 credentials = credentials,
                 onAdd = { showAddPatDialog = true },
                 onDelete = onDeleteCredential,
+                health = credentialHealth,
+                onVerify = onVerifyCredential,
             )
 
             // notARepo（明确不是仓库）与 branch=null（有 git status 但拿不到分支，
@@ -304,6 +309,8 @@ private fun CredentialsTab(
     credentials: List<top.wanxiang.app.core.datastore.GitCredential>,
     onAdd: () -> Unit,
     onDelete: (String) -> Unit,
+    health: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
+    onVerify: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -341,6 +348,25 @@ private fun CredentialsTab(
                             Text(cred.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text("${cred.username}@${cred.host}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text("token: ${cred.token.take(4)}${"\u2022".repeat(8)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            when (val h = health[cred.id]) {
+                                is top.wanxiang.app.ui.chat.GitCredHealth.Ok ->
+                                    Text("✓ Token 有效", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                is top.wanxiang.app.ui.chat.GitCredHealth.Invalid ->
+                                    Text("✗ Token 无效 (HTTP ${h.code})", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                                is top.wanxiang.app.ui.chat.GitCredHealth.Unknown ->
+                                    Text("⚠ ${h.reason}", color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall)
+                                is top.wanxiang.app.ui.chat.GitCredHealth.Checking ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        androidx.compose.foundation.layout.Box(Modifier.size(10.dp)) {
+                                            CircularProgressIndicator(strokeWidth = 1.dp, modifier = Modifier.size(10.dp))
+                                        }
+                                        Text("验证中…", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                null -> {}
+                            }
+                        }
+                        RuntimeIconButton(onClick = { onVerify(cred.id) }) {
+                            RuntimeIcon(RuntimeIconName.Refresh, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         RuntimeIconButton(onClick = { onDelete(cred.id) }) {
                             RuntimeIcon(RuntimeIconName.Close, Modifier.size(16.dp), MaterialTheme.colorScheme.error)

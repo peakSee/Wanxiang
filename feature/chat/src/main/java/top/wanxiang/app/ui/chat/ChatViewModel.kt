@@ -35,6 +35,7 @@ import top.wanxiang.app.harness.session.ConversationBranchKind
 import top.wanxiang.app.harness.session.LaneManager
 import top.wanxiang.app.runtime.WorkspaceManager
 import top.wanxiang.app.runtime.WorkspaceProject
+import top.wanxiang.app.runtime.shell.ShellCommand
 import top.wanxiang.app.core.tools.AgentModelDiscovery
 import top.wanxiang.app.core.tools.AgentProviderCatalog
 import top.wanxiang.app.core.tools.ProviderEndpointPolicy
@@ -466,6 +467,49 @@ class ChatViewModel @Inject constructor(
     }
 
     fun consumeAiCommit() { _aiCommit.value = GitAiCommitState.Idle }
+
+    // ===== 凭证健康检查（点击每条凭证的验证图标 → 用 curl 打 provider /user 端点） =====
+
+    private val _credHealth = MutableStateFlow<Map<String, GitCredHealth>>(emptyMap())
+    val credHealth: StateFlow<Map<String, GitCredHealth>> = _credHealth.asStateFlow()
+
+    fun verifyGitCredential(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _credHealth.value = _credHealth.value + (id to GitCredHealth.Checking)
+            val cred = gitPreferences.credentials.first().firstOrNull { it.id == id }
+            if (cred == null) {
+                _credHealth.value = _credHealth.value + (id to GitCredHealth.Unknown("凭证已删除"))
+                return@launch
+            }
+            val (url, authMode) = when {
+                cred.host.contains("github", true) -> "https://api.github.com/user" to "Bearer"
+                cred.host.contains("gitee", true) -> "https://gitee.com/api/v5/user" to "query"
+                cred.host.contains("gitlab", true) -> "https://${cred.host.substringBefore('/')}/api/v4/user" to "PRIVATE-TOKEN"
+                else -> null to null
+            }
+            if (url == null) {
+                _credHealth.value = _credHealth.value + (id to GitCredHealth.Unknown("未知主机：${cred.host}"))
+                return@launch
+            }
+            val quoted = shellQuote(cred.token)
+            val curlCmd = when (authMode) {
+                "query" -> "curl -s -o /dev/null -w '%{http_code}' --max-time 12 '${url}?access_token=$quoted'"
+                "PRIVATE-TOKEN" -> "curl -s -o /dev/null -w '%{http_code}' --max-time 12 -H 'PRIVATE-TOKEN: $quoted' '$url'"
+                else -> "curl -s -o /dev/null -w '%{http_code}' --max-time 12 -H 'Authorization: Bearer $quoted' -H 'User-Agent: wanxiang-app' '$url'"
+            }
+            val result = runCatching {
+                linuxRuntime.execute(ShellCommand(commandLine = curlCmd, workingDirectory = "/root", timeoutMs = 18_000L))
+            }
+            val code = result.getOrNull()?.stdout?.trim()?.takeLast(3).orEmpty()
+            val h = when {
+                code == "200" -> GitCredHealth.Ok
+                code == "401" || code == "403" -> GitCredHealth.Invalid(code)
+                code == "000" || code.isBlank() || !code.all { it.isDigit() } -> GitCredHealth.Unknown("网络不通（可能手机没挂代理或 host 不可达）")
+                else -> GitCredHealth.Unknown("HTTP $code")
+            }
+            _credHealth.value = _credHealth.value + (id to h)
+        }
+    }
 
 
     private fun currentGitWs(): String =
@@ -1343,6 +1387,14 @@ sealed interface GitAiCommitState {
     data object Loading : GitAiCommitState
     data class Done(val message: String) : GitAiCommitState
     data class Error(val reason: String) : GitAiCommitState
+}
+
+/** 凭证健康检查的四种状态。 */
+sealed interface GitCredHealth {
+    data object Ok : GitCredHealth
+    data class Invalid(val code: String) : GitCredHealth
+    data class Unknown(val reason: String) : GitCredHealth
+    data object Checking : GitCredHealth
 }
 
 internal fun mergeHistoricalAndLiveEvents(

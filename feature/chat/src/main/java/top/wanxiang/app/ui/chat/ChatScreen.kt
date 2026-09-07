@@ -169,6 +169,7 @@ fun ChatScreen(
     val matchedCredId by viewModel.matchedCredentialId.collectAsStateWithLifecycle()
     val gitUncommittedCount = gitPanelState.let { s -> s.staged.size + s.unstaged.size + s.untracked.size }
     val gitAiCommit by viewModel.aiCommit.collectAsStateWithLifecycle()
+    val gitCredHealth by viewModel.credHealth.collectAsStateWithLifecycle()
 
     // 弹窗开关与编辑目标：用 rememberSaveable 保存，旋转 / 进程重建后不丢失
     var showSessions by rememberSaveable { mutableStateOf(false) }
@@ -677,6 +678,8 @@ fun ChatScreen(
             onDismissPullDirty = viewModel::dismissPullDirtyConfirm,
             aiCommit = gitAiCommit,
             onAiGenerate = viewModel::aiGenerateCommitMessage,
+            credentialHealth = gitCredHealth,
+            onVerifyCredential = viewModel::verifyGitCredential,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onRevertAll = viewModel::gitRevertAllUnstaged,
