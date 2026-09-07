@@ -487,7 +487,7 @@ fun TerminalScreen(
                             ) {
                                 itemsIndexed(
                                     screen,
-                                    key = { index, line -> "$index-${line.cells.hashCode()}" },
+                                    key = { index, _ -> index },
                                 ) { index, line ->
                                     TerminalLineRow(
                                         line = line,
