@@ -468,6 +468,70 @@ class ChatViewModel @Inject constructor(
 
     fun consumeAiCommit() { _aiCommit.value = GitAiCommitState.Idle }
 
+    // ===== 从 GitHub/Gitee 拉自己的仓库列表（clone 对话框里点「浏览我的仓库」用） =====
+
+    private val _repoList = MutableStateFlow<GitRepoListState>(GitRepoListState.Idle)
+    val repoList: StateFlow<GitRepoListState> = _repoList.asStateFlow()
+
+    /** 用给定主机上第一条凭证打 provider 的 /user/repos API，取回名字+URL 列表。 */
+    fun fetchUserRepos(host: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _repoList.value = GitRepoListState.Loading
+            val cred = gitPreferences.credentials.first().firstOrNull { it.host.equals(host, ignoreCase = true) }
+            if (cred == null) {
+                _repoList.value = GitRepoListState.Error("$host 无保存凭证，先到「凭证」页添加")
+                return@launch
+            }
+            val quoted = shellQuote(cred.token)
+            val (url, auth) = when {
+                cred.host.contains("github", true) ->
+                    "https://api.github.com/user/repos?per_page=100&sort=updated" to
+                        "-H 'Authorization: Bearer $quoted' -H 'User-Agent: wanxiang-app'"
+                cred.host.contains("gitee", true) ->
+                    "https://gitee.com/api/v5/user/repos?per_page=100&sort=updated" to
+                        "'access_token=$quoted'"
+                cred.host.contains("gitlab", true) ->
+                    "https://${cred.host.substringBefore('/')}/api/v4/projects?membership=true&per_page=100&order_by=last_activity_at" to
+                        "-H 'PRIVATE-TOKEN: $quoted'"
+                else -> {
+                    _repoList.value = GitRepoListState.Error("暂不支持 $host 仓库列表")
+                    return@launch
+                }
+            }
+            val curlCmd = if (cred.host.contains("gitee", true)) {
+                "curl -s --max-time 15 '$url?$auth'"
+            } else {
+                "curl -s --max-time 15 $auth '$url'"
+            }
+            val res = runCatching {
+                linuxRuntime.execute(ShellCommand(commandLine = curlCmd, workingDirectory = "/root", timeoutMs = 25_000L))
+            }
+            val body = res.getOrNull()?.stdout?.trim().orEmpty()
+            if (body.isBlank() || body.startsWith("<") || body.startsWith("curl:")) {
+                _repoList.value = GitRepoListState.Error("拉取失败（沙箱可能没网，或 provider 拒了）。可以直接手动粘 URL")
+                return@launch
+            }
+            runCatching {
+                val json = org.json.JSONArray(body)
+                val list = buildList {
+                    for (i in 0 until json.length()) {
+                        val obj = json.getJSONObject(i)
+                        val name = obj.optString("full_name").ifBlank { obj.optString("path_with_namespace") }
+                        val cloneUrl = obj.optString("clone_url").ifBlank { obj.optString("http_url_to_repo") }
+                        val isPrivate = obj.optBoolean("private", false)
+                        if (name.isNotBlank() && cloneUrl.isNotBlank()) add(GitRepoInfo(name, cloneUrl, isPrivate))
+                    }
+                }
+                _repoList.value = if (list.isEmpty()) GitRepoListState.Error("账号下无仓库或返回空")
+                    else GitRepoListState.Ready(list)
+            }.onFailure {
+                _repoList.value = GitRepoListState.Error("解析失败：${it.message}")
+            }
+        }
+    }
+
+    fun clearRepoList() { _repoList.value = GitRepoListState.Idle }
+
     // ===== 凭证健康检查（点击每条凭证的验证图标 → 用 curl 打 provider /user 端点） =====
 
     private val _credHealth = MutableStateFlow<Map<String, GitCredHealth>>(emptyMap())
@@ -1395,6 +1459,17 @@ sealed interface GitCredHealth {
     data class Invalid(val code: String) : GitCredHealth
     data class Unknown(val reason: String) : GitCredHealth
     data object Checking : GitCredHealth
+}
+
+/** 仓库列表条目（clone 对话框「浏览我的仓库」用）。 */
+data class GitRepoInfo(val fullName: String, val cloneUrl: String, val private: Boolean)
+
+/** 仓库列表加载的三态。 */
+sealed interface GitRepoListState {
+    data object Idle : GitRepoListState
+    data object Loading : GitRepoListState
+    data class Ready(val repos: List<GitRepoInfo>) : GitRepoListState
+    data class Error(val reason: String) : GitRepoListState
 }
 
 internal fun mergeHistoricalAndLiveEvents(

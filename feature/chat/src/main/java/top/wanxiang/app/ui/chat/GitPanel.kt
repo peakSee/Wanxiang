@@ -33,6 +33,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -104,6 +105,9 @@ fun GitPanel(
     onAiGenerate: () -> Unit = {},
     credentialHealth: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
     onVerifyCredential: (String) -> Unit = {},
+    repoListState: top.wanxiang.app.ui.chat.GitRepoListState = top.wanxiang.app.ui.chat.GitRepoListState.Idle,
+    onFetchRepos: (String) -> Unit = {},
+    onClearRepoList: () -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -216,8 +220,9 @@ fun GitPanel(
                 onClone(u)
             }
         }
+        val detectedHost = remember(cloneUrl, credentials) { GitAuth.hostOf(cloneUrl) ?: credentials.firstOrNull()?.host }
         RuntimeAlertDialog(
-            onDismissRequest = { showCloneDialog = false },
+            onDismissRequest = { showCloneDialog = false; onClearRepoList() },
             confirmButton = { RuntimeButton(onClick = doClone) { Text("克隆") } },
             dismissButton = { RuntimeTextButton(onClick = { showCloneDialog = false }) { Text("取消") } },
             title = { Text("克隆远程仓库") },
@@ -243,11 +248,17 @@ fun GitPanel(
                     if (matchedCredentialId != null) {
                         val matched = credentials.firstOrNull { it.id == matchedCredentialId }
                         if (matched != null) {
-                            Text(
-                                "✓ 将自动使用凭证：${matched.name}（${matched.username}@${matched.host}）",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "✓ 将自动使用凭证：${matched.name}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                RuntimeTextButton(onClick = { onFetchRepos(detectedHost ?: matched.host) }) {
+                                    Text("📋 浏览我的仓库", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
                         }
                     } else if (cloneUrl.isNotBlank() && GitAuth.hostOf(cloneUrl) != null) {
                         Text(
@@ -255,6 +266,37 @@ fun GitPanel(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )
+                    } else if (credentials.isNotEmpty()) {
+                        // URL 未填或不含可识别主机：提供浏览快捷入口
+                        RuntimeTextButton(onClick = { onFetchRepos(credentials.first().host) }) {
+                            Text("📋 从「${credentials.first().name}」拉仓库列表", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    when (val st = repoListState) {
+                        is top.wanxiang.app.ui.chat.GitRepoListState.Loading ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(14.dp))
+                                Text("正在拉取仓库列表…", style = MaterialTheme.typography.labelSmall)
+                            }
+                        is top.wanxiang.app.ui.chat.GitRepoListState.Error ->
+                            Text(st.reason, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                        is top.wanxiang.app.ui.chat.GitRepoListState.Ready -> {
+                            Text("点仓库自动填 URL（共 ${st.repos.size} 个）", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            st.repos.take(30).forEach { repo ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clickable { cloneUrl = repo.cloneUrl; onProbeCredential(repo.cloneUrl) }.padding(vertical = 4.dp, horizontal = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        if (repo.private) "🔒" else "🌐",
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                    Text(repo.fullName, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                        top.wanxiang.app.ui.chat.GitRepoListState.Idle -> {}
                     }
                 }
             },
