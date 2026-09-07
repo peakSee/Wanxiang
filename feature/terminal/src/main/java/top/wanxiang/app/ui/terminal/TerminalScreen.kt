@@ -327,6 +327,12 @@ fun TerminalScreen(
                 statusText = stringResource(R.string.terminal_engine_status, distributionName),
             ) {
                 IconButton(
+                    onClick = copyScreen,
+                    contentDescription = stringResource(R.string.terminal_copy),
+                ) {
+                    RuntimeIcon(RuntimeIconName.Copy, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(
                     onClick = { showSessions = true },
                     modifier = Modifier.spotlightAnchor(sessionsAnchor),
                     contentDescription = stringResource(R.string.terminal_sessions_desc),
