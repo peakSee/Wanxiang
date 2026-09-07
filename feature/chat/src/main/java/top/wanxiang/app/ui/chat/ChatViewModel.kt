@@ -205,7 +205,7 @@ class ChatViewModel @Inject constructor(
             .let { if (it.startsWith("/")) it else "/workspace/$it" }
         _gitPanelState.value = GitPanelState(loading = true)
         viewModelScope.launch(Dispatchers.IO) {
-            val statusOut = runGitRead(ws, "git status --porcelain -b")
+            val statusOut = runGitRead(ws, "git status --porcelain -b -uall")
             if (statusOut == null || statusOut.contains("not a git repository", ignoreCase = true)) {
                 _gitPanelState.value = GitPanelState(loading = false, notARepo = true)
                 return@launch
