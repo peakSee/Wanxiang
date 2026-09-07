@@ -483,6 +483,7 @@ if [ -n "$WANXIANG_AAPT2_PATH" ] && [ -x "$WANXIANG_AAPT2_PATH" ] && \
     if [ -f "$GRADLE_PROPERTIES" ]; then
         sed \
             -e '/^[[:space:]]*android\.aapt2FromMavenOverride[[:space:]]*=/d' \
+            -e '/^[[:space:]]*android\.enableResourceOptimizations[[:space:]]*=/d' \
             -e '/^[[:space:]]*android\.builder\.sdkDownload[[:space:]]*=/d' \
             -e '/^[[:space:]]*org\.gradle\.daemon[[:space:]]*=/d' \
             -e '/^[[:space:]]*org\.gradle\.parallel[[:space:]]*=/d' \
@@ -493,7 +494,7 @@ if [ -n "$WANXIANG_AAPT2_PATH" ] && [ -x "$WANXIANG_AAPT2_PATH" ] && \
     else
         : > "$GRADLE_PROPERTIES_TMP"
     fi
-    printf '\n# WanXiang: immutable ARM64 toolchain and mobile-safe build limits.\nandroid.aapt2FromMavenOverride=%s\nandroid.builder.sdkDownload=false\norg.gradle.daemon=false\norg.gradle.parallel=false\norg.gradle.workers.max=2\norg.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=384m -XX:+UseSerialGC -Dfile.encoding=UTF-8\nsystemProp.org.gradle.internal.http.connectionTimeout=30000\nsystemProp.org.gradle.internal.http.socketTimeout=60000\nkotlin.daemon.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m\n' \
+    printf '\n# WanXiang: immutable ARM64 toolchain and mobile-safe build limits.\nandroid.aapt2FromMavenOverride=%s\nandroid.builder.sdkDownload=false\nandroid.enableResourceOptimizations=false\norg.gradle.daemon=false\norg.gradle.parallel=false\norg.gradle.workers.max=2\norg.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=384m -XX:+UseSerialGC -Dfile.encoding=UTF-8\nsystemProp.org.gradle.internal.http.connectionTimeout=30000\nsystemProp.org.gradle.internal.http.socketTimeout=60000\nkotlin.daemon.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m\n' \
         "$WANXIANG_AAPT2_PATH" >> "$GRADLE_PROPERTIES_TMP"
     mv -f "$GRADLE_PROPERTIES_TMP" "$GRADLE_PROPERTIES"
     echo "==> [WanXiang] Gradle 全局 AAPT2 覆盖: $WANXIANG_AAPT2_PATH"
