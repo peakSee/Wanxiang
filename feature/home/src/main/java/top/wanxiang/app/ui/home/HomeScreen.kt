@@ -1074,9 +1074,16 @@ private fun RuntimeEngineStatusCard(
             }
 
             if (state is RuntimeState.Error) {
+                val context = LocalContext.current
+                val errMsg = state.throwable.message ?: stringResource(R.string.home_runtime_error_fallback)
                 NoticeBanner(
-                    text = state.throwable.message ?: stringResource(R.string.home_runtime_error_fallback),
+                    text = errMsg,
                     isError = true,
+                    onCopy = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("WanXiang Error", errMsg))
+                        Toast.makeText(context, "错误信息已复制", Toast.LENGTH_SHORT).show()
+                    },
                 )
             }
 

@@ -1567,6 +1567,7 @@ fun NoticeBanner(
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     onDismiss: (() -> Unit)? = null,
+    onCopy: (() -> Unit)? = null,
 ) {
     val color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     Row(
@@ -1586,6 +1587,15 @@ fun NoticeBanner(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
+        if (onCopy != null) {
+            RuntimeIconButton(
+                onClick = onCopy,
+                modifier = Modifier.size(24.dp),
+                contentDescription = "复制",
+            ) {
+                RuntimeIcon(RuntimeIconName.Copy, Modifier.size(14.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         if (onDismiss != null) {
             val dismissLabel = stringResource(R.string.components_close)
             RuntimeIconButton(
