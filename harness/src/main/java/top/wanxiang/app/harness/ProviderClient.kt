@@ -52,6 +52,12 @@ internal class ChatApi(
 ) {
     private val requestCache = LlmRequestCache()
 
+    /**
+     * 重试观察回调（对齐 DeepSeek Harness 的 durable retry 事件）：
+     * 每次重试等待前触发，供上层把重试事件记录进会话日志 / 更新 UI，而非静默重试。
+     */
+    var retryObserver: ((attempt: Int, waitMillis: Long, error: Throwable) -> Unit)? = null
+
     suspend fun chat(model: ModelConfig, messages: List<ApiMessage>): ChatResult =
         withContext(Dispatchers.IO) {
             val cacheKey = requestCacheKey(model, messages)
@@ -105,10 +111,12 @@ internal class ChatApi(
                 return block()
             } catch (t: Throwable) {
                 if (attempt >= ProviderClient.RETRY_MAX_ATTEMPTS || !isRetryable(t, includeTransport)) throw t
-                val jitter = (delayMs * ProviderClient.RETRY_JITTER_RATIO * (Math.random() * 2.0 - 1.0)).toLong()
-                delay(delayMs + jitter)
-                delayMs = (delayMs * 2).coerceAtMost(ProviderClient.RETRY_MAX_DELAY_MS)
                 attempt++
+                val jitter = (delayMs * ProviderClient.RETRY_JITTER_RATIO * (Math.random() * 2.0 - 1.0)).toLong()
+                val waitMillis = delayMs + jitter
+                retryObserver?.invoke(attempt, waitMillis, t)
+                delay(waitMillis)
+                delayMs = (delayMs * 2).coerceAtMost(ProviderClient.RETRY_MAX_DELAY_MS)
             }
         }
     }

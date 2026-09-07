@@ -64,6 +64,20 @@ class ChatApiTest {
     }
 
     @Test
+    fun `retry observer fires before each retry wait`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(503).setBody("""{"error":"overloaded"}"""))
+        server.enqueue(
+            MockResponse().setBody("""{"choices":[{"message":{"role":"assistant","content":"ok"}}]}"""),
+        )
+        val attempts = mutableListOf<Int>()
+        api.retryObserver = { attempt, _, _ -> attempts.add(attempt) }
+        val result = api.chat(model(), listOf(ApiMessage(role = "user", content = "hi")))
+        assertEquals("ok", result.content)
+        assertEquals(listOf(1), attempts)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
     fun `parses tool calls response`() = runBlocking {
         server.enqueue(
             MockResponse().setBody(
