@@ -92,3 +92,12 @@ t_*.tsv
 q.png
 q_ocr.txt
 q_tsv.tsv
+# adb 截图调试临时文件
+q*.png
+q*.txt
+s*.pngs*_ocr.txts*_tsv.tsv
+f.png
+b.png
+c.png
+r.png
+h.png
