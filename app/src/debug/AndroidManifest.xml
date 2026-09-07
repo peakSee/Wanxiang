@@ -7,6 +7,7 @@
             <intent-filter>
                 <action android:name="top.wanxiang.app.DEBUG_CLONE" />
                 <action android:name="top.wanxiang.app.DEBUG_DIAG" />
+                <action android:name="top.wanxiang.app.DEBUG_GIT" />
             </intent-filter>
         </receiver>
     </application>

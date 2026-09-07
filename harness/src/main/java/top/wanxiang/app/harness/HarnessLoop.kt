@@ -171,6 +171,12 @@ class HarnessLoop @Inject constructor(
     /** 当前会话关联的工作区 Linux 路径（"" = 未关联）。 */
     val workspace: StateFlow<String> = _workspace.asStateFlow()
 
+    /** Debug 通道：只改内存 StateFlow 的 workspace，让 ChatViewModel 里的 git 操作指向别的目录。 */
+    fun debugSetWorkspace(path: String) {
+        _workspace.value = path
+        refreshMcpRecommendations(path)
+    }
+
     private val _projectType = MutableStateFlow("")
     /** 当前会话显式选择的工程类型；空值表示由工作区内容自动识别。 */
     val projectType: StateFlow<String> = _projectType.asStateFlow()

@@ -180,6 +180,29 @@ class ChatViewModel @Inject constructor(
                             _gitOpMessage.value = GitOpMessage.Error("诊断：exit=${r?.exitCode}\n$out")
                         }
                     }
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.SwitchWorkspace -> {
+                        harnessLoop.debugSetWorkspace(action.path)
+                        _gitOpMessage.value = GitOpMessage.Ok("已切工作区到 ${action.path}")
+                        refreshGitStatus()
+                    }
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.RefreshStatus -> refreshGitStatus()
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.AddCred ->
+                        addGitCredential(action.name, action.host, action.user, action.token)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.VerifyCred ->
+                        verifyGitCredential(action.id)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.FetchRepos ->
+                        fetchUserRepos(action.host)
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.AiGenerateCommit ->
+                        aiGenerateCommitMessage()
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitPull -> gitPull()
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitPush -> gitPush()
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitStash -> gitStash()
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitStashPop -> gitStashPop()
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitRevertAll -> gitRevertAllUnstaged()
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitRenameBranch ->
+                        gitRenameBranch(action.old, action.new)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitDeleteRemote ->
+                        gitDeleteRemoteBranch(action.name)
                 }
             }
         }
