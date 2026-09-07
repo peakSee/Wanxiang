@@ -72,6 +72,11 @@ scripts_patch/
 # 本机 OCR 调试产物（adb 截屏 + Tesseract 语言包，不入库）
 screen.png
 screen_ocr.txt
+screen_ocr.tsv
+screen_tsv.txt
+screen_tsv.tsv
+out.txt
+out.tsv
 tessdata/
 
 
