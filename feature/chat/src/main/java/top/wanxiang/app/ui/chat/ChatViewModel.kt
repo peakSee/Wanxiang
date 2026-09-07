@@ -344,12 +344,48 @@ class ChatViewModel @Inject constructor(
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
     fun gitInit() = runGitWrite("git init")
-    fun gitClone(url: String) = runGitNetworkOp(
-        cmd = "git clone --depth 1 ${shellQuote(url)} .",
-        resolveHostFromOrigin = false,
-        explicitHost = GitAuth.hostOf(url),
-        timeoutMs = 600_000L,
-    )
+    /**
+     * 克隆到当前工作区下的一个以仓库名命名的子目录（避免 `git clone URL .` 因工作区
+     * 里已有的 `.wanxiang-health` 等非空文件报 "destination not empty"）。
+     * 完成后自动把工作区切到该子目录，让 Git 面板立刻显示新仓库；失败通过 [gitOpMessage]
+     * 弹出 stdout+stderr 摘要，不再静默。
+     */
+    fun gitClone(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank()) {
+            _gitOpMessage.value = GitOpMessage.Error("仓库 URL 是空的，先粘贴一个再点克隆")
+            return
+        }
+        val repoName = trimmed.trimEnd('/').substringAfterLast('/').removeSuffix(".git").ifBlank { "repo" }
+        val ws = currentGitWs()
+        _gitOpMessage.value = GitOpMessage.Busy("正在克隆 $repoName…")
+        viewModelScope.launch(Dispatchers.IO) {
+            val host = GitAuth.hostOf(trimmed)
+            val creds = gitPreferences.credentials.first()
+            val cred = GitAuth.findCredential(creds, host)
+            val raw = "git clone --depth 1 ${shellQuote(trimmed)} ${shellQuote(repoName)}"
+            val effective = if (cred != null) GitAuth.wrap(raw, cred) else raw
+            val result = runCatching {
+                linuxRuntime.execute(
+                    top.wanxiang.app.runtime.shell.ShellCommand(
+                        commandLine = "$effective 2>&1",
+                        workingDirectory = ws,
+                        timeoutMs = 600_000L,
+                    ),
+                )
+            }
+            val r = result.getOrNull()
+            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
+            if (r != null && r.isSuccess) {
+                _gitOpMessage.value = GitOpMessage.Ok("✓ 已克隆到 $repoName/。用顶部工作区选择器切到 $repoName 就能改代码")
+                refreshGitStatus()
+            } else {
+                _gitOpMessage.value = GitOpMessage.Error(
+                    "克隆失败：\n" + out.take(600).ifBlank { "git 无输出（可能网络不通或 URL 错误）" },
+                )
+            }
+        }
+    }
     fun gitConfigIdentity(name: String, email: String) = runGitWrite("git config user.name ${shellQuote(name)} && git config user.email ${shellQuote(email)}")
     fun gitRevert(path: String) = runGitWrite("git checkout -- ${shellQuote(path)}")
     /** 一键回退所有已修改未暂存文件（等价 IDE 里 "Rollback" 未暂存部分）；未跟踪文件不动。 */
@@ -381,6 +417,9 @@ class ChatViewModel @Inject constructor(
         timeoutMs: Long,
     ) {
         val ws = currentGitWs()
+        val isPush = cmd.startsWith("git push")
+        val isPull = cmd.startsWith("git pull")
+        _gitOpMessage.value = GitOpMessage.Busy(if (isPush) "正在推送…" else if (isPull) "正在拉取…" else "正在执行 git 命令…")
         viewModelScope.launch(Dispatchers.IO) {
             val host = if (resolveHostFromOrigin) {
                 GitAuth.hostOf(runGitRead(ws, "git remote get-url origin").orEmpty().trim())
@@ -390,13 +429,23 @@ class ChatViewModel @Inject constructor(
             val creds = gitPreferences.credentials.first()
             val cred = GitAuth.findCredential(creds, host)
             val effective = if (cred != null) GitAuth.wrap(cmd, cred) else cmd
-            linuxRuntime.execute(
-                top.wanxiang.app.runtime.shell.ShellCommand(
-                    commandLine = "$effective 2>&1 || true",
-                    workingDirectory = ws,
-                    timeoutMs = timeoutMs,
-                ),
-            )
+            val result = runCatching {
+                linuxRuntime.execute(
+                    top.wanxiang.app.runtime.shell.ShellCommand(
+                        commandLine = "$effective 2>&1",
+                        workingDirectory = ws,
+                        timeoutMs = timeoutMs,
+                    ),
+                )
+            }
+            val r = result.getOrNull()
+            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
+            val label = if (isPush) "推送" else if (isPull) "拉取" else "操作"
+            if (r != null && r.isSuccess) {
+                _gitOpMessage.value = GitOpMessage.Ok("✓ $label 成功")
+            } else {
+                _gitOpMessage.value = GitOpMessage.Error("$label 失败：\n" + out.take(600).ifBlank { "git 无输出" })
+            }
             refreshGitStatus()
         }
     }
@@ -410,6 +459,11 @@ class ChatViewModel @Inject constructor(
     /** 当前工作区 URL 命中的凭证 id（Git 面板顶部提示用），无匹配则 null。 */
     private val _matchedCredentialId = MutableStateFlow<String?>(null)
     val matchedCredentialId: StateFlow<String?> = _matchedCredentialId.asStateFlow()
+
+    /** 一次性 git 操作反馈（克隆/推送/拉取）：Busy / Ok / Error。UI 用 Snackbar 显示 + 消费后清回 Idle。 */
+    private val _gitOpMessage = MutableStateFlow<GitOpMessage>(GitOpMessage.Idle)
+    val gitOpMessage: StateFlow<GitOpMessage> = _gitOpMessage.asStateFlow()
+    fun consumeGitOpMessage() { _gitOpMessage.value = GitOpMessage.Idle }
 
     fun addGitCredential(name: String, host: String, username: String, token: String) {
         val trimmedHost = host.trim().lowercase().removePrefix("https://").removeSuffix("/")
@@ -617,13 +671,22 @@ class ChatViewModel @Inject constructor(
     private fun runGitWrite(cmd: String) {
         val ws = workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
         viewModelScope.launch(Dispatchers.IO) {
-            linuxRuntime.execute(
-                top.wanxiang.app.runtime.shell.ShellCommand(
-                    commandLine = "$cmd 2>&1 || true",
-                    workingDirectory = ws,
-                    timeoutMs = 30_000L,
-                ),
-            )
+            val result = runCatching {
+                linuxRuntime.execute(
+                    top.wanxiang.app.runtime.shell.ShellCommand(
+                        commandLine = "$cmd 2>&1",
+                        workingDirectory = ws,
+                        timeoutMs = 30_000L,
+                    ),
+                )
+            }
+            val r = result.getOrNull()
+            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
+            // 只在失败时提示；成功的 stage/commit/init 通过下面的 refreshGitStatus 视觉可见（列表变化）不啰嗦
+            if (r != null && !r.isSuccess) {
+                val op = cmd.substringAfter("git ").substringBefore(' ').ifBlank { "git" }
+                _gitOpMessage.value = GitOpMessage.Error("$op 失败：\n" + out.take(500))
+            }
             refreshGitStatus()
         }
     }
@@ -1488,6 +1551,14 @@ sealed interface GitRepoListState {
     data object Loading : GitRepoListState
     data class Ready(val repos: List<GitRepoInfo>) : GitRepoListState
     data class Error(val reason: String) : GitRepoListState
+}
+
+/** Git 一次性操作反馈（克隆/拉取/推送）：给 UI Snackbar 消费。 */
+sealed interface GitOpMessage {
+    data object Idle : GitOpMessage
+    data class Busy(val label: String) : GitOpMessage
+    data class Ok(val message: String) : GitOpMessage
+    data class Error(val message: String) : GitOpMessage
 }
 
 internal fun mergeHistoricalAndLiveEvents(

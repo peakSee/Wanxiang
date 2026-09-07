@@ -217,9 +217,13 @@ fun GitPanel(
     }
 
     if (showCloneDialog) {
+        var cloneBlankError by remember { mutableStateOf(false) }
         val doClone = {
             val u = cloneUrl.trim()
-            if (u.isNotBlank()) {
+            if (u.isBlank()) {
+                cloneBlankError = true
+            } else {
+                cloneBlankError = false
                 showCloneDialog = false
                 onClone(u)
             }
@@ -242,10 +246,15 @@ fun GitPanel(
                         onValueChange = {
                             cloneUrl = it
                             onProbeCredential(it.trim())
+                            cloneBlankError = false
                         },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("https://github.com/owner/repo.git") },
                         singleLine = true,
+                        isError = cloneBlankError,
+                        supportingText = if (cloneBlankError) {
+                            { Text("请先输入仓库 URL", color = MaterialTheme.colorScheme.error) }
+                        } else null,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { doClone() }),
                     )

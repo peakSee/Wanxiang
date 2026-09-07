@@ -291,6 +291,23 @@ fun ChatScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val appContext = LocalContext.current.applicationContext
+    // Git 操作结果（克隆/拉取/推送）Snackbar 反馈：Busy 不显示 snackbar（面板已显 loading），
+    // Ok/Error 显示 + 消费回 Idle 避免重播
+    val gitOp by viewModel.gitOpMessage.collectAsStateWithLifecycle()
+    LaunchedEffect(gitOp) {
+        val snapshot = gitOp
+        when (snapshot) {
+            is top.wanxiang.app.ui.chat.GitOpMessage.Ok -> {
+                snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                viewModel.consumeGitOpMessage()
+            }
+            is top.wanxiang.app.ui.chat.GitOpMessage.Error -> {
+                snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                viewModel.consumeGitOpMessage()
+            }
+            else -> {}
+        }
+    }
     val grantLabel = stringResource(R.string.chat_snackbar_grant)
     val gotItLabel = stringResource(R.string.chat_snackbar_got_it)
     LaunchedEffect(Unit) {
