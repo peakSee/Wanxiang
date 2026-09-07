@@ -88,6 +88,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var adbNotificationManager: AdbNotificationManager
 
+    @Inject
+    lateinit var gitCredentialIpcBridge: top.wanxiang.app.runtime.credentials.GitCredentialIpcBridge
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -314,6 +317,8 @@ class MainActivity : AppCompatActivity() {
                     onboarding.completed -> WanXiangNavHost(globalNavigationBus = globalNavigationBus)
                     else -> OnboardingScreen(onboardingViewModel)
                 }
+                // 全局 git 凭据弹窗宿主：容器 helper 走文件 IPC 请求凭据时，无论在哪个页面都能立即弹出。
+                top.wanxiang.app.ui.chat.GlobalCredentialDialogHost(gitCredentialIpcBridge)
                 }
             }
         }

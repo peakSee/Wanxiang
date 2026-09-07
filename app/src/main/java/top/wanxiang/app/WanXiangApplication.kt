@@ -36,6 +36,7 @@ class WanXiangApplication : Application() {
     @Inject lateinit var privilegeManager: PrivilegeManager
     @Inject lateinit var browserMcpBootstrap: BrowserMcpBootstrap
     @Inject lateinit var wanxiangCloudClient: WanxiangCloudClient
+    @Inject lateinit var gitCredentialIpcBootstrap: top.wanxiang.app.runtime.credentials.GitCredentialIpcBootstrap
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -53,6 +54,9 @@ class WanXiangApplication : Application() {
                 launch { runCatching { privilegeManager.reconcilePersistedMode() } }
                 // 启动进程内 MCP HTTP server（loopback 127.0.0.1:8787）供 harness / 外部 IDE 接入浏览器工具
                 launch { runCatching { browserMcpBootstrap.bootstrap() } }
+                // Git 凭证 IPC 桥：从 assets 装 helper、注册 git config、启动 FileObserver + 兜底轮询、
+                // 镜像已存凭据到 git-credentials 文件（UI/AI Bash/终端三端 git 缺凭据都走同一弹窗）
+                launch { runCatching { gitCredentialIpcBootstrap.start() } }
                 launch {
                     runCatching {
                         val skillRepository = agentSkillRepositoryLazy.get()
