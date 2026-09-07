@@ -73,10 +73,13 @@ fun GitPanel(
     onCheckout: (String) -> Unit = {},
     onCreateBranch: (String) -> Unit = {},
     onDeleteBranch: (String) -> Unit = {},
+    onRenameBranch: (String, String) -> Unit = { _, _ -> },
+    onDeleteRemoteBranch: (String) -> Unit = {},
     onInitRepo: () -> Unit = {},
     onClone: (String) -> Unit = {},
     onConfigIdentity: (String, String) -> Unit = { _, _ -> },
     onRevert: (String) -> Unit = {},
+    onRevertAll: () -> Unit = {},
     onDeleteUntracked: (String) -> Unit = {},
     onCreateTag: (String) -> Unit = {},
     onDeleteTag: (String) -> Unit = {},
@@ -159,8 +162,8 @@ fun GitPanel(
             state.error != null -> CenterHint(state.error, isError = true)
 
             else -> when (selectedTab) {
-                0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onDeleteUntracked)
-                1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onCreateTag, onDeleteTag)
+                0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked)
+                1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
                 2 -> LogTab(state, onCommitDetail)
             }
         }
@@ -453,6 +456,7 @@ private fun StatusTab(
     onPull: () -> Unit,
     onPush: () -> Unit,
     onRevert: (String) -> Unit,
+    onRevertAll: () -> Unit = {},
     onDeleteUntracked: (String) -> Unit,
 ) {
     val staged = state.staged
@@ -539,7 +543,7 @@ private fun StatusTab(
                 }
             }
             if (unstaged.isNotEmpty()) {
-                SectionHeader("已修改 (${unstaged.size})")
+                SectionHeader("已修改 (${unstaged.size})", actionLabel = if (unstaged.isNotEmpty()) "全部回退" else null, onAction = onRevertAll)
                 RuntimeCard(contentPadding = PaddingValues(0.dp)) {
                     Column {
                         unstaged.forEachIndexed { i, f ->
@@ -671,12 +675,17 @@ private fun BranchesTab(
     onCheckout: (String) -> Unit,
     onCreateBranch: (String) -> Unit,
     onDeleteBranch: (String) -> Unit,
+    onRename: (String, String) -> Unit,
+    onDeleteRemoteBranch: (String) -> Unit,
     onCreateTag: (String) -> Unit,
     onDeleteTag: (String) -> Unit,
 ) {
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var newBranchName by rememberSaveable { mutableStateOf("") }
     var pendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingRename by rememberSaveable { mutableStateOf<String?>(null) }
+    var renameInput by rememberSaveable { mutableStateOf("") }
+    var pendingDeleteRemote by rememberSaveable { mutableStateOf<String?>(null) }
     var showCreateTag by rememberSaveable { mutableStateOf(false) }
     var newTagName by rememberSaveable { mutableStateOf("") }
     var pendingDeleteTag by rememberSaveable { mutableStateOf<String?>(null) }
@@ -710,6 +719,7 @@ private fun BranchesTab(
                                 modifier = Modifier.weight(1f),
                             )
                             if (!isCurrent) RuntimeTextButton(onClick = { pendingDelete = branch }) { Text("删除", style = MaterialTheme.typography.labelSmall) }
+                            RuntimeTextButton(onClick = { pendingRename = branch; renameInput = branch }) { Text("重命名", style = MaterialTheme.typography.labelSmall) }
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     }
@@ -723,7 +733,8 @@ private fun BranchesTab(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             RuntimeIcon(RuntimeIconName.GitBranch, Modifier.size(15.dp), MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(branch, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(branch, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            RuntimeTextButton(onClick = { pendingDeleteRemote = branch }) { Text("删除", style = MaterialTheme.typography.labelSmall) }
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     }
@@ -824,6 +835,44 @@ private fun BranchesTab(
             dismissButton = { RuntimeTextButton(onClick = { pendingDeleteTag = null }) { Text("取消") } },
             title = { Text("删除标签") },
             text = { Text("确定删除标签 $tag 吗？") },
+        )
+    }
+
+    pendingRename?.let { oldName ->
+        RuntimeAlertDialog(
+            onDismissRequest = { pendingRename = null },
+            confirmButton = {
+                RuntimeTextButton(onClick = {
+                    val n = renameInput.trim()
+                    pendingRename = null
+                    if (n.isNotBlank() && n != oldName) onRename(oldName, n)
+                }) { Text("重命名") }
+            },
+            dismissButton = { RuntimeTextButton(onClick = { pendingRename = null }) { Text("取消") } },
+            title = { Text("重命名分支") },
+            text = {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("原分支：$oldName", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(value = renameInput, onValueChange = { renameInput = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("新的分支名") }, singleLine = true)
+                }
+            },
+        )
+    }
+
+    pendingDeleteRemote?.let { remote ->
+        RuntimeAlertDialog(
+            onDismissRequest = { pendingDeleteRemote = null },
+            confirmButton = {
+                RuntimeTextButton(onClick = {
+                    pendingDeleteRemote = null
+                    // remote 形如 "origin/main"，git push origin --delete 需要去前缀
+                    val branch = remote.substringAfter("/", remote)
+                    onDeleteRemoteBranch(branch)
+                }) { Text("删除") }
+            },
+            dismissButton = { RuntimeTextButton(onClick = { pendingDeleteRemote = null }) { Text("取消") } },
+            title = { Text("删除远程分支") },
+            text = { Text("将从远端删除 $remote，不可撤销。确定？") },
         )
     }
 }

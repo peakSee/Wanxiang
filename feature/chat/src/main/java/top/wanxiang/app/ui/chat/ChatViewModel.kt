@@ -332,6 +332,18 @@ class ChatViewModel @Inject constructor(
     )
     fun gitConfigIdentity(name: String, email: String) = runGitWrite("git config user.name ${shellQuote(name)} && git config user.email ${shellQuote(email)}")
     fun gitRevert(path: String) = runGitWrite("git checkout -- ${shellQuote(path)}")
+    /** 一键回退所有已修改未暂存文件（等价 IDE 里 "Rollback" 未暂存部分）；未跟踪文件不动。 */
+    fun gitRevertAllUnstaged() = runGitWrite("git checkout -- .")
+    /** 重命名分支：在目标分支上执行 -m 会连带切换，所以先记下当前分支再切回。 */
+    fun gitRenameBranch(oldName: String, newName: String) = runGitWrite(
+        "git branch -m ${shellQuote(oldName)} ${shellQuote(newName)}",
+    )
+    /** 删除远程分支（不可撤销，UI 应二次确认）。 */
+    fun gitDeleteRemoteBranch(name: String) = runGitNetworkOp(
+        cmd = "git push origin --delete ${shellQuote(name)}",
+        resolveHostFromOrigin = true,
+        timeoutMs = 120_000L,
+    )
     fun gitDeleteUntracked(path: String) = runGitWrite("rm -- ${shellQuote(path)}")
     fun gitCreateTag(name: String) = runGitWrite("git tag ${shellQuote(name)}")
     fun gitDeleteTag(name: String) = runGitWrite("git tag -d ${shellQuote(name)}")
