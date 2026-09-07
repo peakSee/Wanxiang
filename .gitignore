@@ -1,0 +1,72 @@
+# Gradle and Kotlin caches
+.gradle/
+.kotlin/
+**/build/
+!runtime/src/main/java/top/wanxiang/app/runtime/build/
+!runtime/src/main/java/top/wanxiang/app/runtime/build/*.kt
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+
+# Android native build outputs
+.externalNativeBuild/
+.cxx/
+**/.externalNativeBuild/
+**/.cxx/
+
+# Machine-local Android configuration
+local.properties
+
+# Signing credentials and service configuration
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+
+# Logs, diagnostics, and heap dumps
+*.log
+*.hprof
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Locally downloaded offline-plugin SDK archives (about 1.6 GiB).
+# Keep manifests, scripts, checksums and download instructions versioned.
+assets/plugins/android-suite-offline/payload/archives/
+
+# Locally downloaded QEMU x86_64 user-mode plugin archives (~47 MiB).
+# Keep manifests, scripts, checksums and download instructions versioned.
+assets/plugins/qemu-x86-64-compat/payload/archives/
+
+# Locally downloaded RTK offline plugin binary (~8.7 MiB) and dist artifacts.
+# Keep manifests, scripts, checksums, config and download instructions versioned.
+assets/plugins/rtk-suite-offline/payload/bin/
+dist/
+.workbuddy/
+.trae/
+.codegraph/
+.tmp_unusedscan/
+webchat/node_modules/
+__pycache__/
+*.pyc
+webchat/dist/
+
+# 运行时崩溃帧调试产物（不入库）
+.crash_frames/
+
+# 临时调试产物与脚本（不入库）
+*_tmp/
+_*.py
+build-output.txt
+scripts_patch/
+
+

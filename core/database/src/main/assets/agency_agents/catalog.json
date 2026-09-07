@@ -1,0 +1,1165 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "https://github.com/msitarzewski/agency-agents",
+    "revision": "3c9588880b7cafaec325a104899fd8bbe27e7d72",
+    "license": "MIT",
+    "agentCount": 136,
+    "departmentCount": 9
+  },
+  "departments": [
+    {
+      "id": "engineering",
+      "name": "Engineering",
+      "icon": "Code",
+      "color": "#3B82F6",
+      "sortOrder": 0
+    },
+    {
+      "id": "design",
+      "name": "Design",
+      "icon": "PenTool",
+      "color": "#EC4899",
+      "sortOrder": 1
+    },
+    {
+      "id": "product",
+      "name": "Product",
+      "icon": "Box",
+      "color": "#D946EF",
+      "sortOrder": 2
+    },
+    {
+      "id": "project-management",
+      "name": "Project Management",
+      "icon": "ClipboardList",
+      "color": "#0EA5E9",
+      "sortOrder": 3
+    },
+    {
+      "id": "testing",
+      "name": "Testing",
+      "icon": "FlaskConical",
+      "color": "#F59E0B",
+      "sortOrder": 4
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "icon": "ShieldCheck",
+      "color": "#EF4444",
+      "sortOrder": 5
+    },
+    {
+      "id": "game-development",
+      "name": "Game Development",
+      "icon": "Gamepad2",
+      "color": "#A855F7",
+      "sortOrder": 6
+    },
+    {
+      "id": "spatial-computing",
+      "name": "Spatial Computing",
+      "icon": "Boxes",
+      "color": "#06B6D4",
+      "sortOrder": 7
+    },
+    {
+      "id": "specialized",
+      "name": "Specialized",
+      "icon": "Sparkles",
+      "color": "#6366F1",
+      "sortOrder": 8
+    }
+  ],
+  "agents": [
+    {
+      "id": "agency_engineering_ai_data_remediation_engineer",
+      "name": "AI Data Remediation Engineer",
+      "description": "Specialist in self-healing data pipelines — uses air-gapped local SLMs and semantic clustering to automatically detect, classify, and fix data anomalies at scale. Focuses exclusively on the remediation layer: intercepting bad data, generating deterministic fix logic via Ollama, and guaranteeing zero data loss. Not a general data engineer — a surgical specialist for when your data is broken and the pipeline can't stop.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-ai-data-remediation-engineer.md",
+      "sortOrder": 0
+    },
+    {
+      "id": "agency_engineering_ai_engineer",
+      "name": "AI Engineer",
+      "description": "Expert AI/ML engineer specializing in machine learning model development, deployment, and integration into production systems. Focused on building intelligent features, data pipelines, and AI-powered applications with emphasis on practical, scalable solutions.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-ai-engineer.md",
+      "sortOrder": 1
+    },
+    {
+      "id": "agency_engineering_api_platform_engineer",
+      "name": "API Platform Engineer",
+      "description": "Expert API platform engineer for public and partner APIs — contract-first design (OpenAPI/gRPC), versioning and deprecation policy, SDK generation, API gateway concerns (auth, rate limiting, quotas), and developer-portal DX.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-api-platform-engineer.md",
+      "sortOrder": 2
+    },
+    {
+      "id": "agency_engineering_autonomous_optimization_architect",
+      "name": "Autonomous Optimization Architect",
+      "description": "Intelligent system governor that continuously shadow-tests APIs for performance while enforcing strict financial and security guardrails against runaway costs.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-autonomous-optimization-architect.md",
+      "sortOrder": 3
+    },
+    {
+      "id": "agency_engineering_backend_architect",
+      "name": "Backend Architect",
+      "description": "Senior backend architect specializing in scalable system design, database architecture, API development, and cloud infrastructure. Builds robust, secure, performant server-side applications and microservices",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-backend-architect.md",
+      "sortOrder": 4
+    },
+    {
+      "id": "agency_engineering_cms_developer",
+      "name": "CMS Developer",
+      "description": "Drupal and WordPress specialist for theme development, custom plugins/modules, content architecture, and code-first CMS implementation",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-cms-developer.md",
+      "sortOrder": 5
+    },
+    {
+      "id": "agency_engineering_code_reviewer",
+      "name": "Code Reviewer",
+      "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-code-reviewer.md",
+      "sortOrder": 6
+    },
+    {
+      "id": "agency_engineering_codebase_onboarding_engineer",
+      "name": "Codebase Onboarding Engineer",
+      "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-codebase-onboarding-engineer.md",
+      "sortOrder": 7
+    },
+    {
+      "id": "agency_engineering_data_engineer",
+      "name": "Data Engineer",
+      "description": "Expert data engineer specializing in building reliable data pipelines, lakehouse architectures, and scalable data infrastructure. Masters ETL/ELT, Apache Spark, dbt, streaming systems, and cloud data platforms to turn raw data into trusted, analytics-ready assets.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-data-engineer.md",
+      "sortOrder": 8
+    },
+    {
+      "id": "agency_engineering_data_visualization_engineer",
+      "name": "Data Visualization Engineer",
+      "description": "Expert data visualization engineer — chart-type selection by data and question, perceptually honest encodings, colorblind-safe data palettes, accessible and interactive charts, and rendering large datasets performantly with D3, Vega, and charting libraries.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-data-visualization-engineer.md",
+      "sortOrder": 9
+    },
+    {
+      "id": "agency_engineering_database_optimizer",
+      "name": "Database Optimizer",
+      "description": "Expert database specialist focusing on schema design, query optimization, indexing strategies, and performance tuning for PostgreSQL, MySQL, and modern databases like Supabase and PlanetScale.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-database-optimizer.md",
+      "sortOrder": 10
+    },
+    {
+      "id": "agency_engineering_database_reliability_engineer",
+      "name": "Database Reliability Engineer",
+      "description": "Expert database reliability engineer (DBRE) — high availability and replication, automated failover, backup and point-in-time recovery, zero-downtime online schema migrations, connection pooling, and disaster-recovery drills. Focused on keeping data safe and available, not query tuning.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-database-reliability-engineer.md",
+      "sortOrder": 11
+    },
+    {
+      "id": "agency_engineering_desktop_app_engineer",
+      "name": "Desktop App Engineer",
+      "description": "Expert desktop application engineer for Electron and Tauri — secure IPC and process isolation, code signing and notarization, auto-update pipelines, native OS integration, and resource-footprint discipline.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-desktop-app-engineer.md",
+      "sortOrder": 12
+    },
+    {
+      "id": "agency_engineering_developer_tooling_engineer",
+      "name": "Developer Tooling Engineer",
+      "description": "Expert developer-tooling and CLI engineer — building command-line tools and internal developer platforms with great DX: intuitive command design, helpful errors, shell completions, fast startup, cross-platform distribution, and scriptable, composable interfaces.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-developer-tooling-engineer.md",
+      "sortOrder": 13
+    },
+    {
+      "id": "agency_engineering_devops_automator",
+      "name": "DevOps Automator",
+      "description": "Expert DevOps engineer specializing in infrastructure automation, CI/CD pipeline development, and cloud operations",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-devops-automator.md",
+      "sortOrder": 14
+    },
+    {
+      "id": "agency_engineering_drupal_performance",
+      "name": "Drupal Performance Engineer",
+      "description": "Expert Drupal 10/11 performance engineer specializing in Core Web Vitals, render and dynamic page caching, BigPipe, cache tags and contexts, database query and Views optimization, CSS/JS aggregation, responsive images and lazy loading, CDN integration, and opcache/PHP-FPM tuning for fast, audit-passing sites",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-drupal-performance.md",
+      "sortOrder": 15
+    },
+    {
+      "id": "agency_engineering_drupal_shopping_cart",
+      "name": "Drupal Shopping Cart Engineer",
+      "description": "Expert Drupal e-commerce engineer specializing in Drupal Commerce for product catalog management, payment gateway integration, checkout workflow design, order management, tax and promotion configuration, and high-reliability storefront delivery on Drupal 10/11",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-drupal-shopping-cart.md",
+      "sortOrder": 16
+    },
+    {
+      "id": "agency_engineering_email_intelligence_engineer",
+      "name": "Email Intelligence Engineer",
+      "description": "Expert in extracting structured, reasoning-ready data from raw email threads for AI agents and automation systems",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-email-intelligence-engineer.md",
+      "sortOrder": 17
+    },
+    {
+      "id": "agency_engineering_embedded_firmware_engineer",
+      "name": "Embedded Firmware Engineer",
+      "description": "Specialist in bare-metal and RTOS firmware - ESP32/ESP-IDF, PlatformIO, Arduino, ARM Cortex-M, STM32 HAL/LL, Nordic nRF5/nRF Connect SDK, FreeRTOS, Zephyr",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-embedded-firmware-engineer.md",
+      "sortOrder": 18
+    },
+    {
+      "id": "agency_engineering_feishu_integration_developer",
+      "name": "Feishu Integration Developer",
+      "description": "Full-stack integration expert specializing in the Feishu (Lark) Open Platform — proficient in Feishu bots, mini programs, approval workflows, Bitable (multidimensional spreadsheets), interactive message cards, Webhooks, SSO authentication, and workflow automation, building enterprise-grade collaboration and automation solutions within the Feishu ecosystem.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-feishu-integration-developer.md",
+      "sortOrder": 19
+    },
+    {
+      "id": "agency_engineering_filament_optimization_specialist",
+      "name": "Filament Optimization Specialist",
+      "description": "Expert in restructuring and optimizing Filament PHP admin interfaces for maximum usability and efficiency. Focuses on impactful structural changes — not just cosmetic tweaks.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-filament-optimization-specialist.md",
+      "sortOrder": 20
+    },
+    {
+      "id": "agency_engineering_finops_engineer",
+      "name": "FinOps Engineer",
+      "description": "Expert cloud cost engineer for AWS/GCP/Azure — cost allocation and tagging, rightsizing, commitment planning (reserved instances/savings plans), egress and storage optimization, and unit-economics dashboards that tie spend to business value.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-finops-engineer.md",
+      "sortOrder": 21
+    },
+    {
+      "id": "agency_engineering_frontend_developer",
+      "name": "Frontend Developer",
+      "description": "Expert frontend developer specializing in modern web technologies, React/Vue/Angular frameworks, UI implementation, and performance optimization",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-frontend-developer.md",
+      "sortOrder": 22
+    },
+    {
+      "id": "agency_engineering_gaussdb_expert",
+      "name": "GaussDB Expert Engineer",
+      "description": "Expert database specialist focusing on GaussDB OLTP — Huawei's self-developed enterprise-grade relational database (NOT GaussDB(DWS) OLAP, NOT GaussDB(for openGauss) cloud service, NOT GaussDB(for MySQL)). Covers schema design, distributed table design, query optimization, indexing, Ustore engine, and performance tuning for both distributed and centralized deployments.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-gaussdb-expert.md",
+      "sortOrder": 23
+    },
+    {
+      "id": "agency_engineering_git_workflow_master",
+      "name": "Git Workflow Master",
+      "description": "Expert in Git workflows, branching strategies, and version control best practices including conventional commits, rebasing, worktrees, and CI-friendly branch management.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-git-workflow-master.md",
+      "sortOrder": 24
+    },
+    {
+      "id": "agency_engineering_i18n_engineer",
+      "name": "Internationalization Engineer",
+      "description": "Expert i18n engineer for ICU MessageFormat, CLDR plural rules, RTL and bidirectional layouts, locale-aware date/number/currency formatting, string extraction pipelines, and pseudo-localization testing.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-i18n-engineer.md",
+      "sortOrder": 25
+    },
+    {
+      "id": "agency_engineering_identity_access_engineer",
+      "name": "Identity & Access Engineer",
+      "description": "Expert identity engineer for OAuth 2.0/OIDC flows, enterprise SSO (SAML/OIDC) and SCIM provisioning, passkeys/WebAuthn, session architecture, and multi-tenant authorization with RBAC/ABAC.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-identity-access-engineer.md",
+      "sortOrder": 26
+    },
+    {
+      "id": "agency_engineering_incident_response_commander",
+      "name": "Incident Response Commander",
+      "description": "Expert incident commander specializing in production incident management, structured response coordination, post-mortem facilitation, SLO/SLI tracking, and on-call process design for reliable engineering organizations.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-incident-response-commander.md",
+      "sortOrder": 27
+    },
+    {
+      "id": "agency_engineering_iot_fleet_engineer",
+      "name": "IoT Fleet Engineer",
+      "description": "Expert IoT and edge fleet engineer — device provisioning and identity, MQTT/telemetry pipelines, staged over-the-air (OTA) firmware updates with rollback, edge compute, and observability across fleets of unreliable, intermittently-connected devices.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-iot-fleet-engineer.md",
+      "sortOrder": 28
+    },
+    {
+      "id": "agency_engineering_it_service_manager",
+      "name": "IT Service Manager",
+      "description": "Expert IT service management specialist using ITIL 4 framework for service catalog design, incident and problem management, change control, SLA governance, CMDB maintenance, and continual service improvement — ensuring IT delivers reliable, measurable business value across any organization size",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-it-service-manager.md",
+      "sortOrder": 29
+    },
+    {
+      "id": "agency_engineering_knowledge_graph_engineer",
+      "name": "Knowledge Graph Engineer",
+      "description": "Structures information and capabilities into interconnected nodes (entities) and edges (relationships) — enabling dynamic context navigation, modular competency chaining, lower token costs, and hallucination reduction.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-knowledge-graph-engineer.md",
+      "sortOrder": 30
+    },
+    {
+      "id": "agency_engineering_llm_post_training_engineer",
+      "name": "LLM Post-Training Engineer",
+      "description": "Evidence-driven owner for SFT, preference optimization, RLHF/RLVR, MoE post-training, and the release gates that turn a checkpoint into a defensible model change.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-llm-post-training-engineer.md",
+      "sortOrder": 31
+    },
+    {
+      "id": "agency_engineering_minimal_change_engineer",
+      "name": "Minimal Change Engineer",
+      "description": "Engineering specialist focused on minimum-viable diffs — fixes only what was asked, refuses scope creep, prefers three similar lines over a premature abstraction. The discipline that prevents bug-fix PRs from becoming refactor avalanches.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-minimal-change-engineer.md",
+      "sortOrder": 32
+    },
+    {
+      "id": "agency_engineering_mobile_app_builder",
+      "name": "Mobile App Builder",
+      "description": "Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-mobile-app-builder.md",
+      "sortOrder": 33
+    },
+    {
+      "id": "agency_engineering_mobile_release_engineer",
+      "name": "Mobile Release Engineer",
+      "description": "Expert mobile release and distribution engineer for iOS and Android — code signing, provisioning, fastlane pipelines, App Store Connect and Play Console submission, phased rollouts, and crash-triaged release health.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-mobile-release-engineer.md",
+      "sortOrder": 34
+    },
+    {
+      "id": "agency_engineering_multi_agent_systems_architect",
+      "name": "Multi-Agent Systems Architect",
+      "description": "Systems architect specializing in the design, coordination, and governance of multi-agent AI pipelines — covering topology selection, context management, inter-agent trust, failure recovery, human-in-the-loop gating, and observability for production-grade agent systems.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-multi-agent-systems-architect.md",
+      "sortOrder": 35
+    },
+    {
+      "id": "agency_engineering_network_engineer",
+      "name": "Network Engineer",
+      "description": "Expert network engineer for Cisco IOS/IOS-XE, Cisco ASA/FTD, Juniper Junos, and Palo Alto PAN-OS routing, switching, firewalling, and troubleshooting.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-network-engineer.md",
+      "sortOrder": 36
+    },
+    {
+      "id": "agency_engineering_orgscript_engineer",
+      "name": "OrgScript Engineer",
+      "description": "Expert in designing, parsing, and implementing OrgScript grammar, AST validation, and business logic definitions.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-orgscript-engineer.md",
+      "sortOrder": 37
+    },
+    {
+      "id": "agency_engineering_payments_billing_engineer",
+      "name": "Payments & Billing Engineer",
+      "description": "Expert payments engineer for PSP integrations (Stripe, Adyen, Braintree, PayPal), idempotent payment flows, webhook processing, subscription billing, SCA/3DS, PCI scope reduction, and financial reconciliation.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-payments-billing-engineer.md",
+      "sortOrder": 38
+    },
+    {
+      "id": "agency_engineering_privacy_engineer",
+      "name": "Privacy Engineer",
+      "description": "Expert privacy engineer who implements privacy in code — PII discovery and classification, data minimization, consent enforcement at the API layer, automated DSAR and deletion across services, pseudonymization/tokenization, and retention automation. Builds the technical controls a privacy policy only promises.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-privacy-engineer.md",
+      "sortOrder": 39
+    },
+    {
+      "id": "agency_engineering_prompt_engineer",
+      "name": "Prompt Engineer",
+      "description": "Specialist in crafting, testing, and systematically optimizing prompts for LLMs — turning vague instructions into reliable, production-grade AI behaviors.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-prompt-engineer.md",
+      "sortOrder": 40
+    },
+    {
+      "id": "agency_engineering_rag_pipeline_engineer",
+      "name": "RAG Pipeline Engineer",
+      "description": "Production RAG specialist focused on chunking strategy, retrieval quality, hybrid search, re-ranking, and eval-driven iteration. Builds pipelines that actually retrieve the right context — not just pipelines that run.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-rag-pipeline-engineer.md",
+      "sortOrder": 41
+    },
+    {
+      "id": "agency_engineering_rapid_prototyper",
+      "name": "Rapid Prototyper",
+      "description": "Specialized in ultra-fast proof-of-concept development and MVP creation using efficient tools and frameworks",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-rapid-prototyper.md",
+      "sortOrder": 42
+    },
+    {
+      "id": "agency_engineering_realtime_collaboration_engineer",
+      "name": "Realtime Collaboration Engineer",
+      "description": "Expert realtime systems engineer for WebSocket/SSE infrastructure, presence, CRDT and OT-based collaborative editing, offline-first sync engines, and fan-out scaling with reconnect-safe protocols.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-realtime-collaboration-engineer.md",
+      "sortOrder": 43
+    },
+    {
+      "id": "agency_engineering_rust_refactoring_specialist",
+      "name": "Rust Refactoring Specialist",
+      "description": "Expert Rust engineer for repository-scale refactoring, safe renames, module restructuring, duplication removal, panic hardening, ownership improvements, and compiler or Clippy remediation.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-rust-refactoring-specialist.md",
+      "sortOrder": 44
+    },
+    {
+      "id": "agency_engineering_search_relevance_engineer",
+      "name": "Search Relevance Engineer",
+      "description": "Expert search engineer for Elasticsearch and OpenSearch — index and analyzer design, BM25 query tuning, hybrid lexical+vector retrieval, and judgment-based relevance evaluation with nDCG and online experiments.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-search-relevance-engineer.md",
+      "sortOrder": 45
+    },
+    {
+      "id": "agency_engineering_section_508_specialist",
+      "name": "Section 508 Accessibility Specialist",
+      "description": "Expert U.S. federal Section 508 accessibility engineer (the 508 legal baseline is WCAG 2.0 Level AA; WCAG 2.1/2.2 AA are recommended best practice, and ADA Title II requires WCAG 2.1 AA for state/local government) specializing in accessible web development, ARIA implementation, screen reader testing (JAWS/NVDA/VoiceOver), keyboard navigation, color contrast, accessible forms and PDFs, VPAT/ACR authoring, automated and manual auditing (axe/WAVE/Lighthouse), and remediation for government and enterprise sites",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-section-508-specialist.md",
+      "sortOrder": 46
+    },
+    {
+      "id": "agency_engineering_senior_developer",
+      "name": "Senior Developer",
+      "description": "Premium implementation specialist - Masters Laravel/Livewire/FluxUI, advanced CSS, Three.js integration",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-senior-developer.md",
+      "sortOrder": 47
+    },
+    {
+      "id": "agency_engineering_software_architect",
+      "name": "Software Architect",
+      "description": "Expert software architect specializing in system design, domain-driven design, architectural patterns, and technical decision-making for scalable, maintainable systems.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-software-architect.md",
+      "sortOrder": 48
+    },
+    {
+      "id": "agency_engineering_solidity_smart_contract_engineer",
+      "name": "Solidity Smart Contract Engineer",
+      "description": "Expert Solidity developer specializing in EVM smart contract architecture, gas optimization, upgradeable proxy patterns, DeFi protocol development, and security-first contract design across Ethereum and L2 chains.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-solidity-smart-contract-engineer.md",
+      "sortOrder": 49
+    },
+    {
+      "id": "agency_engineering_sre",
+      "name": "SRE (Site Reliability Engineer)",
+      "description": "Expert site reliability engineer specializing in SLOs, error budgets, observability, chaos engineering, and toil reduction for production systems at scale.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-sre.md",
+      "sortOrder": 50
+    },
+    {
+      "id": "agency_engineering_technical_writer",
+      "name": "Technical Writer",
+      "description": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-technical-writer.md",
+      "sortOrder": 51
+    },
+    {
+      "id": "agency_engineering_uswds_developer",
+      "name": "USWDS Developer",
+      "description": "Expert U.S. Web Design System frontend developer specializing in USWDS components and design tokens, accessible-by-default patterns, responsive government UI, Sass settings/theming, the federal design language, integration into CMS platforms (Drupal/WordPress), and compliance with 21st Century IDEA and the Federal Website Standards",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-uswds-developer.md",
+      "sortOrder": 52
+    },
+    {
+      "id": "agency_engineering_video_streaming_engineer",
+      "name": "Video Streaming Engineer",
+      "description": "Expert video streaming engineer for adaptive bitrate delivery — HLS/DASH packaging, ffmpeg transcode ladders, CMAF low-latency, DRM, CDN delivery, and QoE-driven player tuning.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-video-streaming-engineer.md",
+      "sortOrder": 53
+    },
+    {
+      "id": "agency_engineering_voice_ai_integration_engineer",
+      "name": "Voice AI Integration Engineer",
+      "description": "Expert in building end-to-end speech transcription pipelines using Whisper-style models and cloud ASR services — from raw audio ingestion through preprocessing, transcript cleanup, subtitle generation, speaker diarization, and structured downstream integration into apps, APIs, and CMS platforms.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-voice-ai-integration-engineer.md",
+      "sortOrder": 54
+    },
+    {
+      "id": "agency_engineering_webassembly_engineer",
+      "name": "WebAssembly Engineer",
+      "description": "Expert WebAssembly engineer — compiling Rust/C++/Go to Wasm, JS interop and the boundary marshalling cost, WASI and server-side runtimes (Wasmtime/Wasmer), the component model, and near-native performance tuning.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-webassembly-engineer.md",
+      "sortOrder": 55
+    },
+    {
+      "id": "agency_engineering_wechat_mini_program_developer",
+      "name": "WeChat Mini Program Developer",
+      "description": "Expert WeChat Mini Program developer specializing in 小程序 development with WXML/WXSS/WXS, WeChat API integration, payment systems, subscription messaging, and the full WeChat ecosystem.",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-wechat-mini-program-developer.md",
+      "sortOrder": 56
+    },
+    {
+      "id": "agency_engineering_wordpress_performance",
+      "name": "WordPress Performance Engineer",
+      "description": "Expert WordPress performance engineer specializing in Core Web Vitals, object caching (Redis/Memcached), page caching, database and WP_Query optimization, the Transients API, asset minification/deferral/critical CSS, image optimization and lazy loading, CDN integration, plugin performance auditing, and PHP-FPM/opcache tuning for fast, audit-passing sites",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-wordpress-performance.md",
+      "sortOrder": 57
+    },
+    {
+      "id": "agency_engineering_wordpress_shopping_cart",
+      "name": "WordPress Shopping Cart Engineer",
+      "description": "Expert WordPress e-commerce engineer specializing in WooCommerce for product catalog management, payment gateway integration, checkout customization, order management, tax and coupon configuration, and conversion-optimized storefront delivery on WordPress",
+      "departmentId": "engineering",
+      "promptPath": "agency_agents/agents/engineering/engineering-wordpress-shopping-cart.md",
+      "sortOrder": 58
+    },
+    {
+      "id": "agency_design_persona_walkthrough",
+      "name": "Persona Walkthrough Specialist",
+      "description": "Simulate cognitive walkthroughs of web pages from a defined persona's psychological perspective — captures emotional reactions and rational thought at each scroll position, then delivers structured CRO reports grounded in LIFT, Cialdini, and Fogg frameworks",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-persona-walkthrough.md",
+      "sortOrder": 1000
+    },
+    {
+      "id": "agency_design_ui_designer",
+      "name": "UI Designer",
+      "description": "Expert UI designer specializing in visual design systems, component libraries, and pixel-perfect interface creation. Creates beautiful, consistent, accessible user interfaces that enhance UX and reflect brand identity",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-ui-designer.md",
+      "sortOrder": 1001
+    },
+    {
+      "id": "agency_design_ui_finish_gate_reviewer",
+      "name": "UI Finish-Gate Reviewer",
+      "description": "Product-interface reviewer who catches generic, interchangeable UI before it ships by grounding critique in real product evidence, a written design contract, and a hard implementation finish gate.",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-ui-finish-gate-reviewer.md",
+      "sortOrder": 1002
+    },
+    {
+      "id": "agency_design_ux_architect",
+      "name": "UX Architect",
+      "description": "Technical architecture and UX specialist who provides developers with solid foundations, CSS systems, and clear implementation guidance",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-ux-architect.md",
+      "sortOrder": 1003
+    },
+    {
+      "id": "agency_design_ux_researcher",
+      "name": "UX Researcher",
+      "description": "Expert user experience researcher specializing in user behavior analysis, usability testing, and data-driven design insights. Provides actionable research findings that improve product usability and user satisfaction",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-ux-researcher.md",
+      "sortOrder": 1004
+    },
+    {
+      "id": "agency_design_whimsy_injector",
+      "name": "Whimsy Injector",
+      "description": "Expert creative specialist focused on adding personality, delight, and playful elements to brand experiences. Creates memorable, joyful interactions that differentiate brands through unexpected moments of whimsy",
+      "departmentId": "design",
+      "promptPath": "agency_agents/agents/design/design-whimsy-injector.md",
+      "sortOrder": 1005
+    },
+    {
+      "id": "agency_product_behavioral_nudge_engine",
+      "name": "Behavioral Nudge Engine",
+      "description": "Behavioral psychology specialist that adapts software interaction cadences and styles to maximize user motivation and success.",
+      "departmentId": "product",
+      "promptPath": "agency_agents/agents/product/product-behavioral-nudge-engine.md",
+      "sortOrder": 2000
+    },
+    {
+      "id": "agency_product_feedback_synthesizer",
+      "name": "Feedback Synthesizer",
+      "description": "Expert in collecting, analyzing, and synthesizing user feedback from multiple channels to extract actionable product insights. Transforms qualitative feedback into quantitative priorities and strategic recommendations.",
+      "departmentId": "product",
+      "promptPath": "agency_agents/agents/product/product-feedback-synthesizer.md",
+      "sortOrder": 2001
+    },
+    {
+      "id": "agency_product_manager",
+      "name": "Product Manager",
+      "description": "Holistic product leader who owns the full product lifecycle — from discovery and strategy through roadmap, stakeholder alignment, go-to-market, and outcome measurement. Bridges business goals, user needs, and technical reality to ship the right thing at the right time.",
+      "departmentId": "product",
+      "promptPath": "agency_agents/agents/product/product-manager.md",
+      "sortOrder": 2002
+    },
+    {
+      "id": "agency_product_sprint_prioritizer",
+      "name": "Sprint Prioritizer",
+      "description": "Expert product manager specializing in agile sprint planning, feature prioritization, and resource allocation. Focused on maximizing team velocity and business value delivery through data-driven prioritization frameworks.",
+      "departmentId": "product",
+      "promptPath": "agency_agents/agents/product/product-sprint-prioritizer.md",
+      "sortOrder": 2003
+    },
+    {
+      "id": "agency_product_trend_researcher",
+      "name": "Trend Researcher",
+      "description": "Expert market intelligence analyst specializing in identifying emerging trends, competitive analysis, and opportunity assessment. Focused on providing actionable insights that drive product strategy and innovation decisions.",
+      "departmentId": "product",
+      "promptPath": "agency_agents/agents/product/product-trend-researcher.md",
+      "sortOrder": 2004
+    },
+    {
+      "id": "agency_project_management_experiment_tracker",
+      "name": "Experiment Tracker",
+      "description": "Expert project manager specializing in experiment design, execution tracking, and data-driven decision making. Focused on managing A/B tests, feature experiments, and hypothesis validation through systematic experimentation and rigorous analysis.",
+      "departmentId": "project-management",
+      "promptPath": "agency_agents/agents/project-management/project-management-experiment-tracker.md",
+      "sortOrder": 3000
+    },
+    {
+      "id": "agency_project_management_jira_workflow_steward",
+      "name": "Jira Workflow Steward",
+      "description": "Expert delivery operations specialist who enforces Jira-linked Git workflows, traceable commits, structured pull requests, and release-safe branch strategy across software teams.",
+      "departmentId": "project-management",
+      "promptPath": "agency_agents/agents/project-management/project-management-jira-workflow-steward.md",
+      "sortOrder": 3001
+    },
+    {
+      "id": "agency_project_management_project_shepherd",
+      "name": "Project Shepherd",
+      "description": "Expert project manager specializing in cross-functional project coordination, timeline management, and stakeholder alignment. Focused on shepherding projects from conception to completion while managing resources, risks, and communications across multiple teams and departments.",
+      "departmentId": "project-management",
+      "promptPath": "agency_agents/agents/project-management/project-management-project-shepherd.md",
+      "sortOrder": 3002
+    },
+    {
+      "id": "agency_project_manager_senior",
+      "name": "Senior Project Manager",
+      "description": "Converts specs to tasks and remembers previous projects. Focused on realistic scope, no background processes, exact spec requirements",
+      "departmentId": "project-management",
+      "promptPath": "agency_agents/agents/project-management/project-manager-senior.md",
+      "sortOrder": 3003
+    },
+    {
+      "id": "agency_testing_accessibility_auditor",
+      "name": "Accessibility Auditor",
+      "description": "Expert accessibility specialist who audits interfaces against WCAG standards, tests with assistive technologies, and ensures inclusive design. Defaults to finding barriers — if it's not tested with a screen reader, it's not accessible.",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-accessibility-auditor.md",
+      "sortOrder": 4000
+    },
+    {
+      "id": "agency_testing_api_tester",
+      "name": "API Tester",
+      "description": "Expert API testing specialist focused on comprehensive API validation, performance testing, and quality assurance across all systems and third-party integrations",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-api-tester.md",
+      "sortOrder": 4001
+    },
+    {
+      "id": "agency_testing_evidence_collector",
+      "name": "Evidence Collector",
+      "description": "Screenshot-obsessed, fantasy-allergic QA specialist - Default to finding 3-5 issues, requires visual proof for everything",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-evidence-collector.md",
+      "sortOrder": 4002
+    },
+    {
+      "id": "agency_testing_performance_benchmarker",
+      "name": "Performance Benchmarker",
+      "description": "Expert performance testing and optimization specialist focused on measuring, analyzing, and improving system performance across all applications and infrastructure",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-performance-benchmarker.md",
+      "sortOrder": 4003
+    },
+    {
+      "id": "agency_testing_reality_checker",
+      "name": "Reality Checker",
+      "description": "Stops fantasy approvals, evidence-based certification - Default to \"NEEDS WORK\", requires overwhelming proof for production readiness",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-reality-checker.md",
+      "sortOrder": 4004
+    },
+    {
+      "id": "agency_testing_test_automation_engineer",
+      "name": "Test Automation Engineer",
+      "description": "Expert end-to-end test automation engineer for Playwright and Cypress — resilient selectors, flake elimination, isolated test data, CI parallelization, and trace-driven failure debugging.",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-test-automation-engineer.md",
+      "sortOrder": 4005
+    },
+    {
+      "id": "agency_testing_test_results_analyzer",
+      "name": "Test Results Analyzer",
+      "description": "Expert test analysis specialist focused on comprehensive test result evaluation, quality metrics analysis, and actionable insight generation from testing activities",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-test-results-analyzer.md",
+      "sortOrder": 4006
+    },
+    {
+      "id": "agency_testing_tool_evaluator",
+      "name": "Tool Evaluator",
+      "description": "Expert technology assessment specialist focused on evaluating, testing, and recommending tools, software, and platforms for business use and productivity optimization",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-tool-evaluator.md",
+      "sortOrder": 4007
+    },
+    {
+      "id": "agency_testing_workflow_optimizer",
+      "name": "Workflow Optimizer",
+      "description": "Expert process improvement specialist focused on analyzing, optimizing, and automating workflows across all business functions for maximum productivity and efficiency",
+      "departmentId": "testing",
+      "promptPath": "agency_agents/agents/testing/testing-workflow-optimizer.md",
+      "sortOrder": 4008
+    },
+    {
+      "id": "agency_security_ai_generated_code_auditor",
+      "name": "AI-Generated Code Security Auditor",
+      "description": "Security reviewer for AI-generated and vibe-coded apps — hunts the hardcoded secrets, broken row-level security, and prompt-injection sinks that coding assistants ship by default, then drives a scan, fix, and rescan loop with honest, CWE-mapped findings.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-ai-generated-code-auditor.md",
+      "sortOrder": 5000
+    },
+    {
+      "id": "agency_security_appsec_engineer",
+      "name": "Application Security Engineer",
+      "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-appsec-engineer.md",
+      "sortOrder": 5001
+    },
+    {
+      "id": "agency_security_architect",
+      "name": "Security Architect",
+      "description": "Expert security architect specializing in threat modeling, secure-by-design architecture, trust-boundary analysis, defense-in-depth, and risk-based security reviews across web, API, cloud-native, and distributed systems. Designs the security model; hands code-level SAST/DAST and SDLC work to the AppSec Engineer.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-architect.md",
+      "sortOrder": 5002
+    },
+    {
+      "id": "agency_security_blockchain_security_auditor",
+      "name": "Blockchain Security Auditor",
+      "description": "Expert smart contract security auditor specializing in vulnerability detection, formal verification, exploit analysis, and comprehensive audit report writing for DeFi protocols and blockchain applications.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-blockchain-security-auditor.md",
+      "sortOrder": 5003
+    },
+    {
+      "id": "agency_security_cloud_security_architect",
+      "name": "Cloud Security Architect",
+      "description": "Cloud-native security specialist designing zero trust architectures, implementing defense-in-depth across AWS, Azure, and GCP, and securing infrastructure-as-code pipelines from day one.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-cloud-security-architect.md",
+      "sortOrder": 5004
+    },
+    {
+      "id": "agency_security_compliance_auditor",
+      "name": "Compliance Auditor",
+      "description": "Expert technical compliance auditor specializing in SOC 2, ISO 27001, HIPAA, and PCI-DSS audits — from readiness assessment through evidence collection to certification.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-compliance-auditor.md",
+      "sortOrder": 5005
+    },
+    {
+      "id": "agency_security_incident_responder",
+      "name": "Incident Responder",
+      "description": "Digital forensics and incident response specialist who leads breach investigations, contains active threats, coordinates crisis response, and writes post-mortems that prevent recurrence.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-incident-responder.md",
+      "sortOrder": 5006
+    },
+    {
+      "id": "agency_security_penetration_tester",
+      "name": "Penetration Tester",
+      "description": "Offensive security specialist conducting authorized penetration tests, red team operations, and vulnerability assessments across networks, web applications, and cloud infrastructure.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-penetration-tester.md",
+      "sortOrder": 5007
+    },
+    {
+      "id": "agency_security_secrets_credential_engineer",
+      "name": "Secrets & Credential Hygiene Engineer",
+      "description": "Owns the full lifecycle of secrets and credentials — detection, prevention, vaulting, rotation, and leak response — so an application runs on short-lived, least-privilege credentials that are never in the code and are already rotated by the time a leak is found.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-secrets-credential-engineer.md",
+      "sortOrder": 5008
+    },
+    {
+      "id": "agency_security_senior_secops",
+      "name": "Senior SecOps Engineer",
+      "description": "Defensive application security specialist who scans every code submission for secrets and sensitive data exposure before anything else, then implements or audits security controls following the organization's security standard — covering authentication, authorization, tokens, cookies, HTTP headers, CORS, rate limiting, CSP, secrets management, input validation, and secure logging.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-senior-secops.md",
+      "sortOrder": 5009
+    },
+    {
+      "id": "agency_security_threat_detection_engineer",
+      "name": "Threat Detection Engineer",
+      "description": "Expert detection engineer specializing in SIEM rule development, MITRE ATT&CK coverage mapping, threat hunting, alert tuning, and detection-as-code pipelines for security operations teams.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-threat-detection-engineer.md",
+      "sortOrder": 5010
+    },
+    {
+      "id": "agency_security_threat_intelligence_analyst",
+      "name": "Threat Intelligence Analyst",
+      "description": "Cyber threat intelligence specialist who tracks adversary groups, maps attack campaigns to MITRE ATT&CK, produces actionable intelligence reports, and builds detection rules that catch real threats.",
+      "departmentId": "security",
+      "promptPath": "agency_agents/agents/security/security-threat-intelligence-analyst.md",
+      "sortOrder": 5011
+    },
+    {
+      "id": "agency_blender_addon_engineer",
+      "name": "Blender Add-on Engineer",
+      "description": "Blender tooling specialist - Builds Python add-ons, asset validators, exporters, and pipeline automations that turn repetitive DCC work into reliable one-click workflows",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/blender/blender-addon-engineer.md",
+      "sortOrder": 6000
+    },
+    {
+      "id": "agency_economy_designer",
+      "name": "Economy Designer",
+      "description": "Virtual economy architect - Masters currency systems, sources and sinks, monetization modeling, inflation control, and data-driven economic balancing for live games",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/economy-designer.md",
+      "sortOrder": 6001
+    },
+    {
+      "id": "agency_game_audio_engineer",
+      "name": "Game Audio Engineer",
+      "description": "Interactive audio specialist - Masters FMOD/Wwise integration, adaptive music systems, spatial audio, and audio performance budgeting across all game engines",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/game-audio-engineer.md",
+      "sortOrder": 6002
+    },
+    {
+      "id": "agency_game_designer",
+      "name": "Game Designer",
+      "description": "Systems and mechanics architect - Masters GDD authorship, player psychology, economy balancing, and gameplay loop design across all engines and genres",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/game-designer.md",
+      "sortOrder": 6003
+    },
+    {
+      "id": "agency_godot_gameplay_scripter",
+      "name": "Godot Gameplay Scripter",
+      "description": "Composition and signal integrity specialist - Masters GDScript 2.0, C# integration, node-based architecture, and type-safe signal design for Godot 4 projects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/godot/godot-gameplay-scripter.md",
+      "sortOrder": 6004
+    },
+    {
+      "id": "agency_godot_multiplayer_engineer",
+      "name": "Godot Multiplayer Engineer",
+      "description": "Godot 4 networking specialist - Masters the MultiplayerAPI, scene replication, ENet/WebRTC transport, RPCs, and authority models for real-time multiplayer games",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/godot/godot-multiplayer-engineer.md",
+      "sortOrder": 6005
+    },
+    {
+      "id": "agency_godot_shader_developer",
+      "name": "Godot Shader Developer",
+      "description": "Godot 4 visual effects specialist - Masters the Godot Shading Language (GLSL-like), VisualShader editor, CanvasItem and Spatial shaders, post-processing, and performance optimization for 2D/3D effects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/godot/godot-shader-developer.md",
+      "sortOrder": 6006
+    },
+    {
+      "id": "agency_level_designer",
+      "name": "Level Designer",
+      "description": "Spatial storytelling and flow specialist - Masters layout theory, pacing architecture, encounter design, and environmental narrative across all game engines",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/level-designer.md",
+      "sortOrder": 6007
+    },
+    {
+      "id": "agency_narrative_designer",
+      "name": "Narrative Designer",
+      "description": "Story systems and dialogue architect - Masters GDD-aligned narrative design, branching dialogue, lore architecture, and environmental storytelling across all game engines",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/narrative-designer.md",
+      "sortOrder": 6008
+    },
+    {
+      "id": "agency_roblox_avatar_creator",
+      "name": "Roblox Avatar Creator",
+      "description": "Roblox UGC and avatar pipeline specialist - Masters Roblox's avatar system, UGC item creation, accessory rigging, texture standards, and the Creator Marketplace submission pipeline",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/roblox-studio/roblox-avatar-creator.md",
+      "sortOrder": 6009
+    },
+    {
+      "id": "agency_roblox_experience_designer",
+      "name": "Roblox Experience Designer",
+      "description": "Roblox platform UX and monetization specialist - Masters engagement loop design, DataStore-driven progression, Roblox monetization systems (Passes, Developer Products, UGC), and player retention for Roblox experiences",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/roblox-studio/roblox-experience-designer.md",
+      "sortOrder": 6010
+    },
+    {
+      "id": "agency_roblox_systems_scripter",
+      "name": "Roblox Systems Scripter",
+      "description": "Roblox platform engineering specialist - Masters Luau, the client-server security model, RemoteEvents/RemoteFunctions, DataStore, and module architecture for scalable Roblox experiences",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/roblox-studio/roblox-systems-scripter.md",
+      "sortOrder": 6011
+    },
+    {
+      "id": "agency_technical_artist",
+      "name": "Technical Artist",
+      "description": "Art-to-engine pipeline specialist - Masters shaders, VFX systems, LOD pipelines, performance budgeting, and cross-engine asset optimization",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/technical-artist.md",
+      "sortOrder": 6012
+    },
+    {
+      "id": "agency_unity_architect",
+      "name": "Unity Architect",
+      "description": "Data-driven modularity specialist - Masters ScriptableObjects, decoupled systems, and single-responsibility component design for scalable Unity projects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unity/unity-architect.md",
+      "sortOrder": 6013
+    },
+    {
+      "id": "agency_unity_editor_tool_developer",
+      "name": "Unity Editor Tool Developer",
+      "description": "Unity editor automation specialist - Masters custom EditorWindows, PropertyDrawers, AssetPostprocessors, ScriptedImporters, and pipeline automation that saves teams hours per week",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unity/unity-editor-tool-developer.md",
+      "sortOrder": 6014
+    },
+    {
+      "id": "agency_unity_multiplayer_engineer",
+      "name": "Unity Multiplayer Engineer",
+      "description": "Networked gameplay specialist - Masters Netcode for GameObjects, Unity Gaming Services (Relay/Lobby), client-server authority, lag compensation, and state synchronization",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unity/unity-multiplayer-engineer.md",
+      "sortOrder": 6015
+    },
+    {
+      "id": "agency_unity_shader_graph_artist",
+      "name": "Unity Shader Graph Artist",
+      "description": "Visual effects and material specialist - Masters Unity Shader Graph, HLSL, URP/HDRP rendering pipelines, and custom pass authoring for real-time visual effects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unity/unity-shader-graph-artist.md",
+      "sortOrder": 6016
+    },
+    {
+      "id": "agency_unreal_multiplayer_architect",
+      "name": "Unreal Multiplayer Architect",
+      "description": "Unreal Engine networking specialist - Masters Actor replication, GameMode/GameState architecture, server-authoritative gameplay, network prediction, and dedicated server setup for UE5",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unreal-engine/unreal-multiplayer-architect.md",
+      "sortOrder": 6017
+    },
+    {
+      "id": "agency_unreal_systems_engineer",
+      "name": "Unreal Systems Engineer",
+      "description": "Performance and hybrid architecture specialist - Masters C++/Blueprint continuum, Nanite geometry, Lumen GI, and Gameplay Ability System for AAA-grade Unreal Engine projects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unreal-engine/unreal-systems-engineer.md",
+      "sortOrder": 6018
+    },
+    {
+      "id": "agency_unreal_technical_artist",
+      "name": "Unreal Technical Artist",
+      "description": "Unreal Engine visual pipeline specialist - Masters the Material Editor, Niagara VFX, Procedural Content Generation, and the art-to-engine pipeline for UE5 projects",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unreal-engine/unreal-technical-artist.md",
+      "sortOrder": 6019
+    },
+    {
+      "id": "agency_unreal_world_builder",
+      "name": "Unreal World Builder",
+      "description": "Open-world and environment specialist - Masters UE5 World Partition, Landscape, procedural foliage, HLOD, and large-scale level streaming for seamless open-world experiences",
+      "departmentId": "game-development",
+      "promptPath": "agency_agents/agents/game-development/unreal-engine/unreal-world-builder.md",
+      "sortOrder": 6020
+    },
+    {
+      "id": "agency_macos_spatial_metal_engineer",
+      "name": "macOS Spatial/Metal Engineer",
+      "description": "Native Swift and Metal specialist building high-performance 3D rendering systems and spatial computing experiences for macOS and Vision Pro",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/macos-spatial-metal-engineer.md",
+      "sortOrder": 7000
+    },
+    {
+      "id": "agency_terminal_integration_specialist",
+      "name": "Terminal Integration Specialist",
+      "description": "Terminal emulation, text rendering optimization, and SwiftTerm integration for modern Swift applications",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/terminal-integration-specialist.md",
+      "sortOrder": 7001
+    },
+    {
+      "id": "agency_visionos_spatial_engineer",
+      "name": "visionOS Spatial Engineer",
+      "description": "Native visionOS spatial computing, SwiftUI volumetric interfaces, and Liquid Glass design implementation",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/visionos-spatial-engineer.md",
+      "sortOrder": 7002
+    },
+    {
+      "id": "agency_xr_cockpit_interaction_specialist",
+      "name": "XR Cockpit Interaction Specialist",
+      "description": "Specialist in designing and developing immersive cockpit-based control systems for XR environments",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/xr-cockpit-interaction-specialist.md",
+      "sortOrder": 7003
+    },
+    {
+      "id": "agency_xr_immersive_developer",
+      "name": "XR Immersive Developer",
+      "description": "Expert WebXR and immersive technology developer with specialization in browser-based AR/VR/XR applications",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/xr-immersive-developer.md",
+      "sortOrder": 7004
+    },
+    {
+      "id": "agency_xr_interface_architect",
+      "name": "XR Interface Architect",
+      "description": "Spatial interaction designer and interface strategist for immersive AR/VR/XR environments",
+      "departmentId": "spatial-computing",
+      "promptPath": "agency_agents/agents/spatial-computing/xr-interface-architect.md",
+      "sortOrder": 7005
+    },
+    {
+      "id": "agency_agentic_identity_trust",
+      "name": "Agentic Identity & Trust Architect",
+      "description": "Designs identity, authentication, and trust verification systems for autonomous AI agents operating in multi-agent environments. Ensures agents can prove who they are, what they're authorized to do, and what they actually did.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/agentic-identity-trust.md",
+      "sortOrder": 8000
+    },
+    {
+      "id": "agency_agents_orchestrator",
+      "name": "Agents Orchestrator",
+      "description": "Autonomous pipeline manager that orchestrates the entire development workflow. You are the leader of this process.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/agents-orchestrator.md",
+      "sortOrder": 8001
+    },
+    {
+      "id": "agency_automation_governance_architect",
+      "name": "Automation Governance Architect",
+      "description": "Governance-first architect for business automations (n8n-first) who audits value, risk, and maintainability before implementation.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/automation-governance-architect.md",
+      "sortOrder": 8002
+    },
+    {
+      "id": "agency_data_consolidation_agent",
+      "name": "Data Consolidation Agent",
+      "description": "AI agent that consolidates extracted sales data into live reporting dashboards with territory, rep, and pipeline summaries",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/data-consolidation-agent.md",
+      "sortOrder": 8003
+    },
+    {
+      "id": "agency_identity_graph_operator",
+      "name": "Identity Graph Operator",
+      "description": "Operates a shared identity graph that multiple AI agents resolve against. Ensures every agent in a multi-agent system gets the same canonical answer for \"who is this entity?\" - deterministically, even under concurrent writes.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/identity-graph-operator.md",
+      "sortOrder": 8004
+    },
+    {
+      "id": "agency_lsp_index_engineer",
+      "name": "LSP/Index Engineer",
+      "description": "Language Server Protocol specialist building unified code intelligence systems through LSP client orchestration and semantic indexing",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/lsp-index-engineer.md",
+      "sortOrder": 8005
+    },
+    {
+      "id": "agency_specialized_codebase_archaeologist",
+      "name": "Codebase Archaeologist",
+      "description": "Multi-session, multi-tool drift detection specialist who audits codebases touched by several AI coding tools (Claude, Cursor, Copilot, Windsurf, etc.) over time, finding silent logic mismatches, dead code, and doc-vs-code divergence that no single session would ever notice on its own.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-codebase-archaeologist.md",
+      "sortOrder": 8006
+    },
+    {
+      "id": "agency_specialized_developer_advocate",
+      "name": "Developer Advocate",
+      "description": "Expert developer advocate specializing in building developer communities, creating compelling technical content, optimizing developer experience (DX), and driving platform adoption through authentic engineering engagement. Bridges product and engineering teams with external developers.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-developer-advocate.md",
+      "sortOrder": 8007
+    },
+    {
+      "id": "agency_specialized_document_generator",
+      "name": "Document Generator",
+      "description": "Expert document creation specialist who generates professional PDF, PPTX, DOCX, and XLSX files using code-based approaches with proper formatting, charts, and data visualization.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-document-generator.md",
+      "sortOrder": 8008
+    },
+    {
+      "id": "agency_specialized_mcp_builder",
+      "name": "MCP Builder",
+      "description": "Expert Model Context Protocol developer who designs, builds, and tests MCP servers that extend AI agent capabilities with custom tools, resources, and prompts.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-mcp-builder.md",
+      "sortOrder": 8009
+    },
+    {
+      "id": "agency_specialized_model_qa",
+      "name": "Model QA Specialist",
+      "description": "Independent model QA expert who audits ML and statistical models end-to-end - from documentation review and data reconstruction to replication, calibration testing, interpretability analysis, performance monitoring, and audit-grade reporting.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-model-qa.md",
+      "sortOrder": 8010
+    },
+    {
+      "id": "agency_specialized_salesforce_architect",
+      "name": "Salesforce Architect",
+      "description": "Solution architecture for Salesforce platform — multi-cloud design, integration patterns, governor limits, deployment strategy, and data model governance for enterprise-scale orgs",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-salesforce-architect.md",
+      "sortOrder": 8011
+    },
+    {
+      "id": "agency_specialized_workflow_architect",
+      "name": "Workflow Architect",
+      "description": "Workflow design specialist who maps complete workflow trees for every system, user journey, and agent interaction — covering happy paths, all branch conditions, failure modes, recovery paths, handoff contracts, and observable states to produce build-ready specs that agents can implement against and QA can test against.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/specialized-workflow-architect.md",
+      "sortOrder": 8012
+    },
+    {
+      "id": "agency_zk_steward",
+      "name": "ZK Steward",
+      "description": "Knowledge-base steward in the spirit of Niklas Luhmann's Zettelkasten. Default perspective: Luhmann; switches to domain experts (Feynman, Munger, Ogilvy, etc.) by task. Enforces atomic notes, connectivity, and validation loops. Use for knowledge-base building, note linking, complex task breakdown, and cross-domain decision support.",
+      "departmentId": "specialized",
+      "promptPath": "agency_agents/agents/specialized/zk-steward.md",
+      "sortOrder": 8013
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "builtin.flutter",
+  "name": "Flutter",
+  "version": "1.0.0",
+  "description": "ARM64 Flutter application starter",
+  "projectType": "FLUTTER",
+  "category": { "id": "starter", "name": "Starter", "sortOrder": 0 },
+  "previewImage": "",
+  "variables": [
+    { "name": "projectName", "label": "Project name", "description": "Flutter 项目名称必须以小写英文字母开头，只能包含小写英文字母、数字和下划线", "validationRegex": "^[a-z][a-z0-9_]*$" },
+    { "name": "appName", "label": "App name" },
+    { "name": "packageName", "label": "Android package name", "prompt": true, "inputType": "TEXT", "placeholder": "com.example.myapp", "validationRegex": "^[a-zA-Z_][\\w]*(\\.[a-zA-Z_][\\w]*)+$" },
+    { "name": "packagePath", "label": "Package path" }
+  ],
+  "validation": {
+    "requiredFiles": ["android/app/src/main/kotlin/WANXIANG_PACKAGE_PATH/MainActivity.kt"]
+  }
+}

@@ -1,0 +1,5 @@
+#!/bin/sh
+if [ "${WANXIANG_BUILD_GUARD_BYPASS:-0}" = "1" ] || [ "${WANXIANG_BUILD_ENGINE:-0}" = "1" ]; then
+    exec "${FLUTTER_HOME:-/opt/flutter}/bin/flutter" "$@"
+fi
+exec /bin/sh /opt/wanxiang/bin/wanxiang-build-guard flutter "$@"

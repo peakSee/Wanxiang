@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">{{appName}}</string>
+    <string name="module_description">{{moduleDescription}}</string>
+</resources>

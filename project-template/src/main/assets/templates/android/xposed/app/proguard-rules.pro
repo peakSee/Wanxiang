@@ -1,0 +1,1 @@
+-keep class {{packageName}}.MainHook { *; }

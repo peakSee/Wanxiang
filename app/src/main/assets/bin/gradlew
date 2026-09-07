@@ -1,0 +1,4 @@
+#!/bin/sh
+# A literal ./gradlew cannot be intercepted by PATH. Global Gradle properties
+# and init scripts remain the second line of defence for that invocation.
+exec /bin/sh /opt/wanxiang/bin/wanxiang-build-guard gradlew "$@"

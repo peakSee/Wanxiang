@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "builtin.android-xposed",
+  "name": "Xposed",
+  "version": "1.0.0",
+  "description": "Classic Xposed and LSPosed module starter",
+  "projectType": "ANDROID",
+  "category": { "id": "extension", "name": "Extensions", "sortOrder": 10 },
+  "previewImage": "preview.png",
+  "variables": [
+    { "name": "projectName", "label": "Project name" },
+    { "name": "appName", "label": "App name" },
+    { "name": "packageName", "label": "Package name", "prompt": true, "inputType": "TEXT", "placeholder": "com.example.xposed", "validationRegex": "^[a-zA-Z_][\\w]*(\\.[a-zA-Z_][\\w]*)+$" },
+    { "name": "packagePath", "label": "Package path" },
+    { "name": "targetPackage", "label": "Target package", "description": "Package to activate and test the module against (can be changed later in code)", "prompt": true, "inputType": "TEXT", "placeholder": "com.example.target", "required": false, "validationRegex": "^[a-zA-Z_][\\w]*(\\.[a-zA-Z_][\\w]*)+$" },
+    { "name": "moduleDescription", "label": "Module description", "prompt": true, "inputType": "MULTILINE", "placeholder": "Describe what this module does", "defaultValue": "An Xposed module" }
+  ],
+  "validation": {
+    "requiredFiles": [
+      "app/src/main/java/WANXIANG_PACKAGE_PATH/MainHook.kt",
+      "app/src/main/assets/xposed_init"
+    ],
+    "contentRules": [
+      { "path": "app/src/main/assets/xposed_init", "equals": "{{packageName}}.MainHook" }
+    ]
+  }
+}

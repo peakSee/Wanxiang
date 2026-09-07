@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="developer_text_0001" formatted="false">Ed25519 公钥（Base64）</string>
+    <string name="developer_text_0002" formatted="false">Linux 环境已恢复初始状态，工作区工程未删除。</string>
+    <string name="developer_text_0003" formatted="false">Linux 环境重置失败</string>
+    <string name="developer_text_0004" formatted="false">RootFS 已是最新版本。</string>
+    <string name="developer_text_0005" formatted="false">RootFS 更新完成，用户数据已保留。</string>
+    <string name="developer_text_0006" formatted="false">Runtime 初始化失败</string>
+    <string name="developer_text_0007" formatted="false">Runtime 核心能力已完成检测</string>
+    <string name="developer_text_0008" formatted="false">Shell 命令</string>
+    <string name="developer_text_0009" formatted="false">下载并初始化</string>
+    <string name="developer_text_0010" formatted="false">下载缓存</string>
+    <string name="developer_text_0011" formatted="false">保存配置</string>
+    <string name="developer_text_0012" formatted="false">停止</string>
+    <string name="developer_text_0013" formatted="false">健康检查</string>
+    <string name="developer_text_0014" formatted="false">健康检查异常</string>
+    <string name="developer_text_0015" formatted="false">健康检查通过</string>
+    <string name="developer_text_0016" formatted="false">共享 Runtime 已清理。</string>
+    <string name="developer_text_0017" formatted="false">关闭</string>
+    <string name="developer_text_0018" formatted="false">准备 PRoot</string>
+    <string name="developer_text_0019" formatted="false">准备 PRoot 启动组件</string>
+    <string name="developer_text_0020" formatted="false">创建工作区</string>
+    <string name="developer_text_0021" formatted="false">创建运行目录</string>
+    <string name="developer_text_0022" formatted="false">初始化中</string>
+    <string name="developer_text_0023" formatted="false">初始化完成。</string>
+    <string name="developer_text_0024" formatted="false">刷新</string>
+    <string name="developer_text_0025" formatted="false">取消</string>
+    <string name="developer_text_0026" formatted="false">取消下载</string>
+    <string name="developer_text_0027" formatted="false">只删除未激活的下载和临时文件，不会影响 Linux 系统、工具或工作区。</string>
+    <string name="developer_text_0028" formatted="false">可清理 Runtime</string>
+    <string name="developer_text_0029" formatted="false">后台 Linux 进程与磁盘占用</string>
+    <string name="developer_text_0030" formatted="false">后台进程</string>
+    <string name="developer_text_0031" formatted="false">否</string>
+    <string name="developer_text_0032" formatted="false">命令不能为空。</string>
+    <string name="developer_text_0033" formatted="false">命令诊断</string>
+    <string name="developer_text_0034" formatted="false">在隔离的 Linux 环境中执行一次性 Shell 命令</string>
+    <string name="developer_text_0035" formatted="false">复制</string>
+    <string name="developer_text_0036" formatted="false">复制全部</string>
+    <string name="developer_text_0037" formatted="false">失败</string>
+    <string name="developer_text_0038" formatted="false">存储占用</string>
+    <string name="developer_text_0039" formatted="false">将删除当前 Linux RootFS、已安装工具和沙箱缓存，但保留 /workspace 工程和手机共享存储。此操作不可撤销。</string>
+    <string name="developer_text_0040" formatted="false">将在线下载并校验新版本，保留 /root 与 /opt/wanxiang。更新期间后台 Linux 进程会停止，失败时自动恢复旧版本。</string>
+    <string name="developer_text_0041" formatted="false">将移除未被工具引用的共享 Runtime，此操作无法自动恢复。</string>
+    <string name="developer_text_0042" formatted="false">工作区</string>
+    <string name="developer_text_0043" formatted="false">工作区可写</string>
+    <string name="developer_text_0044" formatted="false">工具数据</string>
+    <string name="developer_text_0045" formatted="false">工具清单配置已保存。</string>
+    <string name="developer_text_0046" formatted="false">工具源</string>
+    <string name="developer_text_0047" formatted="false">工具程序</string>
+    <string name="developer_text_0048" formatted="false">已关闭（不写入本地日志文件）</string>
+    <string name="developer_text_0049" formatted="false">已就绪</string>
+    <string name="developer_text_0050" formatted="false">已是最新</string>
+    <string name="developer_text_0051" formatted="false">开发者控制台</string>
+    <string name="developer_text_0052" formatted="false">异常</string>
+    <string name="developer_text_0053" formatted="false">引用计数为 0</string>
+    <string name="developer_text_0054" formatted="false">当前没有可安全清理的共享 Runtime。</string>
+    <string name="developer_text_0055" formatted="false">当前没有登记中的后台进程。</string>
+    <string name="developer_text_0056" formatted="false">恢复 Linux 初始状态</string>
+    <string name="developer_text_0057" formatted="false">恢复 Linux 初始状态？</string>
+    <string name="developer_text_0058" formatted="false">执行命令</string>
+    <string name="developer_text_0059" formatted="false">提示：能控制清单地址的人也能提供公钥，自填密钥只用于防传输损坏/校验内容一致性，不能提供端到端防篡改。如需真正的信任锚，请在 APK 内置固定公钥。</string>
+    <string name="developer_text_0060" formatted="false">日志已复制</string>
+    <string name="developer_text_0061" formatted="false">日志已复制到剪贴板</string>
+    <string name="developer_text_0062" formatted="false">是</string>
+    <string name="developer_text_0063" formatted="false">智能体执行流、工具调用与错误详情本地持久化</string>
+    <string name="developer_text_0064" formatted="false">智能体日志已清空。</string>
+    <string name="developer_text_0065" formatted="false">智能体本地调试日志</string>
+    <string name="developer_text_0066" formatted="false">智能体诊断</string>
+    <string name="developer_text_0067" formatted="false">暂无日志</string>
+    <string name="developer_text_0068" formatted="false">更新 Linux RootFS？</string>
+    <string name="developer_text_0069" formatted="false">更新 RootFS</string>
+    <string name="developer_text_0070" formatted="false">未初始化</string>
+    <string name="developer_text_0071" formatted="false">架构</string>
+    <string name="developer_text_0072" formatted="false">查看日志</string>
+    <string name="developer_text_0073" formatted="false">检查可用空间</string>
+    <string name="developer_text_0074" formatted="false">检查更新</string>
+    <string name="developer_text_0075" formatted="false">检测到 RootFS 新版本，可以更新。</string>
+    <string name="developer_text_0076" formatted="false">检测到可用更新</string>
+    <string name="developer_text_0077" formatted="false">检测设备架构</string>
+    <string name="developer_text_0078" formatted="false">正在下载并验证工具清单…</string>
+    <string name="developer_text_0079" formatted="false">正在检查 RootFS 的 OCI manifest…</string>
+    <string name="developer_text_0080" formatted="false">正在读取</string>
+    <string name="developer_text_0081" formatted="false">正在读取存储信息…</string>
+    <string name="developer_text_0082" formatted="false">清单 HTTPS 地址</string>
+    <string name="developer_text_0083" formatted="false">清理</string>
+    <string name="developer_text_0084" formatted="false">清理下载缓存</string>
+    <string name="developer_text_0085" formatted="false">清理下载缓存？</string>
+    <string name="developer_text_0086" formatted="false">清空</string>
+    <string name="developer_text_0087" formatted="false">版本未知</string>
+    <string name="developer_text_0088" formatted="false">确认更新</string>
+    <string name="developer_text_0089" formatted="false">确认清理</string>
+    <string name="developer_text_0090" formatted="false">确认重置</string>
+    <string name="developer_text_0091" formatted="false">签名 HTTPS 地址</string>
+    <string name="developer_text_0092" formatted="false">系统</string>
+    <string name="developer_text_0093" formatted="false">读取可清理 Runtime 失败</string>
+    <string name="developer_text_0094" formatted="false">读取后台进程失败</string>
+    <string name="developer_text_0095" formatted="false">读取存储占用失败</string>
+    <string name="developer_text_0096" formatted="false">资源管理</string>
+    <string name="developer_text_0097" formatted="false">运行健康检查</string>
+    <string name="developer_text_0098" formatted="false">运行时基础</string>
+    <string name="developer_text_0099" formatted="false">运行时缓存已清理。</string>
+    <string name="developer_text_0100" formatted="false">这里只列出未被任何工具引用的共享依赖，清理会在 Linux 沙箱内执行包管理清理。</string>
+    <string name="developer_text_0101" formatted="false">远程清单更新：HTTPS + Ed25519 验签（自定义公钥仅防传输损坏，非防篡改信任锚）</string>
+    <string name="developer_text_0102" formatted="false">适合快速诊断，不会创建持久终端会话</string>
+    <string name="developer_text_0103" formatted="false">配置 DNS</string>
+    <string name="developer_text_0104" formatted="false">配置 Linux 系统</string>
+    <string name="developer_text_0105" formatted="false">配置环境变量</string>
+    <string name="developer_text_0106" formatted="false">重新检查初始化</string>
+    <string name="developer_text_0107" formatted="false">重试初始化</string>
+    <string name="developer_text_0108" formatted="false">错误</string>
+    <string name="developer_active_process_count">%1$s 个活动进程</string>
+    <string name="developer_rootfs_update_failed">RootFS 更新失败：%1$s</string>
+    <string name="developer_rootfs_check_failed">RootFS 更新检查失败：%1$s</string>
+    <string name="developer_stop_process_failed">停止进程失败：%1$s</string>
+    <string name="developer_health_check_failed">健康检查失败：%1$s</string>
+    <string name="developer_initialization_failed">初始化失败：%1$s</string>
+    <string name="developer_command_failed">命令执行失败：%1$s</string>
+    <string name="developer_manifest_updated">工具清单已更新：%1$s 个工具。</string>
+    <string name="developer_log_enabled_size">已启用（文件大小：%1$s）</string>
+    <string name="developer_update_failed">更新失败：%1$s</string>
+    <string name="developer_clean_runtime_confirm">清理 %1$s？</string>
+    <string name="developer_cleanup_failed">清理失败：%1$s</string>
+    <string name="developer_device_space_available">设备剩余空间 %1$s</string>
+    <string name="developer_reset_failed">重置失败：%1$s</string>
+</resources>

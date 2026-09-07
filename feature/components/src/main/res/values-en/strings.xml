@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="components_nav_home">WanXiang</string>
+    <string name="components_nav_agent">Agent</string>
+    <string name="components_nav_workspace">Workspace</string>
+    <string name="components_nav_settings">Settings</string>
+    <string name="components_back">Back</string>
+    <string name="components_wanxiang_logo">WanXiang logo</string>
+    <string name="components_close">Close</string>
+    <string name="components_guide_confirm">Got it</string>
+    <!-- Bottom navigation subtitles -->
+    <string name="components_nav_subtitle_home">Genesis</string>
+    <string name="components_nav_subtitle_agent">AI Agent</string>
+    <string name="components_nav_subtitle_workspace">Workspace</string>
+    <string name="components_nav_subtitle_settings">Settings</string>
+</resources>

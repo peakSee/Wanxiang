@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f8">
+  <meta name="description" content="万象 WanXiang：在 Android 无 Root 环境中运行 Linux、多智能体与原生终端的掌上创作空间。">
+  <meta property="og:title" content="万象 WanXiang — 掌中归墟，万象可期">
+  <meta property="og:description" content="Android 无 Root Linux Runtime · Agent Harness · 原生 PTY · 工作区与工具生态">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/wanxiang-logo.png">
+  <title>万象 WanXiang — 掌中归墟，万象可期</title>
+  <link rel="icon" href="assets/wanxiang-logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header" data-header>
+    <a class="brand" href="#top" aria-label="万象首页">
+      <span class="brand-mark"><img src="assets/wanxiang-logo.png" alt=""></span>
+      <span class="brand-name">万象</span>
+      <span class="brand-roman">WANXIANG</span>
+    </a>
+
+    <button class="menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" data-menu-toggle>
+      <span></span><span></span>
+    </button>
+
+    <nav class="site-nav" aria-label="主导航" data-nav>
+      <a href="#vision">理念</a>
+      <a href="#capabilities">能力</a>
+      <a href="#themes">界面</a>
+      <a href="#plugins">插件</a>
+      <a href="templates.html">模板</a>
+      <a href="#architecture">架构</a>
+      <a class="nav-github" href="https://github.com/peakSee/Wanxiang" target="_blank" rel="noreferrer">
+        GitHub <span aria-hidden="true">↗</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy reveal">
+        <div class="hero-logo"><img src="assets/wanxiang-logo.png" alt="万象 Logo"></div>
+        <div class="eyebrow">Android 上的 Linux AI Runtime</div>
+        <h1>万象</h1>
+        <p class="hero-tagline">掌中归墟，万象可期。</p>
+        <p class="hero-lead">无需 Root，在 Android 上运行完整 Linux、AI Agent、原生终端与工程工作区。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/peakSee/Wanxiang/releases" target="_blank" rel="noreferrer">
+            <span>获取最新版本</span><span aria-hidden="true">↗</span>
+          </a>
+          <a class="button button-quiet" href="https://github.com/peakSee/Wanxiang#readme" target="_blank" rel="noreferrer">
+            阅读项目文档 <span aria-hidden="true">→</span>
+          </a>
+        </div>
+        <div class="hero-meta" aria-label="系统需求">
+          <span>v0.5.0</span><i></i><span>Android 10+</span><i></i><span>ARM64</span><i></i><span>开源</span>
+        </div>
+      </div>
+
+      <div class="hero-stage reveal" data-delay="1">
+        <div class="glass-orb glass-orb-a" aria-hidden="true"></div>
+        <div class="glass-orb glass-orb-b" aria-hidden="true"></div>
+        <figure class="device-shot device-shot-dark">
+          <img src="assets/theme-chengming-dark.jpg" alt="万象澄明液态玻璃深色主题实机界面">
+        </figure>
+        <figure class="device-shot device-shot-light">
+          <img src="assets/theme-chengming-light.jpg" alt="万象澄明液态玻璃浅色主题实机界面">
+        </figure>
+        <div class="glass-badge"><span></span> 实机界面 · 澄明液态玻璃</div>
+      </div>
+    </section>
+
+    <section class="manifesto section-pad" id="vision">
+      <div class="section-index reveal">01 / 理念</div>
+      <div class="manifesto-grid">
+        <h2 class="reveal">它不是终端的外壳，<br>而是一个<span>行动发生的场域。</span></h2>
+        <div class="manifesto-copy reveal" data-delay="1">
+          <p>模型在这里获得语言，工具获得双手，终端保存因果，工作区赋予记忆以位置。</p>
+          <p>万象承认 Android 的边界，并在边界之内建立一套可运行、可观察、可持续演化的 Linux 世界。</p>
+          <blockquote>“掌中归墟，万象可期。”</blockquote>
+        </div>
+      </div>
+    </section>
+
+    <section class="screens section-pad" id="themes">
+      <div class="section-heading reveal">
+        <div><div class="section-index">02 / 核心界面</div><h2>从首页之外，<br>看见万象如何工作。</h2></div>
+        <p>以下全部来自 Android 真机。智枢负责把意图变成行动，工坊承载项目与共享存储，乾坤管理模型、Linux 环境和整套系统配置。</p>
+      </div>
+      <div class="screen-gallery">
+        <figure class="screen-shot reveal"><a href="assets/screen-agent-dark.jpg" target="_blank"><img src="assets/screen-agent-dark.jpg" alt="智枢 Agent 界面"></a><figcaption><b>智枢</b><span>Agent · 快捷指令 · 任务执行</span></figcaption></figure>
+        <figure class="screen-shot reveal"><a href="assets/screen-workspace-dark.jpg" target="_blank"><img src="assets/screen-workspace-dark.jpg" alt="工坊工作区界面"></a><figcaption><b>工坊</b><span>Workspace · 项目 · 共享存储</span></figcaption></figure>
+        <figure class="screen-shot reveal"><a href="assets/screen-settings-dark.jpg" target="_blank"><img src="assets/screen-settings-dark.jpg" alt="乾坤系统设置界面"></a><figcaption><b>乾坤</b><span>模型 · Linux · 系统配置</span></figcaption></figure>
+      </div>
+    </section>
+
+    <section class="capabilities section-pad" id="capabilities">
+      <div class="section-heading reveal">
+        <div><div class="section-index">03 / 核心能力</div><h2>一台设备，<br>一座完整工坊。</h2></div>
+        <p>从运行环境到智能体，从工具执行到工程构建，万象将分散的能力编织成一条完整链路。</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature feature-wide reveal">
+          <div class="feature-number">壹</div>
+          <div class="feature-body">
+            <span class="feature-kicker">LINUX RUNTIME</span>
+            <h3>无 Root，衍化诸界</h3>
+            <p>基于 PRoot 运行完整 Linux 用户空间。多发行版安装、切换、更新与持久化，都在 Android 沙盒中有序发生。</p>
+            <div class="distro-row" aria-label="支持的发行版">
+              <span>DEBIAN</span><span>UBUNTU</span><span>ARCH</span><span>ALPINE</span><span>KALI</span><span>FEDORA</span>
+            </div>
+          </div>
+          <div class="cube-art" aria-hidden="true"><div class="cube-top"></div><div class="cube-left"></div><div class="cube-right"></div><span></span></div>
+        </article>
+
+        <article class="feature feature-dark reveal">
+          <div class="feature-number">贰</div>
+          <span class="feature-kicker">AGENT HARNESS</span>
+          <h3>让模型从回答，走向完成</h3>
+          <p>流式推理、工具调用、MCP 与子智能体协作汇成持续执行循环。</p>
+          <div class="loop-graphic" aria-hidden="true">
+            <span class="loop-core">AI</span><span>思考</span><span>行动</span><span>验证</span>
+          </div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-number">叁</div>
+          <span class="feature-kicker">NATIVE PTY</span>
+          <h3>真实终端，真实因果</h3>
+          <p>JNI forkpty、ANSI/VT100、多会话与动态 Resize。不是文本模拟，而是真实进程与控制终端。</p>
+          <div class="terminal-mini"><span>$ npm run build</span><br><b>Done in 4.2s.</b><i></i></div>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-number">肆</div>
+          <span class="feature-kicker">WORKSPACE</span>
+          <h3>为项目建立坐标</h3>
+          <p>文件浏览、代码编辑、宿主存储映射，以及 Agent 与终端共享的工程上下文。</p>
+          <div class="file-tree" aria-hidden="true"><span>▾ wanxiang</span><span>　▾ app</span><span>　　◇ src/main</span><span>　▾ feature</span><span>　　◇ chat</span><span>　　◇ terminal</span></div>
+        </article>
+
+        <article class="feature feature-accent reveal">
+          <div class="feature-number">伍</div>
+          <span class="feature-kicker">TOOLS & SAFETY</span>
+          <h3>百工之器，知止而行</h3>
+          <p>工具安装事务、服务管理与高风险操作审批，让能力、状态和失败路径都清晰可见。</p>
+          <div class="approval"><span>高风险命令</span><b>等待你的确认</b><button type="button" tabindex="-1">允许一次</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="plugins section-pad" id="plugins">
+      <div class="plugin-intro reveal">
+        <div class="section-index">04 / 插件生态</div>
+        <h2>把你的工具，<br>装进万象。</h2>
+        <p>在线 Registry 与本地 <code>.txplugin</code> 各有清晰来源标识。本地包由清单与离线 payload 组成，可声明 ARM64 架构、安装步骤、命令入口、实时进度和能力元数据。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="plugins.html">阅读插件制作教程 <span>→</span></a>
+          <a class="button button-quiet" href="templates.html">阅读模板制作教程 <span>→</span></a>
+        </div>
+      </div>
+      <div class="plugin-steps reveal" data-delay="1">
+        <div><b>01</b><strong>组织目录</strong><span>manifest.json + payload/</span></div>
+        <div><b>02</b><strong>声明来源</strong><span>LOCAL / REMOTE · ARM64 · 启动类型</span></div>
+        <div><b>03</b><strong>打包导入</strong><span>ZIP64 · SHA-256 · 版本去重</span></div>
+        <div><b>04</b><strong>验证发布</strong><span>离线安装 · 百分比进度 · 卸载</span></div>
+        <pre><code>{
+  "id": "hello-arm64",
+  "launchType": "command",
+  "architectures": ["ARM64"],
+  "offlineOnly": true,
+  "commandLinks": ["hello"]
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="architecture section-pad" id="architecture">
+      <div class="section-index reveal">05 / 运行架构</div>
+      <div class="architecture-title reveal"><h2>意图进入万象，<br><span>行动抵达系统。</span></h2><p>每一步都有上下文，每一次执行都有回声。未完成，便继续。</p></div>
+      <div class="flow reveal" data-delay="1">
+        <div class="flow-node"><small>01</small><strong>人的意图</strong><span>自然语言 / 指令</span></div>
+        <i>→</i>
+        <div class="flow-node"><small>02</small><strong>模型推理</strong><span>多 Provider / 本地模型</span></div>
+        <i>→</i>
+        <div class="flow-node flow-node-main"><small>03</small><strong>Harness</strong><span>规划 · 工具 · 子智能体</span></div>
+        <i>→</i>
+        <div class="flow-node"><small>04</small><strong>Linux / MCP</strong><span>执行与结果校验</span></div>
+      </div>
+      <div class="flow-return reveal"><span>↳</span> 结果回到上下文，驱动下一轮判断</div>
+    </section>
+
+    <section class="system-strip" aria-label="技术特点">
+      <div><span>PRoot</span><i>✦</i><span>Kotlin</span><i>✦</i><span>Compose</span><i>✦</i><span>Native PTY</span><i>✦</i><span>MCP</span><i>✦</i><span>OpenAI Compatible</span><i>✦</i></div>
+      <div aria-hidden="true"><span>PRoot</span><i>✦</i><span>Kotlin</span><i>✦</i><span>Compose</span><i>✦</i><span>Native PTY</span><i>✦</i><span>MCP</span><i>✦</i><span>OpenAI Compatible</span><i>✦</i></div>
+    </section>
+
+    <section class="start section-pad" id="start">
+      <div class="start-mark reveal"><img src="assets/wanxiang-logo.png" alt="万象 Logo"></div>
+      <div class="start-copy reveal" data-delay="1">
+        <div class="section-index">06 / 从此处开始</div>
+        <h2>把一座 Linux 工坊，<br>装进你的口袋。</h2>
+        <p>万象仍在快速演进。欢迎下载体验、阅读源码，或一同参与这个掌上计算世界的建造。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/peakSee/Wanxiang/releases" target="_blank" rel="noreferrer">前往 Releases <span>↗</span></a>
+          <a class="button button-outline" href="https://github.com/peakSee/Wanxiang" target="_blank" rel="noreferrer">查看源代码 <span>↗</span></a>
+        </div>
+        <div class="requirements"><span>需要 Android 10 或更高版本</span><span>仅支持 ARM64-v8a</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-brand"><strong>万象</strong><span>WANXIANG / LINUX AI RUNTIME</span></div>
+    <p>于万象中立极，于方寸间创世。</p>
+    <div class="footer-links"><a href="plugins.html">插件教程</a><a href="https://github.com/peakSee/Wanxiang">GitHub</a><a href="https://github.com/peakSee/Wanxiang/issues">Issues</a><a href="https://github.com/peakSee/Wanxiang/blob/main/README_EN.md">English README</a></div>
+    <small>© <span data-year></span> WanXiang Project. Open source on GitHub.</small>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "rtk-suite-offline",
+  "name": "RTK 终端命令优化器",
+  "description": "万象内置 Agent 终端命令重写优化套件（ARM64 Linux 离线包），支持智能重写 git/cargo/find/grep 等命令并压缩输出，减少大体积结果的 Token 消耗。",
+  "dependencies": [],
+  "launchType": "command",
+  "version": "1.0.0",
+  "latestVersion": "1.0.0",
+  "enabled": true,
+  "publisher": "WanXiang",
+  "category": "DEVELOPER_TOOL",
+  "architectures": [
+    "ARM64"
+  ],
+  "permissions": [
+    "WORKSPACE_READ",
+    "WORKSPACE_WRITE"
+  ],
+  "updateStrategy": "REINSTALL",
+  "source": "LOCAL",
+  "offlineOnly": true,
+  "installMethod": "LOCAL_PACKAGE",
+  "installSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/install-rtk.sh\""
+  ],
+  "uninstallSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/uninstall-rtk.sh\""
+  ],
+  "verifyCommand": "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/verify-rtk.sh\"",
+  "launchCommand": "rtk --version",
+  "commandLinks": [
+    "rtk"
+  ],
+  "environment": {
+    "RTK_TEE": "0",
+    "XDG_CONFIG_HOME": "/opt/wanxiang/data/rtk/config",
+    "XDG_DATA_HOME": "/opt/wanxiang/data/rtk/data"
+  }
+}

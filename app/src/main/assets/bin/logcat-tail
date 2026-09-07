@@ -1,0 +1,52 @@
+#!/bin/sh
+# WanXiang Logcat Tail — 实时跟踪目标应用日志
+set -eu
+
+show_help() {
+    cat << 'HELP'
+Logcat Tail — 实时跟踪目标应用日志
+
+用法:
+  logcat-tail <包名> [选项]
+
+选项:
+  -t, --tag TAG         按 Tag 过滤
+  -p, --priority LEVEL  按优先级过滤 (V/D/I/W/E/F)
+  -k, --keyword KW      按关键词过滤
+  -i, --interval SEC    刷新间隔（秒，默认 2）
+  -h, --help            显示帮助
+HELP
+}
+
+PACKAGE=""
+TAG=""
+PRIORITY="V"
+KEYWORD=""
+INTERVAL=2
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help) show_help; exit 0 ;;
+        -t|--tag) TAG="$2"; shift 2 ;;
+        -p|--priority) PRIORITY="$2"; shift 2 ;;
+        -k|--keyword) KEYWORD="$2"; shift 2 ;;
+        -i|--interval) INTERVAL="$2"; shift 2 ;;
+        *)
+            if [ -z "$PACKAGE" ]; then
+                PACKAGE="$1"
+            fi
+            shift ;;
+    esac
+done
+
+if [ -z "$PACKAGE" ]; then
+    echo "错误: 必须指定包名" >&2
+    show_help
+    exit 1
+fi
+
+echo "--- 开始实时跟踪 $PACKAGE 日志 (按 Ctrl+C 停止) ---"
+while true; do
+    /opt/wanxiang/bin/logcat-grabber "$PACKAGE" ${TAG:+-t "$TAG"} -p "$PRIORITY" ${KEYWORD:+-k "$KEYWORD"} -n 50
+    sleep "$INTERVAL"
+done

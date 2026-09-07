@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "builtin.android-compose",
+  "name": "Jetpack Compose",
+  "version": "1.0.0",
+  "description": "ARM64 Android Jetpack Compose starter",
+  "projectType": "ANDROID",
+  "category": { "id": "starter", "name": "Starter", "sortOrder": 0 },
+  "previewImage": "preview.png",
+  "variables": [
+    { "name": "projectName", "label": "Project name" },
+    { "name": "appName", "label": "App name" },
+    { "name": "packageName", "label": "Package name", "prompt": true, "inputType": "TEXT", "placeholder": "com.example.myapp", "validationRegex": "^[a-zA-Z_][\\w]*(\\.[a-zA-Z_][\\w]*)+$" },
+    { "name": "packagePath", "label": "Package path" }
+  ],
+  "validation": {
+    "requiredFiles": ["app/src/main/java/WANXIANG_PACKAGE_PATH/MainActivity.kt"]
+  }
+}

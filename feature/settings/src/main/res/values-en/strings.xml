@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_language_title">App language</string>
+    <string name="settings_language_system">Follow system language</string>
+    <string name="settings_language_system_description">Use Chinese or English based on the Android system language</string>
+    <string name="settings_language_chinese">Simplified Chinese</string>
+    <string name="settings_language_chinese_description">Display the app interface in Simplified Chinese</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_english_description">Display the app interface in English</string>
+    <string name="settings_appearance_title">Appearance &amp; terminal</string>
+    <string name="settings_terminal_preview">Live terminal preview</string>
+    <string name="settings_terminal_appearance">Terminal appearance &amp; console</string>
+    <string name="settings_terminal_color_scheme">Terminal color scheme</string>
+    <string name="settings_terminal_theme_obsidian">Obsidian</string>
+    <string name="settings_terminal_theme_matrix">Hacker green</string>
+    <string name="settings_terminal_theme_amber">Retro amber</string>
+    <string name="settings_terminal_theme_aurora">Deep-sea aurora</string>
+    <string name="settings_terminal_font_size">Terminal font size</string>
+    <string name="settings_terminal_haptics">Terminal key haptics</string>
+    <string name="settings_terminal_haptics_description">Provide subtle haptic feedback for extra keys and Enter</string>
+    <string name="settings_theme_style">Theme style</string>
+    <string name="settings_theme_xuantong">Xuantong</string>
+    <string name="settings_theme_xuantong_description">Default theme with an obsidian night and warm white palette</string>
+    <string name="settings_theme_chengming">Chengming</string>
+    <string name="settings_theme_chengming_description">Liquid glass with refraction and a luminous aurora</string>
+    <string name="settings_chengming_background">Chengming background</string>
+    <string name="settings_background_none">No background (default)</string>
+    <string name="settings_background_custom">Use a custom image as the glass refraction source</string>
+    <string name="settings_background_upload">Upload image</string>
+    <string name="settings_background_change">Change image</string>
+    <string name="settings_background_remove">Remove background</string>
+    <string name="settings_background_preview">Chengming background preview</string>
+    <string name="settings_color_mode">Color mode</string>
+    <string name="settings_color_system">Follow system (Auto)</string>
+    <string name="settings_color_system_description">Automatically follow the Android light or dark theme</string>
+    <string name="settings_color_light">Light</string>
+    <string name="settings_color_light_description">A clean light theme for bright environments</string>
+    <string name="settings_color_dark">Dark</string>
+    <string name="settings_color_dark_description">An immersive Material 3 obsidian dark theme</string>
+    <string name="settings_interface_scale">Interface scale</string>
+    <string name="settings_scale">Scale</string>
+    <string name="settings_terminal_preview_command">wanxiang@debian:~$ echo \"WanXiang sandbox is running normally 🚀\"</string>
+    <string name="settings_terminal_preview_output">WanXiang sandbox is running normally 🚀</string>
+    <string name="settings_tool_center_empty_category_title">No tools in this category</string>
+    <string name="settings_tool_center_empty_category_subtitle">Try another category, or refresh the tool registry later</string>
+</resources>

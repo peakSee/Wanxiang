@@ -1,0 +1,10 @@
+*.sh text eol=lf
+app/src/main/assets/scripts/*.gradle text eol=lf
+assets/plugins/**/payload/**/*.properties text eol=lf
+assets/plugins/**/payload/**/*.gradle text eol=lf
+app/src/main/assets/bin/* text eol=lf
+app/src/main/assets/bin/rtk binary
+app/src/main/assets/templates/** text eol=lf
+app/src/main/assets/scripts/*.sh text eol=lf
+*.txplugin binary
+assets/plugins/**/payload/bin/* binary

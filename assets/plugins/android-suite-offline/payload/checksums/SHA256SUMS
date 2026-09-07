@@ -1,0 +1,17 @@
+92ffb0343d2325f0bdb77c68c9ffb049e86b4266a0881db594dddbc2d6f9519f  archives/android-ndk-r29-aarch64.tar.gz
+db1cea2c4454d5f9c5a802646b2d1cf560b4ee7badbe23e51ab8e1881bb50fc2  archives/android-sdk-tools-static-aarch64.zip
+82e48bf8038250fb0997b1f2cf5f780730104f2544a5532298c453d94cfe1537  archives/android-tools_aarch64.deb
+c0350abbab5314248dfe2ee0c907def4edd14f6faef1f5d372d3d4abd28f0431  archives/apktool_2.10.0.jar
+bd3a4966912eb8b30ed0d00b0cda6b6543b949d5ffe00bea54c04c81e1561d88  archives/build-tools_r35_linux.zip
+e5b2dc2aefdca10afe09c8fa4ee2bbb4e732665943a94322f99c118781910c3c  archives/cmake-linux-aarch64.tar.gz
+ee7c45eb3c1d2474a6145d8d447e651a736a22d9664b6d3d3be5a5a817dda23a  archives/dex-tools-v2.4.zip
+1ba82c4599631268d993a4dd11b6f66a6eb68fe4d77a7d992cc8f744720d8d7d  archives/flutter-linux-arm64-android-only-slim.tar.gz
+7197a12f450794931532469d4ff21a59ea2c1cd59a3ec3f89c035c3c420a6999  archives/gradle-8.14.2-bin.zip
+c5a713fa4800cbb9e6df85ced1bef95ba329040c95cb87d54465f108483e4ef9  archives/jadx-1.5.0.zip
+457b57af8f9c93ec39080bb8c764f559dc8c89a6da1a39d718a400b7890d3e41  archives/jdk-17-aarch64-linux.tar.gz
+5c25c6570b0155e95fce5918cb95f1ad9870df5768653afe128db822301a05a1  archives/ninja-linux-aarch64.zip
+16fdb74c55e59ae3ef52def135aec713508467bd56d7dabcd8c9be31fa8b20f3  archives/platform-34-ext7_r03.zip
+800b1e7206afe799dfb5a6901f23147cfaabe0e52210538100f61e86e1740915  archives/ripgrep-15.2.0-aarch64-unknown-linux-musl.tar.gz
+0306c30bee00469fbec4b07bb04ea0308c096454354c3dc96a92b729f1c2acd1  archives/rust-1.85.0-aarch64-unknown-linux-gnu.tar.gz
+e66eb451fa7169d26578f27096005a853d1de3cee3eeabed7ab944e2600585b6  archives/rust-std-1.85.0-aarch64-linux-android.tar.gz
+e1299fd6fcf4da527dd53735b56127e8ea922a321128123b9c32d619bba1d835  archives/uber-apk-signer-1.3.0.jar

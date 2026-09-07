@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- QQ 企鹅剪影，自 RuntimeIcon.kt 代码内矢量迁移，单色可 tint -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12 2c-4.4 0-8 3.4-8 7.6 0 2.2 1 4.1 2.5 5.5-.3 1.2-1.2 2.8-2.3 3.6 1.5.2 3.2-.3 4.4-1.2 1.1.4 2.2.6 3.4.6 4.4 0 8-3.4 8-7.6S16.4 2 12 2zm-3.2 8.5c-.7 0-1.2-.7-1.2-1.5s.5-1.5 1.2-1.5 1.2.7 1.2 1.5-.5 1.5-1.2 1.5zm6.4 0c-.7 0-1.2-.7-1.2-1.5s.5-1.5 1.2-1.5 1.2.7 1.2 1.5-.5 1.5-1.2 1.5z"
+        android:fillColor="#FF000000" />
+</vector>

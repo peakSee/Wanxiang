@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "providers": [
+    {
+      "id": "custom",
+      "name": "自定义 OpenAI 兼容接口",
+      "group": "CUSTOM",
+      "baseUrl": "",
+      "modelsUrl": "",
+      "apiKeyOptional": true
+    },
+    {
+      "id": "custom_anthropic",
+      "name": "自定义 Anthropic 兼容接口",
+      "group": "CUSTOM",
+      "baseUrl": "",
+      "modelsUrl": "",
+      "protocol": "ANTHROPIC",
+      "apiKeyOptional": true
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic Claude",
+      "group": "OFFICIAL",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "modelsUrl": "https://api.anthropic.com/v1/models",
+      "protocol": "ANTHROPIC",
+      "recommendedModels": [
+        "claude-opus-4.6",
+        "claude-sonnet-4.6",
+        "claude-haiku-4.5"
+      ]
+    },
+    {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "group": "OFFICIAL",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "modelsUrl": "https://generativelanguage.googleapis.com/v1beta/openai/models",
+      "recommendedModels": [
+        "gemini-3-pro",
+        "gemini-3-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
+      ]
+    },
+    {
+      "id": "zhipu",
+      "name": "智谱 GLM",
+      "group": "CHINA",
+      "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+      "modelsUrl": "https://open.bigmodel.cn/api/paas/v4/models",
+      "recommendedModels": [
+        "glm-5.2",
+        "glm-5.1-air",
+        "glm-4.6"
+      ]
+    },
+    {
+      "id": "doubao",
+      "name": "字节豆包 (火山方舟)",
+      "group": "CHINA",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "modelsUrl": "https://ark.cn-beijing.volces.com/api/v3/models",
+      "recommendedModels": [
+        "doubao-seed-1.6",
+        "doubao-1.5-pro-32k",
+        "doubao-1.5-thinking-pro"
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "group": "OFFICIAL",
+      "baseUrl": "https://api.openai.com/v1",
+      "modelsUrl": "https://api.openai.com/v1/models",
+      "recommendedModels": [
+        "gpt-5.6",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+        "gpt-5.5",
+        "gpt-5.4-mini",
+        "gpt-4.1"
+      ]
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "group": "CHINA",
+      "baseUrl": "https://api.deepseek.com/v1",
+      "modelsUrl": "https://api.deepseek.com/v1/models",
+      "recommendedModels": [
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash-vision-exp"
+      ]
+    },
+    {
+      "id": "qwen",
+      "name": "阿里云百炼 / Qwen",
+      "group": "CHINA",
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "modelsUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+      "recommendedModels": [
+        "qwen3.8-max",
+        "qwen3.7-plus",
+        "qwen3.6-plus",
+        "qwen3-coder-plus",
+        "qwen-plus"
+      ]
+    },
+    {
+      "id": "moonshot",
+      "name": "Moonshot / Kimi",
+      "group": "CHINA",
+      "baseUrl": "https://api.moonshot.ai/v1",
+      "modelsUrl": "https://api.moonshot.ai/v1/models",
+      "recommendedModels": [
+        "kimi-k3",
+        "kimi-k2.7-code",
+        "kimi-k2.7-code-highspeed",
+        "kimi-k2.6"
+      ]
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax 中国",
+      "group": "CHINA",
+      "baseUrl": "https://api.minimaxi.com/v1",
+      "modelsUrl": "https://api.minimaxi.com/v1/models",
+      "recommendedModels": [
+        "MiniMax-M3",
+        "MiniMax-M2.7",
+        "MiniMax-M2.7-highspeed",
+        "MiniMax-M2.5"
+      ]
+    },
+    {
+      "id": "siliconflow",
+      "name": "硅基流动",
+      "group": "CHINA",
+      "baseUrl": "https://api.siliconflow.cn/v1",
+      "modelsUrl": "https://api.siliconflow.cn/v1/models",
+      "recommendedModels": [
+        "deepseek-ai/DeepSeek-V3.2",
+        "deepseek-ai/DeepSeek-R1",
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "zai-org/GLM-5.1",
+        "moonshotai/Kimi-K2.6"
+      ]
+    },
+    {
+      "id": "modelscope",
+      "name": "魔搭 ModelScope",
+      "group": "CHINA",
+      "baseUrl": "https://api-inference.modelscope.cn/v1",
+      "modelsUrl": "https://api-inference.modelscope.cn/v1/models"
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "group": "AGGREGATOR",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "modelsUrl": "https://openrouter.ai/api/v1/models",
+      "recommendedModels": [
+        "auto"
+      ]
+    },
+    {
+      "id": "groq",
+      "name": "Groq",
+      "group": "AGGREGATOR",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "modelsUrl": "https://api.groq.com/openai/v1/models",
+      "recommendedModels": [
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-120b",
+        "qwen/qwen3-32b"
+      ]
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral AI",
+      "group": "OFFICIAL",
+      "baseUrl": "https://api.mistral.ai/v1",
+      "modelsUrl": "https://api.mistral.ai/v1/models",
+      "recommendedModels": [
+        "mistral-large-latest",
+        "mistral-medium-3-5",
+        "mistral-small-latest",
+        "devstral-latest",
+        "codestral-latest"
+      ]
+    },
+    {
+      "id": "together",
+      "name": "Together AI",
+      "group": "AGGREGATOR",
+      "baseUrl": "https://api.together.xyz/v1",
+      "modelsUrl": "https://api.together.xyz/v1/models",
+      "recommendedModels": [
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "deepseek-ai/DeepSeek-R1",
+        "Qwen/Qwen3-235B-A22B"
+      ]
+    },
+    {
+      "id": "nvidia",
+      "name": "NVIDIA NIM",
+      "group": "AGGREGATOR",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "modelsUrl": "https://integrate.api.nvidia.com/v1/models",
+      "recommendedModels": [
+        "z-ai/glm-5.2",
+        "moonshotai/kimi-k2.6",
+        "openai/gpt-oss-120b",
+        "nvidia/nemotron-3-super-120b-a12b"
+      ]
+    },
+    {
+      "id": "xai",
+      "name": "xAI",
+      "group": "OFFICIAL",
+      "baseUrl": "https://api.x.ai/v1",
+      "modelsUrl": "https://api.x.ai/v1/models",
+      "recommendedModels": [
+        "grok-4.3",
+        "grok-build-0.1",
+        "grok-4.20-0309-reasoning",
+        "grok-4.20-0309-non-reasoning"
+      ]
+    },
+    {
+      "id": "llamacpp",
+      "name": "llama.cpp 沙箱离线模型",
+      "group": "LOCAL",
+      "baseUrl": "http://127.0.0.1:8080/v1",
+      "modelsUrl": "http://127.0.0.1:8080/v1/models",
+      "apiKeyOptional": true,
+      "recommendedModels": [
+        "Qwen2.5-Coder-1.5B-Instruct-Q4_K_M.gguf",
+        "Qwen2.5-Coder-3B-Instruct-Q4_K_M.gguf",
+        "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
+        "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+      ]
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama 本地",
+      "group": "LOCAL",
+      "baseUrl": "http://127.0.0.1:11434/v1",
+      "modelsUrl": "http://127.0.0.1:11434/api/tags",
+      "apiKeyOptional": true,
+      "recommendedModels": [
+        "qwen2.5-coder:1.5b",
+        "qwen2.5-coder:3b",
+        "deepseek-r1:1.5b",
+        "deepseek-r1:8b",
+        "qwen3:8b",
+        "llama3.2"
+      ]
+    },
+    {
+      "id": "lmstudio",
+      "name": "LM Studio 本地",
+      "group": "LOCAL",
+      "baseUrl": "http://127.0.0.1:1234/v1",
+      "modelsUrl": "http://127.0.0.1:1234/v1/models",
+      "apiKeyOptional": true
+    },
+    {
+      "id": "vllm",
+      "name": "vLLM 本地",
+      "group": "LOCAL",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "modelsUrl": "http://127.0.0.1:8000/v1/models",
+      "apiKeyOptional": true
+    }
+  ]
+}

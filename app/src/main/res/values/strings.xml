@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wanxiang_app_name">万象</string>
+    <string name="wanxiang_update_available">发现新版本 v%1$s</string>
+    <string name="wanxiang_update_versions">当前版本: v%1$s  ➔  最新版本: v%2$s</string>
+    <string name="wanxiang_update_downloading_package">正在下载更新包…</string>
+    <string name="wanxiang_update_download_failed">下载更新包失败，请检查网络后重试。</string>
+    <string name="wanxiang_downloading">正在下载…</string>
+    <string name="wanxiang_update_now">立即更新</string>
+    <string name="wanxiang_open_github">前往 GitHub</string>
+    <string name="wanxiang_later">稍后再说</string>
+    <string name="wanxiang_agent_notification_channel">Agent 执行</string>
+    <string name="wanxiang_agent_ready">智能体中枢就绪</string>
+    <string name="wanxiang_agent_default_title">智枢智能体</string>
+    <string name="wanxiang_agent_background_running">万象 Agent 后台运行中</string>
+    <string name="wanxiang_agent_background_locked">智能体后台运行中 · 进程锁已开启</string>
+    <string name="wanxiang_notification_stop">停止</string>
+    <string name="wanxiang_notification_reply_to">回复给 %1$s</string>
+    <string name="wanxiang_notification_reply">回复</string>
+    <string name="wanxiang_agent_task_completed">【%1$s】任务已完成</string>
+    <string name="wanxiang_agent_next_task_hint">点下方回复，交代下一步任务</string>
+    <string name="wanxiang_agent_thinking">Agent 正在思考…</string>
+    <string name="wanxiang_runtime_notification_channel">Linux Runtime</string>
+    <string name="wanxiang_runtime_running">Linux Runtime 正在运行</string>
+    <string name="wanxiang_runtime_background_available">后台工具和本地服务保持可用</string>
+</resources>

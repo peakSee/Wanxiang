@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_legacy_0001" formatted="false">关闭</string>
+    <string name="settings_legacy_0002" formatted="false">取消</string>
+    <string name="settings_legacy_0003" formatted="false">保存</string>
+    <string name="settings_legacy_0004" formatted="false">删除</string>
+    <string name="settings_legacy_0005" formatted="false">确定</string>
+    <string name="settings_legacy_0006" formatted="false">完成</string>
+    <string name="settings_legacy_0007" formatted="false">素白浅色 (Light)</string>
+    <string name="settings_legacy_0008" formatted="false">明澈素雅，适合日间光线明亮环境</string>
+    <string name="settings_legacy_0009" formatted="false">深邃曜石 (Dark)</string>
+    <string name="settings_legacy_0010" formatted="false">服务商预设</string>
+    <string name="settings_legacy_0011" formatted="false">Base URL（接口地址）</string>
+    <string name="settings_legacy_0012" formatted="false">稍后再说</string>
+    <string name="settings_legacy_0013" formatted="false">正在下载…</string>
+    <string name="settings_legacy_0014" formatted="false">万象 · 乾坤</string>
+    <string name="settings_legacy_0015" formatted="false">万象 · WanXiang</string>
+    <string name="settings_legacy_0016" formatted="false">系统设置与控制中枢</string>
+    <string name="settings_legacy_0017" formatted="false">系统与配置分类</string>
+    <string name="settings_legacy_0018" formatted="false">智能体与 AI 模型</string>
+    <string name="settings_legacy_0019" formatted="false">智能体与模型</string>
+    <string name="settings_legacy_0020" formatted="false">模型档案 · 插件工具中心 · 技能与 MCP 生态</string>
+    <string name="settings_legacy_0021" formatted="false">模型档案</string>
+    <string name="settings_legacy_0022" formatted="false">模型档案管理</string>
+    <string name="settings_legacy_0023" formatted="false">模型档案与提供商</string>
+    <string name="settings_legacy_0024" formatted="false">配置 OpenAI / DeepSeek / Claude / 本地大模型密钥与端点</string>
+    <string name="settings_legacy_0025" formatted="false">新增模型</string>
+    <string name="settings_legacy_0026" formatted="false">新增模型档案</string>
+    <string name="settings_legacy_0027" formatted="false">编辑模型</string>
+    <string name="settings_legacy_0028" formatted="false">编辑模型档案</string>
+    <string name="settings_legacy_0029" formatted="false">暂无模型档案</string>
+    <string name="settings_legacy_0030" formatted="false">未配置模型</string>
+    <string name="settings_legacy_0031" formatted="false">点击上方按钮添加 OpenAI / DeepSeek / Claude 等模型配置</string>
+    <string name="settings_legacy_0032" formatted="false">档案名称</string>
+    <string name="settings_legacy_0033" formatted="false">名称</string>
+    <string name="settings_legacy_0034" formatted="false">模型 ID（可选择或输入）</string>
+    <string name="settings_legacy_0035" formatted="false">保存模型配置</string>
+    <string name="settings_legacy_0036" formatted="false">刷新在线模型</string>
+    <string name="settings_legacy_0037" formatted="false">刷新中…</string>
+    <string name="settings_legacy_0038" formatted="false">测试连接</string>
+    <string name="settings_legacy_0039" formatted="false">测试中…</string>
+    <string name="settings_legacy_0040" formatted="false">连接成功</string>
+    <string name="settings_legacy_0041" formatted="false">高级设置</string>
+    <string name="settings_legacy_0042" formatted="false">采样、上下文、推理、工具与请求头</string>
+    <string name="settings_legacy_0043" formatted="false">API Key 池（每行一个）</string>
+    <string name="settings_legacy_0044" formatted="false">同一接口地址的多个 Key 将按请求自动轮询并在 429 时切换</string>
+    <string name="settings_legacy_0045" formatted="false">单 Key 每分钟请求上限</string>
+    <string name="settings_legacy_0046" formatted="false">0 或留空表示不限制；达到上限时优先轮换其他 Key</string>
+    <string name="settings_legacy_0047" formatted="false">推理思考模式</string>
+    <string name="settings_legacy_0048" formatted="false">开启深度推理（更深入思考）</string>
+    <string name="settings_legacy_0049" formatted="false">跟随模型默认</string>
+    <string name="settings_legacy_0050" formatted="false">支持函数调用 (Tool Call)</string>
+    <string name="settings_legacy_0051" formatted="false">使用 OpenAI 标准函数调用执行沙箱与扩展命令</string>
+    <string name="settings_legacy_0052" formatted="false">支持识图</string>
+    <string name="settings_legacy_0053" formatted="false">开启后图片直接发送给 AI 识别；关闭后自动调用工具读取图片</string>
+    <string name="settings_legacy_0054" formatted="false">上下文 Token 上限</string>
+    <string name="settings_legacy_0055" formatted="false">自定义请求头（可选）</string>
+    <string name="settings_legacy_0056" formatted="false">不注入工具和提示词</string>
+    <string name="settings_legacy_0057" formatted="false">关闭系统提示词和工具定义注入，仅发送用户消息（用于排查问题）</string>
+    <string name="settings_legacy_0059" formatted="false">Agent 智能体管理</string>
+    <string name="settings_legacy_0060" formatted="false">思考流呈现、上下文压缩阈值与技能插件</string>
+    <string name="settings_legacy_0061" formatted="false">工具与插件生态</string>
+    <string name="settings_legacy_0062" formatted="false">插件与工具生态中心</string>
+    <string name="settings_legacy_0063" formatted="false">一键安装 Claude Code、OpenClaw 等 AI CLI 与开发环境</string>
+    <string name="settings_legacy_0064" formatted="false">MCP 协议生态与服务</string>
+    <string name="settings_legacy_0065" formatted="false">管理 SQLite、Git、Fetch 等 Model Context Protocol 协议服务</string>
+    <string name="settings_legacy_0066" formatted="false">Linux 容器与存储</string>
+    <string name="settings_legacy_0067" formatted="false">容器系统与沙箱管理</string>
+    <string name="settings_legacy_0068" formatted="false">多发行版管理 · 宿主存储映射 · 运行特权模式</string>
+    <string name="settings_legacy_0069" formatted="false">Linux 发行版管理</string>
+    <string name="settings_legacy_0070" formatted="false">多沙箱并存 · 镜像拉取 · 一键切换主系统</string>
+    <string name="settings_legacy_0071" formatted="false">存储挂载与共享</string>
+    <string name="settings_legacy_0072" formatted="false">PRoot 宿主存储映射 (-b /sdcard)</string>
+    <string name="settings_legacy_0073" formatted="false">系统运行特权模式</string>
+    <string name="settings_legacy_0074" formatted="false">PRoot 用户态沙箱 · Shizuku · Root</string>
+    <string name="settings_legacy_0075" formatted="false">外观、字号与终端定制</string>
+    <string name="settings_legacy_0076" formatted="false">深浅色主题 · 应用字号缩放 · 终端配色与字体</string>
+    <string name="settings_legacy_0077" formatted="false">系统保活与开发者诊断</string>
+    <string name="settings_legacy_0078" formatted="false">保活与诊断</string>
+    <string name="settings_legacy_0079" formatted="false">电池优化与后台运行</string>
+    <string name="settings_legacy_0080" formatted="false">豁免系统电池限制，防止 Agent 息屏被冻结</string>
+    <string name="settings_legacy_0081" formatted="false">Android 12 子进程限制</string>
+    <string name="settings_legacy_0082" formatted="false">解除 Phantom Process 最多 32 个的后台限制</string>
+    <string name="settings_legacy_0083" formatted="false">已解除</string>
+    <string name="settings_legacy_0084" formatted="false">未解除</string>
+    <string name="settings_legacy_0085" formatted="false">无需处理</string>
+    <string name="settings_legacy_0086" formatted="false">待检测</string>
+    <string name="settings_legacy_0087" formatted="false">已解除限制</string>
+    <string name="settings_legacy_0088" formatted="false">限制仍生效</string>
+    <string name="settings_legacy_0089" formatted="false">当前系统无需处理</string>
+    <string name="settings_legacy_0090" formatted="false">暂时无法检测</string>
+    <string name="settings_legacy_0091" formatted="false">正在检测</string>
+    <string name="settings_legacy_0092" formatted="false">尚未检测</string>
+    <string name="settings_legacy_0093" formatted="false">读取系统实际配置，确认幽灵进程限制是否仍在生效。</string>
+    <string name="settings_legacy_0094" formatted="false">使用 Shizuku / Root 一键解除</string>
+    <string name="settings_legacy_0095" formatted="false">正在处理</string>
+    <string name="settings_legacy_0096" formatted="false">也可以在已连接手机的电脑终端执行：</string>
+    <string name="settings_legacy_0097" formatted="false">复制命令</string>
+    <string name="settings_legacy_0098" formatted="false">命令已复制</string>
+    <string name="settings_legacy_0099" formatted="false">开发者诊断模式</string>
+    <string name="settings_legacy_0100" formatted="false">开启底层健康监控与调试控制台</string>
+    <string name="settings_legacy_0101" formatted="false">开发者控制台</string>
+    <string name="settings_legacy_0102" formatted="false">开发者调试与控制台</string>
+    <string name="settings_legacy_0103" formatted="false">实时查看 PRoot 进程与命令追踪</string>
+    <string name="settings_legacy_0104" formatted="false">关于与社区</string>
+    <string name="settings_legacy_0105" formatted="false">关于万象 · WanXiang</string>
+    <string name="settings_legacy_0106" formatted="false">关于、更新与官方社区</string>
+    <string name="settings_legacy_0107" formatted="false">应用版本与更新</string>
+    <string name="settings_legacy_0108" formatted="false">检查新版本</string>
+    <string name="settings_legacy_0109" formatted="false">检查中…</string>
+    <string name="settings_legacy_0110" formatted="false">已是最新版本</string>
+    <string name="settings_legacy_0111" formatted="false">检查更新失败</string>
+    <string name="settings_legacy_0112" formatted="false">启动时自动检查更新</string>
+    <string name="settings_legacy_0113" formatted="false">应用启动时在后台静默检测新版本</string>
+    <string name="settings_legacy_0114" formatted="false">官方社区与开源</string>
+    <string name="settings_legacy_0115" formatted="false">GitHub 开源项目</string>
+    <string name="settings_legacy_0116" formatted="false">万象官方交流群</string>
+    <string name="settings_legacy_0117" formatted="false">官方 QQ 交流群</string>
+    <string name="settings_legacy_0118" formatted="false">前往 GitHub 下载</string>
+    <string name="settings_legacy_0119" formatted="false">运行平稳</string>
+    <string name="settings_legacy_0120" formatted="false">未配置</string>
+    <string name="settings_legacy_0121" formatted="false">当前激活</string>
+    <string name="settings_legacy_0122" formatted="false">设为激活</string>
+    <string name="settings_legacy_0123" formatted="false">浅色</string>
+    <string name="settings_legacy_0124" formatted="false">曜石</string>
+    <string name="settings_legacy_0125" formatted="false">跟随系统</string>
+    <string name="settings_legacy_0126" formatted="false">选择外观主题</string>
+    <string name="settings_legacy_0127" formatted="false">选择系统运行模式</string>
+    <string name="settings_legacy_0128" formatted="false">系统底层特权</string>
+    <string name="settings_legacy_0129" formatted="false">正在进行特权探测与授权申请…</string>
+    <string name="settings_legacy_0130" formatted="false">运行模式授权未通过</string>
+    <string name="settings_legacy_0131" formatted="false">环境变量</string>
+    <string name="settings_legacy_0132" formatted="false">为终端、Agent 和工具注入加密变量</string>
+    <string name="settings_legacy_0133" formatted="false">添加环境变量</string>
+    <string name="settings_legacy_0134" formatted="false">编辑环境变量</string>
+    <string name="settings_legacy_0135" formatted="false">删除环境变量</string>
+    <string name="settings_legacy_0136" formatted="false">暂无环境变量</string>
+    <string name="settings_legacy_0137" formatted="false">值</string>
+    <string name="settings_legacy_0138" formatted="false">新值（留空保留原值）</string>
+    <string name="settings_legacy_0139" formatted="false">备注（可选）</string>
+    <string name="settings_legacy_0140" formatted="false">隐私模式</string>
+    <string name="settings_legacy_0141" formatted="false">发送给 Agent 前遮盖已配置变量值</string>
+    <string name="settings_legacy_0142" formatted="false">知道了</string>
+    <string name="settings_legacy_0143" formatted="false">复制</string>
+    <string name="settings_legacy_0144" formatted="false">请求批准</string>
+    <string name="settings_legacy_0145" formatted="false">帮我批准</string>
+    <string name="settings_legacy_0146" formatted="false">失败</string>
+    <string name="settings_legacy_0147" formatted="false">完全访问</string>
+    <string name="settings_text_0001" formatted="false">- 关联专精能力：@Linux沙箱运维专精</string>
+    <string name="settings_text_0002" formatted="false">- 失败上下文与日志输出：</string>
+    <string name="settings_text_0003" formatted="false">AI 插件</string>
+    <string name="settings_text_0004" formatted="false">AI 自愈</string>
+    <string name="settings_text_0005" formatted="false">Agent 智能体管理与配置</string>
+    <string name="settings_text_0006" formatted="false">Android 12 子进程限制命令</string>
+    <string name="settings_text_0007" formatted="false">Android 原生 Linux PRoot 沙箱与 AI 结对中枢</string>
+    <string name="settings_text_0008" formatted="false">Android 原生 Linux PRoot 沙箱与 AI 结对编程中枢</string>
+    <string name="settings_text_0009" formatted="false">GGUF 下载地址</string>
+    <string name="settings_text_0010" formatted="false">GGUF 文件路径</string>
+    <string name="settings_text_0011" formatted="false">JSON 语法解析错误</string>
+    <string name="settings_text_0012" formatted="false">JSON 配置已复制</string>
+    <string name="settings_text_0013" formatted="false">M3 曜石天鹅绒暗色，沉浸专注</string>
+    <string name="settings_text_0014" formatted="false">MCP JSON 配置</string>
+    <string name="settings_text_0015" formatted="false">MCP JSON 配置 (Cursor / Claude 格式)</string>
+    <string name="settings_text_0016" formatted="false">MCP 插件与协议生态</string>
+    <string name="settings_text_0017" formatted="false">Max Tokens 需为正整数</string>
+    <string name="settings_text_0018" formatted="false">PRoot 宿主存储映射 (-b)</string>
+    <string name="settings_text_0019" formatted="false">SHA-256（可选）</string>
+    <string name="settings_text_0020" formatted="false">SSE 端点 URL</string>
+    <string name="settings_text_0021" formatted="false">Temperature 需为 0.0 ~ 2.0 的数字</string>
+    <string name="settings_text_0022" formatted="false">Top P 需为 0.0 ~ 1.0 的数字</string>
+    <string name="settings_text_0023" formatted="false">Web 网关服务</string>
+    <string name="settings_text_0024" formatted="false">llama.cpp 沙箱离线模型</string>
+    <string name="settings_text_0025" formatted="false">mcpServers 不是有效的 JSON 对象</string>
+    <string name="settings_text_0026" formatted="false">v0.3.0 稳定版</string>
+    <string name="settings_text_0027" formatted="false">✓ 已就绪</string>
+    <string name="settings_text_0028" formatted="false">【Agent 自愈目标与行动指南】：</string>
+    <string name="settings_text_0029" formatted="false">【系统工具安装失败诊断与沙箱自愈任务】</string>
+    <string name="settings_text_0030" formatted="false">一次性命令</string>
+    <string name="settings_text_0031" formatted="false">一键安装</string>
+    <string name="settings_text_0032" formatted="false">上下文 Token 需为正整数</string>
+    <string name="settings_text_0033" formatted="false">上下文 Token 预算上限</string>
+    <string name="settings_text_0034" formatted="false">上下文记忆与智能压缩</string>
+    <string name="settings_text_0035" formatted="false">下载</string>
+    <string name="settings_text_0036" formatted="false">下载目录 (Download)</string>
+    <string name="settings_text_0037" formatted="false">下载线路与镜像加速：</string>
+    <string name="settings_text_0038" formatted="false">主智能体按任务需要自主选择角色并并行委派</string>
+    <string name="settings_text_0039" formatted="false">主系统</string>
+    <string name="settings_text_0040" formatted="false">交互式终端</string>
+    <string name="settings_text_0041" formatted="false">仅作为新建会话初始值，已存在会话可在聊天顶部单独切换。</string>
+    <string name="settings_text_0042" formatted="false">仅在用户明确要求并行或子智能体协同时派发</string>
+    <string name="settings_text_0043" formatted="false">仅支持英文、数字、下划线和连字符</string>
+    <string name="settings_text_0044" formatted="false">从路径导入</string>
+    <string name="settings_text_0045" formatted="false">优化长任务 Token 消耗，防止触及模型上下文窗口上限</string>
+    <string name="settings_text_0046" formatted="false">传输协议类型</string>
+    <string name="settings_text_0047" formatted="false">低内存首选 · 中英日常对话</string>
+    <string name="settings_text_0048" formatted="false">使用上方按钮下载或导入 GGUF 模型</string>
+    <string name="settings_text_0049" formatted="false">例如：相册照片、项目源码</string>
+    <string name="settings_text_0050" formatted="false">依赖项</string>
+    <string name="settings_text_0051" formatted="false">假运行中</string>
+    <string name="settings_text_0052" formatted="false">停止</string>
+    <string name="settings_text_0053" formatted="false">停止服务失败</string>
+    <string name="settings_text_0054" formatted="false">全栈开发套件</string>
+    <string name="settings_text_0055" formatted="false">全部生态</string>
+    <string name="settings_text_0056" formatted="false">全部组件已就绪</string>
+    <string name="settings_text_0057" formatted="false">内存不足</string>
+    <string name="settings_text_0058" formatted="false">冻结进程，表现为 Agent 推理或命令执行中途停住。建议开启以下两项：</string>
+    <string name="settings_text_0059" formatted="false">准备拉取镜像...</string>
+    <string name="settings_text_0060" formatted="false">切换特权模式将自动发起授权检测；授权成功后即刻释放对应的高级系统与硬件能力。</string>
+    <string name="settings_text_0061" formatted="false">删除子智能体</string>
+    <string name="settings_text_0062" formatted="false">删除服务</string>
+    <string name="settings_text_0063" formatted="false">删除模型失败</string>
+    <string name="settings_text_0064" formatted="false">加入 QQ 交流群 (905971993)</string>
+    <string name="settings_text_0065" formatted="false">助手名称</string>
+    <string name="settings_text_0066" formatted="false">协议: Apache-2.0 License</string>
+    <string name="settings_text_0067" formatted="false">单 Key RPM 需为非负整数</string>
+    <string name="settings_text_0068" formatted="false">单回合最大工具轮次上限</string>
+    <string name="settings_text_0069" formatted="false">单轮最大工具调用数</string>
+    <string name="settings_text_0070" formatted="false">卸载</string>
+    <string name="settings_text_0071" formatted="false">卸载工具</string>
+    <string name="settings_text_0072" formatted="false">压缩策略</string>
+    <string name="settings_text_0073" formatted="false">压缩触发阈值（用户轮次）</string>
+    <string name="settings_text_0074" formatted="false">参数（空格分隔）</string>
+    <string name="settings_text_0075" formatted="false">可呼叫万象 Agent 在 PRoot 沙箱内自主排查与自愈</string>
+    <string name="settings_text_0076" formatted="false">可更新</string>
+    <string name="settings_text_0077" formatted="false">后台正在装配开发套件...</string>
+    <string name="settings_text_0078" formatted="false">后台电池优化白名单 · 调试监控 · PRoot 控制台</string>
+    <string name="settings_text_0079" formatted="false">向 Agent 系统提示词注入领域专业规范与操作指导</string>
+    <string name="settings_text_0080" formatted="false">否则厂商省电策略仍会终止进程。</string>
+    <string name="settings_text_0081" formatted="false">启动</string>
+    <string name="settings_text_0082" formatted="false">启动中</string>
+    <string name="settings_text_0083" formatted="false">启动中…</string>
+    <string name="settings_text_0084" formatted="false">启动命令</string>
+    <string name="settings_text_0085" formatted="false">启动失败</string>
+    <string name="settings_text_0086" formatted="false">启动类型</string>
+    <string name="settings_text_0087" formatted="false">启动网关后此处将展示可访问链接</string>
+    <string name="settings_text_0088" formatted="false">呼叫自愈</string>
+    <string name="settings_text_0089" formatted="false">国内镜像</string>
+    <string name="settings_text_0090" formatted="false">在此输入自定义系统提示词，支持 {{cur_datetime}} 等宏变量...</string>
+    <string name="settings_text_0091" formatted="false">基于 GitHub Releases 自动检测与在线升级</string>
+    <string name="settings_text_0092" formatted="false">复制 JSON</string>
+    <string name="settings_text_0093" formatted="false">复杂且可并行的任务将由主智能体自行决定是否派发</string>
+    <string name="settings_text_0094" formatted="false">多沙箱并存与动态切换</string>
+    <string name="settings_text_0095" formatted="false">多轮工具调用超出阈值时，自动压缩历史中间工具输出日志，保留任务首尾与关键状态</string>
+    <string name="settings_text_0096" formatted="false">如: sqlite / github / fetch</string>
+    <string name="settings_text_0097" formatted="false">安装</string>
+    <string name="settings_text_0098" formatted="false">安装中</string>
+    <string name="settings_text_0099" formatted="false">安装失败</string>
+    <string name="settings_text_0100" formatted="false">安装成功</string>
+    <string name="settings_text_0101" formatted="false">安装新 Linux 发行版</string>
+    <string name="settings_text_0102" formatted="false">安装新系统</string>
+    <string name="settings_text_0103" formatted="false">安装方式</string>
+    <string name="settings_text_0104" formatted="false">安装日志正在接收...</string>
+    <string name="settings_text_0105" formatted="false">安装路径</string>
+    <string name="settings_text_0106" formatted="false">完整共享存储 (/sdcard)</string>
+    <string name="settings_text_0107" formatted="false">定制 Agent 初始人设、环境说明与动态宏变量注入</string>
+    <string name="settings_text_0108" formatted="false">容器挂载路径 (Linux)</string>
+    <string name="settings_text_0109" formatted="false">宿主路径 (Android)</string>
+    <string name="settings_text_0110" formatted="false">导入</string>
+    <string name="settings_text_0111" formatted="false">导入或下载 GGUF，在 ARM64 设备端通过 llama.cpp 离线推理</string>
+    <string name="settings_text_0112" formatted="false">局域网 IP</string>
+    <string name="settings_text_0113" formatted="false">工具 ID</string>
+    <string name="settings_text_0114" formatted="false">工具信息</string>
+    <string name="settings_text_0115" formatted="false">工具安装/环境自检未通过</string>
+    <string name="settings_text_0116" formatted="false">工具尚未安装，请先在工具中心完成安装</string>
+    <string name="settings_text_0117" formatted="false">工具未找到</string>
+    <string name="settings_text_0118" formatted="false">工具调用限制</string>
+    <string name="settings_text_0119" formatted="false">已下载</string>
+    <string name="settings_text_0120" formatted="false">已停止</string>
+    <string name="settings_text_0121" formatted="false">已安装插件</string>
+    <string name="settings_text_0122" formatted="false">已导入模型</string>
+    <string name="settings_text_0123" formatted="false">已就绪</string>
+    <string name="settings_text_0124" formatted="false">已应用</string>
+    <string name="settings_text_0125" formatted="false">已提交 llama.cpp 推理引擎安装任务，可在工具中心查看进度</string>
+    <string name="settings_text_0126" formatted="false">已有模型传输任务正在进行</string>
+    <string name="settings_text_0127" formatted="false">已绑定 0.0.0.0</string>
+    <string name="settings_text_0128" formatted="false">已豁免</string>
+    <string name="settings_text_0129" formatted="false">已豁免电池优化</string>
+    <string name="settings_text_0130" formatted="false">已连通</string>
+    <string name="settings_text_0131" formatted="false">应用</string>
+    <string name="settings_text_0132" formatted="false">应用内立即更新</string>
+    <string name="settings_text_0133" formatted="false">开发套件安装日志</string>
+    <string name="settings_text_0134" formatted="false">开发者全栈套件 (Dev Bundles)</string>
+    <string name="settings_text_0135" formatted="false">开启上下文智能压缩 (Context Compaction)</string>
+    <string name="settings_text_0136" formatted="false">开始下载</string>
+    <string name="settings_text_0137" formatted="false">开始安装</string>
+    <string name="settings_text_0138" formatted="false">异常</string>
+    <string name="settings_text_0139" formatted="false">强制中文 (推荐)</string>
+    <string name="settings_text_0140" formatted="false">强制模型思考过程全程使用英文 (English)</string>
+    <string name="settings_text_0141" formatted="false">当会话关联了工作区时，执行 base 命令默认以该目录为工作路径 (cwd)</string>
+    <string name="settings_text_0142" formatted="false">当会话历史超过该轮数时，启动智能剪裁，最近 4 轮保持无损</string>
+    <string name="settings_text_0143" formatted="false">当前活跃</string>
+    <string name="settings_text_0144" formatted="false">必选基座</string>
+    <string name="settings_text_0145" formatted="false">思考与推理语言偏好 (Thinking Language)</string>
+    <string name="settings_text_0146" formatted="false">思考呈现</string>
+    <string name="settings_text_0147" formatted="false">思考流、子智能体、Skill 与插件</string>
+    <string name="settings_text_0148" formatted="false">思考流与执行表现</string>
+    <string name="settings_text_0149" formatted="false">思考过程（包括生成中内容）默认折叠，点击可展开查看</string>
+    <string name="settings_text_0150" formatted="false">所有预置 Linux 发行版均已安装完毕！</string>
+    <string name="settings_text_0151" formatted="false">手机小模型推荐</string>
+    <string name="settings_text_0152" formatted="false">打开应用详情（自启动/后台运行）</string>
+    <string name="settings_text_0153" formatted="false">打开终端</string>
+    <string name="settings_text_0154" formatted="false">执行上下文</string>
+    <string name="settings_text_0155" formatted="false">执行命令（如 npx / uvx / python3）</string>
+    <string name="settings_text_0156" formatted="false">技能名称（如: Rust 编译专家）</string>
+    <string name="settings_text_0157" formatted="false">技能管理</string>
+    <string name="settings_text_0158" formatted="false">挂载点名称</string>
+    <string name="settings_text_0159" formatted="false">授权失败</string>
+    <string name="settings_text_0160" formatted="false">探测工具</string>
+    <string name="settings_text_0161" formatted="false">控制 DeepSeek 等推理模型的思考过程呈现与工具执行上限</string>
+    <string name="settings_text_0162" formatted="false">控制台日志已复制</string>
+    <string name="settings_text_0163" formatted="false">描述（可选）</string>
+    <string name="settings_text_0164" formatted="false">提示词模板内容：</string>
+    <string name="settings_text_0165" formatted="false">提示词编辑</string>
+    <string name="settings_text_0166" formatted="false">插件与工具中心</string>
+    <string name="settings_text_0167" formatted="false">操作</string>
+    <string name="settings_text_0168" formatted="false">操作未完成</string>
+    <string name="settings_text_0169" formatted="false">效果优先 · 适合 6 GB 以上手机</string>
+    <string name="settings_text_0170" formatted="false">数据目录</string>
+    <string name="settings_text_0171" formatted="false">文档目录 (Documents)</string>
+    <string name="settings_text_0172" formatted="false">新一代通用模型 · 当前按文本模式运行</string>
+    <string name="settings_text_0173" formatted="false">新会话默认工具权限</string>
+    <string name="settings_text_0174" formatted="false">新增子智能体角色</string>
+    <string name="settings_text_0175" formatted="false">新增存储挂载点</string>
+    <string name="settings_text_0176" formatted="false">新增挂载</string>
+    <string name="settings_text_0177" formatted="false">新增自定义 Skill 技能</string>
+    <string name="settings_text_0178" formatted="false">无法读取所选文件</string>
+    <string name="settings_text_0179" formatted="false">日志</string>
+    <string name="settings_text_0180" formatted="false">日志已复制到剪贴板</string>
+    <string name="settings_text_0181" formatted="false">日期</string>
+    <string name="settings_text_0182" formatted="false">日期时间</string>
+    <string name="settings_text_0183" formatted="false">时区</string>
+    <string name="settings_text_0184" formatted="false">时间</string>
+    <string name="settings_text_0185" formatted="false">显示名称</string>
+    <string name="settings_text_0186" formatted="false">智能体生态</string>
+    <string name="settings_text_0187" formatted="false">智能体生态与服务 (Agents &amp; Services)</string>
+    <string name="settings_text_0188" formatted="false">暂无服务日志。点击【启动】网关后将在此实时输出控制台信息与异常报错。</string>
+    <string name="settings_text_0189" formatted="false">暂无模型</string>
+    <string name="settings_text_0190" formatted="false">暂无相关事件日志</string>
+    <string name="settings_text_0191" formatted="false">暂无自定义挂载点</string>
+    <string name="settings_text_0192" formatted="false">更新</string>
+    <string name="settings_text_0193" formatted="false">更新日志：</string>
+    <string name="settings_text_0194" formatted="false">最近一次开发套件装配</string>
+    <string name="settings_text_0195" formatted="false">服务名称</string>
+    <string name="settings_text_0196" formatted="false">服务实时控制台日志</string>
+    <string name="settings_text_0197" formatted="false">服务未启动</string>
+    <string name="settings_text_0198" formatted="false">服务端口</string>
+    <string name="settings_text_0199" formatted="false">服务端点 URL</string>
+    <string name="settings_text_0200" formatted="false">未启用</string>
+    <string name="settings_text_0201" formatted="false">未安装</string>
+    <string name="settings_text_0202" formatted="false">未找到有效的 MCP 服务配置</string>
+    <string name="settings_text_0203" formatted="false">未检测</string>
+    <string name="settings_text_0204" formatted="false">未豁免</string>
+    <string name="settings_text_0205" formatted="false">未豁免 · 后台可能被冻结</string>
+    <string name="settings_text_0206" formatted="false">未运行</string>
+    <string name="settings_text_0207" formatted="false">本地 LLM</string>
+    <string name="settings_text_0208" formatted="false">本地 LLM 推理</string>
+    <string name="settings_text_0209" formatted="false">权限:</string>
+    <string name="settings_text_0210" formatted="false">权限清单</string>
+    <string name="settings_text_0211" formatted="false">查看安装日志</string>
+    <string name="settings_text_0212" formatted="false">查看指导词 (Prompt)</string>
+    <string name="settings_text_0213" formatted="false">查看详情</string>
+    <string name="settings_text_0214" formatted="false">检查新版本 · GitHub 开源仓库 · 官方 QQ 交流群</string>
+    <string name="settings_text_0215" formatted="false">检查更新失败，请检查网络</string>
+    <string name="settings_text_0216" formatted="false">检测中</string>
+    <string name="settings_text_0217" formatted="false">模型ID</string>
+    <string name="settings_text_0218" formatted="false">模型传输失败</string>
+    <string name="settings_text_0219" formatted="false">模型发现失败</string>
+    <string name="settings_text_0220" formatted="false">模型名称</string>
+    <string name="settings_text_0221" formatted="false">模型启动失败</string>
+    <string name="settings_text_0222" formatted="false">模型服务已启动，并已设为当前对话模型</string>
+    <string name="settings_text_0223" formatted="false">模型配置</string>
+    <string name="settings_text_0224" formatted="false">正在下载并配置 RootFS...</string>
+    <string name="settings_text_0225" formatted="false">正在下载更新安装包...</string>
+    <string name="settings_text_0226" formatted="false">正在下载模型</string>
+    <string name="settings_text_0227" formatted="false">正在安装 Linux 沙箱...</string>
+    <string name="settings_text_0228" formatted="false">正在导入模型</string>
+    <string name="settings_text_0229" formatted="false">正在执行后台批量装配流水线，你可自由切换到其他页面</string>
+    <string name="settings_text_0230" formatted="false">正在执行批量原子装配流水线...</string>
+    <string name="settings_text_0231" formatted="false">正在校验 GGUF</string>
+    <string name="settings_text_0232" formatted="false">每行一个请求头，格式 "Key: Value"，会追加到 API 请求中</string>
+    <string name="settings_text_0233" formatted="false">沙箱运行时探测、高危操作安全拦截与扩展能力</string>
+    <string name="settings_text_0234" formatted="false">沙箱进程</string>
+    <string name="settings_text_0235" formatted="false">沙箱连通性与工具探测</string>
+    <string name="settings_text_0236" formatted="false">注入系统的指导提示词 (System Prompt)：</string>
+    <string name="settings_text_0237" formatted="false">添加</string>
+    <string name="settings_text_0238" formatted="false">添加 MCP 服务</string>
+    <string name="settings_text_0239" formatted="false">添加并启用</string>
+    <string name="settings_text_0240" formatted="false">添加挂载</string>
+    <string name="settings_text_0241" formatted="false">添加服务</string>
+    <string name="settings_text_0242" formatted="false">清空</string>
+    <string name="settings_text_0243" formatted="false">清除 Token</string>
+    <string name="settings_text_0244" formatted="false">点击上方“新增挂载”将任意 Android 目录映射到 Linux 沙箱中</string>
+    <string name="settings_text_0245" formatted="false">点击右上角 + 添加</string>
+    <string name="settings_text_0246" formatted="false">点击快捷插入动态宏变量：</string>
+    <string name="settings_text_0247" formatted="false">版本: v0.3.0 (Material 3 Expressive)</string>
+    <string name="settings_text_0248" formatted="false">生成安全 Token</string>
+    <string name="settings_text_0249" formatted="false">用户名称</string>
+    <string name="settings_text_0250" formatted="false">由模型根据上下文或底层默认策略自主决定思考语言</string>
+    <string name="settings_text_0251" formatted="false">申请豁免电池优化</string>
+    <string name="settings_text_0252" formatted="false">电池优化与后台保活</string>
+    <string name="settings_text_0253" formatted="false">电池电量</string>
+    <string name="settings_text_0254" formatted="false">直接粘贴 Claude Desktop / Cursor 标准配置：</string>
+    <string name="settings_text_0255" formatted="false">确认卸载</string>
+    <string name="settings_text_0256" formatted="false">离线</string>
+    <string name="settings_text_0257" formatted="false">移动端编程助手 · 适合 6 GB 以上手机</string>
+    <string name="settings_text_0258" formatted="false">移动端高质量模型 · 当前按文本模式运行</string>
+    <string name="settings_text_0259" formatted="false">端点未返回可用的 Agent 模型</string>
+    <string name="settings_text_0260" formatted="false">简要描述</string>
+    <string name="settings_text_0261" formatted="false">系统提示词与人设自定义</string>
+    <string name="settings_text_0262" formatted="false">系统提示词规则 (System Prompt)</string>
+    <string name="settings_text_0263" formatted="false">系统核心常驻</string>
+    <string name="settings_text_0264" formatted="false">系统版本</string>
+    <string name="settings_text_0265" formatted="false">系统预设快捷挂载</string>
+    <string name="settings_text_0266" formatted="false">组件管理与配置</string>
+    <string name="settings_text_0267" formatted="false">编程助手</string>
+    <string name="settings_text_0268" formatted="false">编辑子智能体角色</string>
+    <string name="settings_text_0269" formatted="false">网关服务</string>
+    <string name="settings_text_0270" formatted="false">网络下载</string>
+    <string name="settings_text_0271" formatted="false">网络下载 GGUF</string>
+    <string name="settings_text_0272" formatted="false">群号: 905971993 · 点击一键加群 / 复制群号</string>
+    <string name="settings_text_0273" formatted="false">聊天界面中新生成的思考过程将默认展开呈现</string>
+    <string name="settings_text_0274" formatted="false">职责简介</string>
+    <string name="settings_text_0275" formatted="false">自动 (Auto)</string>
+    <string name="settings_text_0276" formatted="false">自动判断并拆分任务</string>
+    <string name="settings_text_0277" formatted="false">自动加速</string>
+    <string name="settings_text_0278" formatted="false">自动委派策略</string>
+    <string name="settings_text_0279" formatted="false">自动注入关联工作区路径</string>
+    <string name="settings_text_0280" formatted="false">自定义</string>
+    <string name="settings_text_0281" formatted="false">自定义子智能体角色</string>
+    <string name="settings_text_0282" formatted="false">自定义技能</string>
+    <string name="settings_text_0283" formatted="false">自定义挂载</string>
+    <string name="settings_text_0284" formatted="false">自定义映射绑定</string>
+    <string name="settings_text_0285" formatted="false">自定义系统提示词 (System Prompt)</string>
+    <string name="settings_text_0286" formatted="false">英文 (English)</string>
+    <string name="settings_text_0287" formatted="false">装配任务已结束，可查看完整日志</string>
+    <string name="settings_text_0288" formatted="false">装配套件</string>
+    <string name="settings_text_0289" formatted="false">覆盖全局默认 System Prompt，支持动态宏变量注入</string>
+    <string name="settings_text_0290" formatted="false">角色列表</string>
+    <string name="settings_text_0291" formatted="false">角色指导词</string>
+    <string name="settings_text_0292" formatted="false">角色标识</string>
+    <string name="settings_text_0293" formatted="false">解除命令执行成功，已重新读取系统状态。</string>
+    <string name="settings_text_0294" formatted="false">触发指令（选填，如 /rust）</string>
+    <string name="settings_text_0295" formatted="false">设为主系统</string>
+    <string name="settings_text_0296" formatted="false">设备信息</string>
+    <string name="settings_text_0297" formatted="false">访问链接</string>
+    <string name="settings_text_0298" formatted="false">诊断模式已开启</string>
+    <string name="settings_text_0299" formatted="false">该服务已连通，但未返回任何工具定义</string>
+    <string name="settings_text_0300" formatted="false">该角色标识已存在</string>
+    <string name="settings_text_0301" formatted="false">详情配置</string>
+    <string name="settings_text_0302" formatted="false">语言环境</string>
+    <string name="settings_text_0303" formatted="false">请先输入 GGUF 的 HTTPS 下载地址</string>
+    <string name="settings_text_0304" formatted="false">请勾选待装配组件</string>
+    <string name="settings_text_0305" formatted="false">请输入 GGUF 文件路径</string>
+    <string name="settings_text_0306" formatted="false">请输入 JSON 内容</string>
+    <string name="settings_text_0307" formatted="false">超出时自动压缩旧消息（滑动窗口+摘要记忆）</string>
+    <string name="settings_text_0308" formatted="false">轻量代码补全与简单解释</string>
+    <string name="settings_text_0309" formatted="false">运行中</string>
+    <string name="settings_text_0310" formatted="false">进程保活与唤醒</string>
+    <string name="settings_text_0311" formatted="false">远程 HTTP</string>
+    <string name="settings_text_0312" formatted="false">连接失败</string>
+    <string name="settings_text_0313" formatted="false">连续多轮工具调用全部失败时主动终止，避免陷入死循环空转</string>
+    <string name="settings_text_0314" formatted="false">连续失败熔断阈值</string>
+    <string name="settings_text_0315" formatted="false">适合本机</string>
+    <string name="settings_text_0316" formatted="false">选择下方模型启动服务；启动成功后会自动设为当前对话模型</string>
+    <string name="settings_text_0317" formatted="false">选择文件</string>
+    <string name="settings_text_0318" formatted="false">选择要下载并安装的 Linux 系统：</string>
+    <string name="settings_text_0319" formatted="false">配置中必须包含 command 或 url 字段</string>
+    <string name="settings_text_0320" formatted="false">配置详情</string>
+    <string name="settings_text_0321" formatted="false">重新生成 Token</string>
+    <string name="settings_text_0322" formatted="false">重置模板</string>
+    <string name="settings_text_0323" formatted="false">重试</string>
+    <string name="settings_text_0324" formatted="false">链接已复制</string>
+    <string name="settings_text_0325" formatted="false">错误</string>
+    <string name="settings_text_0326" formatted="false">防止复杂任务中模型陷入死循环；达到轮次后将输出总结并请用户分步进行</string>
+    <string name="settings_text_0327" formatted="false">防止模型一次性爆发大量工具调用耗尽上下文或失控循环</string>
+    <string name="settings_text_0328" formatted="false">随 Android 设备系统深浅色自动切换</string>
+    <string name="settings_text_0329" formatted="false">随应用自启动</string>
+    <string name="settings_text_0330" formatted="false">需要先安装 llama.cpp 推理引擎</string>
+    <string name="settings_text_0331" formatted="false">预置</string>
+    <string name="settings_text_0332" formatted="false">验证命令</string>
+    <string name="settings_text_0333" formatted="false">默认展开模型思考过程</string>
+    <string name="settings_text_0334" formatted="false">📋 JSON 导入</string>
+    <string name="settings_text_0335" formatted="false">📝 表单模式</string>
+    <string name="settings_text_0336" formatted="false">🧠 AI 自愈</string>
+    <string name="settings_long_001" formatted="false">, target.sizeBytes.toDouble() / (1024 * 1024))} MB 空间）。/workspace 工作区中的代码文件不会受到任何影响。</string>
+    <string name="settings_long_002" formatted="false">1. 分析上述 PRoot 沙箱内的失败报错（如 dpkg 依赖破损、锁残留、网络下载受阻、commandLinks 软链接缺失或环境缺失）；</string>
+    <string name="settings_long_003" formatted="false">2. 直接调用 base 工具执行针对性的修复命令（如清理 /var/lib/dpkg 锁、dpkg --configure -a、apt-get --fix-broken install、手动从备用源拉取或补齐软链接）；</string>
+    <string name="settings_long_004" formatted="false">Android 12+ 会监控应用派生的子进程，超过系统上限后可能终止 PRoot、编译器或 Agent 任务。这里解除的是子进程限制，不是 Java/Kotlin 线程数。</string>
+    <string name="settings_long_005" formatted="false">MCP 是开放的标准模型上下文协议。开启后，万象将在 PRoot 沙箱内启动对应的 Stdio 服务或连接本地 SSE 端点，并动态向智枢 Agent 注入专业工具能力。</string>
+    <string name="settings_long_006" formatted="false">https://github.com/peakSee/Wanxiang · 欢迎 Star 支持</string>
+    <string name="settings_long_007" formatted="false">万象在 Agent 执行期间会启动前台服务并持有 CPU 进程锁，但系统电池优化仍可能在息屏后</string>
+    <string name="settings_long_008" formatted="false">万象支持多套 Linux 系统并存。所有系统均自动挂载 /workspace 代码工程，/sdcard 外部存储按「存储挂载与共享」页的开关注入，各发行版软件生态与包管理器完全独立隔离。</string>
+    <string name="settings_long_009" formatted="false">尚未配置任何模型档案，可前往【设置 → 模型档案管理】添加 Claude、OpenAI 或 DeepSeek 模型</string>
+    <string name="settings_long_010" formatted="false">挂载仅作用于 Linux 沙箱内的进程（终端、智枢 Agent、构建任务与后台服务），不影响文件浏览器——文件浏览器始终直接访问宿主存储。挂载在会话启动时注入，修改后新建的终端 / 构建任务才会应用。完整读写还需在系统设置中授予「所有文件访问」权限。</string>
+    <string name="settings_long_011" formatted="false">强约束模型思考过程全程使用中文（解决 DeepSeek/Claude 思考总跑英文的问题）</string>
+    <string name="settings_long_012" formatted="false">提示：小米/华为/OPPO 等厂商系统还需在应用详情中手动允许「自启动」与「后台运行」，</string>
+    <string name="settings_long_013" formatted="false">服务尚未启动，请先在【网关服务】卡片中点击启动，启动成功后将在此展示可访问链接。Token 可提前生成，启动时自动注入。</string>
+    <string name="settings_long_014" formatted="false">架构: aarch64 · chroot-less user-space virtualization</string>
+    <string name="settings_long_015" formatted="false">模型未单独配置 contextTokens 时生效；长会话历史超出预算将自动折叠早期内容</string>
+    <string name="settings_long_017" formatted="false">粘贴以 .gguf 结尾的 HTTPS 直链。Hugging Face 文件页请复制 Download 链接。</string>
+    <string name="settings_long_018" formatted="false">网关服务已绑定全网卡 (0.0.0.0)。同局域网设备打开【局域网 IP 链接】即可直接操作，无需 localhost 映射。</string>
+    <string name="settings_long_019" formatted="false">输入应用可读取的绝对路径，例如 /storage/emulated/0/Download/model.gguf。受 Android 存储权限限制时请改用“选择文件”。</string>
+    <string name="settings_long_020" formatted="false">通过 llama.cpp 在 Linux 沙箱内运行 GGUF 模型，推理数据不离开设备。支持 HTTPS / Hugging Face 直链断点下载，也可从手机文件选择器导入。</string>
+    <string name="settings_dynamic_system_count">%1$s 套系统</string>
+    <string name="settings_dynamic_system_mode">%1$s 套系统 · %2$s</string>
+    <string name="settings_dynamic_model_count">%1$s 个模型</string>
+    <string name="settings_dynamic_model_skill_count">%1$s 个模型 · %2$s 技能</string>
+    <string name="settings_dynamic_skill_count">%1$s 个技能</string>
+    <string name="settings_dynamic_item_count">%1$s 个</string>
+    <string name="settings_dynamic_round_count">%1$s 轮</string>
+    <string name="settings_dynamic_new_version">发现新版本 v%1$s</string>
+    <string name="settings_dynamic_downloaded">已下载：%1$s MB</string>
+    <string name="settings_dynamic_download_progress">下载中：%1$s / %2$s MB</string>
+    <string name="settings_dynamic_delete_confirm">确定删除 %1$s？</string>
+    <string name="settings_dynamic_tool_count">成功探测到 %1$s 个工具</string>
+</resources>

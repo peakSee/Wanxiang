@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f8">
+  <meta name="description" content="万象插件开发指南：本地与在线来源、manifest.json、.txplugin、ARM64 离线资源、实时进度和发布检查。">
+  <title>插件开发指南 · 万象 WanXiang</title>
+  <link rel="icon" href="assets/wanxiang-logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body class="docs-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header docs-header" data-header>
+    <a class="brand" href="index.html" aria-label="返回万象首页"><span class="brand-mark"><img src="assets/wanxiang-logo.png" alt=""></span><span class="brand-name">万象</span><span class="brand-roman">WANXIANG</span></a>
+    <button class="menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" data-menu-toggle><span></span><span></span></button>
+    <nav class="site-nav" aria-label="主导航" data-nav><a href="index.html#vision">理念</a><a href="index.html#themes">界面</a><a href="plugins.html" aria-current="page">插件教程</a><a href="templates.html">模板教程</a><a class="nav-github" href="https://github.com/peakSee/Wanxiang" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
+  </header>
+
+  <main id="main" class="docs-main">
+    <section class="docs-hero reveal">
+      <div class="section-index">WANXIANG PLUGIN GUIDE / SCHEMA 1</div>
+      <h1>把你的工具，<br>装进万象。</h1>
+      <p>用在线 Registry 或一个自包含的 <code>.txplugin</code>，把命令、SDK、脚本和本地服务带进 ARM64 Linux 沙箱。这里记录的是当前导入器与安装器的真实约束。</p>
+    </section>
+
+    <div class="docs-layout">
+      <aside class="docs-toc"><b>目录</b><a href="#sources">插件来源</a><a href="#format">包格式</a><a href="#manifest">清单字段</a><a href="#hello">Hello 示例</a><a href="#package">打包与版本</a><a href="#runtime">精简 RootFS</a><a href="#progress">进度与日志</a><a href="#limits">限制与事务</a><a href="#checklist">发布检查</a></aside>
+      <article class="docs-content">
+        <section id="sources" class="reveal">
+          <h2>01 / 本地插件与在线插件</h2>
+          <table><thead><tr><th>来源</th><th>清单</th><th>资源</th></tr></thead><tbody><tr><td>在线插件</td><td><code>REMOTE + SCRIPT</code></td><td>内置或签名 Registry</td></tr><tr><td>本地插件</td><td><code>LOCAL + LOCAL_PACKAGE</code></td><td>用户导入的 <code>.txplugin</code></td></tr></tbody></table>
+          <p>导入器会把本地包强制标记为 <code>source=LOCAL</code>、<code>offlineOnly=true</code>、<code>installMethod=LOCAL_PACKAGE</code>。本地插件与在线插件使用相同 ID 时，本地版本优先显示。</p>
+          <p class="callout"><code>permissions</code> 目前用于清单校验与界面展示，不是安装脚本的权限沙箱。插件脚本仍能修改 PRoot 内当前用户可写的路径。</p>
+        </section>
+
+        <section id="format" class="reveal">
+          <h2>02 / 插件包格式</h2>
+          <p>本地插件使用 ZIP 容器，扩展名为 <code>.txplugin</code>。根目录必须直接包含 <code>manifest.json</code> 和 <code>payload/</code>。</p>
+          <pre><code>hello-arm64.txplugin
+├── manifest.json
+└── payload/
+    ├── archives/       # SDK、NDK、Flutter 等归档
+    ├── scripts/        # 安装、验证、卸载脚本
+    ├── config/         # 配置模板
+    └── bin/            # ARM64 文件</code></pre>
+          <ul><li>只允许 <code>manifest.json</code> 和 <code>payload/</code>，不得包含绝对路径或 <code>..</code>。</li><li><code>manifest.json</code> 最大 1 MiB。</li><li>解包条目累计最大 8 GiB。</li><li>安装前，payload 会复制到 <code>/opt/wanxiang/imports/&lt;id&gt;</code>。</li></ul>
+        </section>
+
+        <section id="manifest" class="reveal">
+          <h2>03 / 编写 manifest.json</h2>
+          <pre><code>{
+  "schemaVersion": 1,
+  "id": "hello-arm64",
+  "name": "Hello ARM64",
+  "description": "WanXiang 本地插件示例",
+  "version": "1.0.0",
+  "publisher": "Your Name",
+  "category": "DEVELOPER",
+  "launchType": "command",
+  "architectures": ["ARM64"],
+  "permissions": [],
+  "source": "LOCAL",
+  "offlineOnly": true,
+  "installMethod": "LOCAL_PACKAGE",
+  "launchCommand": "hello",
+  "verifyCommand": "hello",
+  "commandLinks": ["hello"]
+}</code></pre>
+          <table><thead><tr><th>字段</th><th>当前约束</th></tr></thead><tbody><tr><td><code>id</code></td><td>小写字母、数字和连字符，长度 2～64。</td></tr><tr><td><code>version</code></td><td>必须非空，建议使用规范的 <code>x.y.z</code>。</td></tr><tr><td><code>launchType</code></td><td><code>one_shot</code>、<code>command</code>、<code>pty</code>、<code>web</code> 或 <code>service</code>。</td></tr><tr><td><code>architectures</code></td><td>必须包含 <code>ARM64</code>。</td></tr><tr><td><code>permissions</code></td><td>NETWORK、WORKSPACE_READ、WORKSPACE_WRITE、LOCAL_WEB。</td></tr><tr><td><code>commandLinks</code></td><td>默认链接到 <code>$WANXIANG_TOOL_DIR/bin/&lt;command&gt;</code>。</td></tr></tbody></table>
+        </section>
+
+        <section id="hello" class="reveal">
+          <h2>04 / 从零制作 Hello 插件</h2>
+          <p>将脚本放在 <code>payload/bin/hello</code>：</p>
+          <pre><code>#!/bin/sh
+echo "hello from WanXiang"</code></pre>
+          <p>安装步骤必须创建工具目录并恢复执行权限：</p>
+          <pre><code>"installSteps": [
+  "test -f \"$WANXIANG_PLUGIN_PAYLOAD/bin/hello\"",
+  "mkdir -p \"$WANXIANG_TOOL_DIR/bin\"",
+  "cp \"$WANXIANG_PLUGIN_PAYLOAD/bin/hello\" \"$WANXIANG_TOOL_DIR/bin/hello\"",
+  "chmod 755 \"$WANXIANG_TOOL_DIR/bin/hello\""
+]</code></pre>
+          <p>安装器提供 <code>WANXIANG_TOOL_ID</code>、<code>WANXIANG_TOOL_DIR</code>、<code>WANXIANG_TOOL_DATA</code> 和本地插件专用的 <code>WANXIANG_PLUGIN_PAYLOAD</code>。</p>
+        </section>
+
+        <section id="package" class="reveal">
+          <h2>05 / 打包、版本与快速更新</h2>
+          <h3>Windows PowerShell</h3>
+          <pre><code>Compress-Archive `
+  -LiteralPath .\hello-arm64\manifest.json, .\hello-arm64\payload `
+  -DestinationPath .\hello-arm64.zip -Force
+Move-Item .\hello-arm64.zip .\hello-arm64.txplugin</code></pre>
+          <h3>Linux / macOS</h3>
+          <pre><code>cd hello-arm64
+zip -r ../hello-arm64.txplugin manifest.json payload</code></pre>
+          <p>大型插件使用支持 Zip64 的工具；对已经压缩的 <code>.zip</code>、<code>.tar.gz</code> 和 <code>.deb</code> 条目优先使用 Store/NoCompression。</p>
+          <p class="callout"><code>.txplugin</code> 就是 ZIP。只更新清单或脚本时，可以复制旧包并替换少量 ZIP 条目，不必解压、重压缩所有大型归档；替换归档或改变压缩格式时才需要处理对应大文件。</p>
+          <ul><li>相同 <code>id + version</code> 会提示已导入，不重复解包或安装。</li><li>相同 ID 的不同版本当前会共存。</li><li>当前版本目录按字符串排序，并非完整 SemVer；修复前避免同时使用 <code>1.0.9</code> 与 <code>1.0.10</code>。</li><li>确认新包后，界面会连续执行导入与安装。</li></ul>
+        </section>
+
+        <section id="runtime" class="reveal">
+          <h2>06 / 精简 RootFS 与大型依赖</h2>
+          <p>不要假设系统带有 <code>unzip</code>、<code>xz</code>、<code>file</code>、<code>readelf</code>、<code>jq</code>、Python 或 Node。优先使用 <code>.tar.gz</code>，并通过 SHA-256 校验归档。</p>
+          <pre><code>archive="$WANXIANG_PLUGIN_PAYLOAD/archives/flutter-arm64.tar.gz"
+test -s "$archive"
+printf '%s  %s\n' "&lt;SHA256&gt;" "$archive" | sha256sum -c -
+rm -rf /opt/flutter.staging
+mkdir -p /opt/flutter.staging
+tar -xzf "$archive" -C /opt/flutter.staging</code></pre>
+          <p>不依赖 <code>file/readelf</code> 的 AArch64 检查：</p>
+          <pre><code>elf_bytes() { od -An -t x1 "$@" 2&gt;/dev/null | tr -d ' \n'; }
+is_aarch64_elf() {
+  test "$(elf_bytes -j 18 -N 2 "$1")" = "b700"
+}</code></pre>
+          <ul><li>ZIP 解压后必须显式 <code>chmod</code>。</li><li>查找可能为符号链接的工具时使用 <code>\( -type f -o -type l \)</code>。</li><li>不要把可能展开为多个路径的 glob 直接交给 <code>test -x</code>。</li><li>ARM64 架构相同不代表 Android/Bionic 与 Linux/glibc ABI 兼容。</li></ul>
+        </section>
+
+        <section id="progress" class="reveal">
+          <h2>07 / 实时百分比与安装日志</h2>
+          <p>插件脚本可以输出单调递增的结构化相对进度，应用会映射到完整安装进度条：</p>
+          <pre><code>[WANXIANG_PROGRESS:47] [EXTRACT] 正在解压 Android NDK r29
+[WANXIANG_PROGRESS:75] [COMMAND] 正在配置 ADB
+[WANXIANG_PROGRESS:98] [VERIFY] 正在执行最终验证</code></pre>
+          <p>推荐使用 <code>[COPY]</code>、<code>[EXTRACT]</code>、<code>[COMMAND]</code>、<code>[VERIFY]</code> 标签。不要启用 <code>set -x</code>，它可能把 Token、代理或环境变量写入日志。</p>
+        </section>
+
+        <section id="limits" class="reveal">
+          <h2>08 / 超时、空间与回滚边界</h2>
+          <ul><li>安装脚本默认超时 15 分钟，验证命令默认超时 60 秒。</li><li>大包需要同时容纳私有插件副本、沙盒 payload 副本、staging 和最终目录。</li><li>框架事务只快照 <code>/opt/wanxiang/tools/&lt;id&gt;</code>。</li><li><code>/opt/android-sdk</code>、<code>/opt/flutter</code>、<code>/root/.gradle</code> 等全局路径必须由插件自行 staging 和清理。</li><li>日志出现 <code>ROLLED_BACK</code> 不代表所有全局文件都已恢复。</li><li><code>verifyCommand</code> 应返回 0；不要依赖旧插件兼容用的命令入口兜底。</li></ul>
+        </section>
+
+        <section id="checklist" class="reveal">
+          <h2>09 / 发布前检查</h2>
+          <ul><li>ZIP 根目录、1 MiB manifest 和 8 GiB 解包限制均满足。</li><li>本地/在线来源、ID、版本、ARM64、启动类型与权限字段正确。</li><li>所有大文件都有固定 SHA-256。</li><li>不依赖未声明的 unzip、xz、file、readelf 等可选命令。</li><li>ELF、符号链接和 ZIP 可执行位均已处理。</li><li>断网完成导入、安装、验证和启动。</li><li>全新安装、同版本重复导入、新版本升级和卸载均验证。</li><li>结构化进度单调递增且日志不包含敏感信息。</li><li>失败时 staging 可清理，并已核算全部磁盘副本。</li></ul>
+          <a class="button button-primary" href="https://github.com/peakSee/Wanxiang/blob/main/docs/PLUGIN_DEVELOPMENT_GUIDELINES.md" target="_blank" rel="noreferrer">阅读完整规范 <span>↗</span></a>
+        </section>
+      </article>
+    </div>
+  </main>
+  <footer><div class="footer-brand"><strong>万象</strong><span>WANXIANG / LINUX AI RUNTIME</span></div><p>于万象中立极，于方寸间创世。</p><div class="footer-links"><a href="index.html">首页</a><a href="templates.html">模板教程</a><a href="https://github.com/peakSee/Wanxiang">GitHub</a></div><small>© <span data-year></span> WanXiang Project. Open source on GitHub.</small></footer>
+</body>
+</html>

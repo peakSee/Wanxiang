@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_legacy_0001" formatted="false">Close</string>
+    <string name="settings_legacy_0002" formatted="false">Cancel</string>
+    <string name="settings_legacy_0003" formatted="false">Save</string>
+    <string name="settings_legacy_0004" formatted="false">Delete</string>
+    <string name="settings_legacy_0005" formatted="false">OK</string>
+    <string name="settings_legacy_0006" formatted="false">Done</string>
+    <string name="settings_legacy_0007" formatted="false">Light</string>
+    <string name="settings_legacy_0008" formatted="false">A clean light theme for bright environments</string>
+    <string name="settings_legacy_0009" formatted="false">Dark</string>
+    <string name="settings_legacy_0010" formatted="false">Provider preset</string>
+    <string name="settings_legacy_0011" formatted="false">Base URL</string>
+    <string name="settings_legacy_0012" formatted="false">Later</string>
+    <string name="settings_legacy_0013" formatted="false">Downloading…</string>
+    <string name="settings_legacy_0014" formatted="false">WanXiang · Settings</string>
+    <string name="settings_legacy_0015" formatted="false">WanXiang</string>
+    <string name="settings_legacy_0016" formatted="false">System settings and control center</string>
+    <string name="settings_legacy_0017" formatted="false">System &amp; configuration</string>
+    <string name="settings_legacy_0018" formatted="false">Agent &amp; AI models</string>
+    <string name="settings_legacy_0019" formatted="false">Agent &amp; models</string>
+    <string name="settings_legacy_0020" formatted="false">Model profiles, tools, skills, and MCP</string>
+    <string name="settings_legacy_0021" formatted="false">Model profiles</string>
+    <string name="settings_legacy_0022" formatted="false">Model profile management</string>
+    <string name="settings_legacy_0023" formatted="false">Model profiles &amp; providers</string>
+    <string name="settings_legacy_0024" formatted="false">Configure endpoints and credentials for OpenAI, DeepSeek, Claude, and local models</string>
+    <string name="settings_legacy_0025" formatted="false">Add model</string>
+    <string name="settings_legacy_0026" formatted="false">Add model profile</string>
+    <string name="settings_legacy_0027" formatted="false">Edit model</string>
+    <string name="settings_legacy_0028" formatted="false">Edit model profile</string>
+    <string name="settings_legacy_0029" formatted="false">No model profiles</string>
+    <string name="settings_legacy_0030" formatted="false">No model configured</string>
+    <string name="settings_legacy_0031" formatted="false">Add an OpenAI, DeepSeek, Claude, or other model configuration above</string>
+    <string name="settings_legacy_0032" formatted="false">Profile name</string>
+    <string name="settings_legacy_0033" formatted="false">Name</string>
+    <string name="settings_legacy_0034" formatted="false">Model ID (select or enter)</string>
+    <string name="settings_legacy_0035" formatted="false">Save model configuration</string>
+    <string name="settings_legacy_0036" formatted="false">Refresh online models</string>
+    <string name="settings_legacy_0037" formatted="false">Refreshing…</string>
+    <string name="settings_legacy_0038" formatted="false">Test connection</string>
+    <string name="settings_legacy_0039" formatted="false">Testing…</string>
+    <string name="settings_legacy_0040" formatted="false">Connected</string>
+    <string name="settings_legacy_0041" formatted="false">Advanced settings</string>
+    <string name="settings_legacy_0042" formatted="false">Sampling, context, reasoning, tools, and headers</string>
+    <string name="settings_legacy_0043" formatted="false">API key pool (one per line)</string>
+    <string name="settings_legacy_0044" formatted="false">Keys for the same endpoint are rotated per request and switched on HTTP 429</string>
+    <string name="settings_legacy_0045" formatted="false">Requests per minute per key</string>
+    <string name="settings_legacy_0046" formatted="false">Use 0 or leave blank for unlimited; another key is preferred when the limit is reached</string>
+    <string name="settings_legacy_0047" formatted="false">Reasoning mode</string>
+    <string name="settings_legacy_0048" formatted="false">Enable deeper reasoning</string>
+    <string name="settings_legacy_0049" formatted="false">Use model default</string>
+    <string name="settings_legacy_0050" formatted="false">Function calling (Tool Call)</string>
+    <string name="settings_legacy_0051" formatted="false">Use OpenAI-compatible function calls for sandbox and extension commands</string>
+    <string name="settings_legacy_0052" formatted="false">Vision support</string>
+    <string name="settings_legacy_0053" formatted="false">Send images directly to the model; when disabled, tools read images instead</string>
+    <string name="settings_legacy_0054" formatted="false">Context token limit</string>
+    <string name="settings_legacy_0055" formatted="false">Custom headers (optional)</string>
+    <string name="settings_legacy_0056" formatted="false">Do not inject tools or system prompts</string>
+    <string name="settings_legacy_0057" formatted="false">Send only user messages without system prompts or tool definitions (for troubleshooting)</string>
+    <string name="settings_legacy_0059" formatted="false">Agent management</string>
+    <string name="settings_legacy_0060" formatted="false">Reasoning display, context compaction, and skills</string>
+    <string name="settings_legacy_0061" formatted="false">Tools &amp; plugins</string>
+    <string name="settings_legacy_0062" formatted="false">Plugin &amp; tool center</string>
+    <string name="settings_legacy_0063" formatted="false">Install AI CLIs and development environments such as Claude Code and OpenClaw</string>
+    <string name="settings_legacy_0064" formatted="false">MCP services</string>
+    <string name="settings_legacy_0065" formatted="false">Manage Model Context Protocol services such as SQLite, Git, and Fetch</string>
+    <string name="settings_legacy_0066" formatted="false">Linux containers &amp; storage</string>
+    <string name="settings_legacy_0067" formatted="false">Container and sandbox management</string>
+    <string name="settings_legacy_0068" formatted="false">Multiple distributions, host storage, and execution modes</string>
+    <string name="settings_legacy_0069" formatted="false">Linux distribution management</string>
+    <string name="settings_legacy_0070" formatted="false">Install multiple sandboxes and switch the active system</string>
+    <string name="settings_legacy_0071" formatted="false">Storage mounts &amp; sharing</string>
+    <string name="settings_legacy_0072" formatted="false">PRoot host storage mapping (-b /sdcard)</string>
+    <string name="settings_legacy_0073" formatted="false">Execution privilege mode</string>
+    <string name="settings_legacy_0074" formatted="false">PRoot userspace sandbox · Shizuku · Root</string>
+    <string name="settings_legacy_0075" formatted="false">Appearance, font size, and terminal customization</string>
+    <string name="settings_legacy_0076" formatted="false">Color theme, interface scaling, and terminal appearance</string>
+    <string name="settings_legacy_0077" formatted="false">Background reliability &amp; diagnostics</string>
+    <string name="settings_legacy_0078" formatted="false">Background reliability &amp; diagnostics</string>
+    <string name="settings_legacy_0079" formatted="false">Battery optimization &amp; background operation</string>
+    <string name="settings_legacy_0080" formatted="false">Exempt WanXiang from battery restrictions so the agent can keep running</string>
+    <string name="settings_legacy_0081" formatted="false">Android 12 child-process limit</string>
+    <string name="settings_legacy_0082" formatted="false">Remove the 32 phantom-process background limit</string>
+    <string name="settings_legacy_0083" formatted="false">Removed</string>
+    <string name="settings_legacy_0084" formatted="false">Active</string>
+    <string name="settings_legacy_0085" formatted="false">Not required</string>
+    <string name="settings_legacy_0086" formatted="false">Check pending</string>
+    <string name="settings_legacy_0087" formatted="false">Limit removed</string>
+    <string name="settings_legacy_0088" formatted="false">Limit still active</string>
+    <string name="settings_legacy_0089" formatted="false">Not required on this system</string>
+    <string name="settings_legacy_0090" formatted="false">Unable to check</string>
+    <string name="settings_legacy_0091" formatted="false">Checking</string>
+    <string name="settings_legacy_0092" formatted="false">Not checked</string>
+    <string name="settings_legacy_0093" formatted="false">Read the actual system configuration to verify whether the phantom-process limit is active.</string>
+    <string name="settings_legacy_0094" formatted="false">Remove with Shizuku / Root</string>
+    <string name="settings_legacy_0095" formatted="false">Applying</string>
+    <string name="settings_legacy_0096" formatted="false">Or run this in a computer terminal with the phone connected:</string>
+    <string name="settings_legacy_0097" formatted="false">Copy commands</string>
+    <string name="settings_legacy_0098" formatted="false">Commands copied</string>
+    <string name="settings_legacy_0099" formatted="false">Developer diagnostics</string>
+    <string name="settings_legacy_0100" formatted="false">Enable low-level health monitoring and the debug console</string>
+    <string name="settings_legacy_0101" formatted="false">Developer console</string>
+    <string name="settings_legacy_0102" formatted="false">Developer debugging &amp; console</string>
+    <string name="settings_legacy_0103" formatted="false">Inspect PRoot processes and command traces in real time</string>
+    <string name="settings_legacy_0104" formatted="false">About &amp; community</string>
+    <string name="settings_legacy_0105" formatted="false">About WanXiang</string>
+    <string name="settings_legacy_0106" formatted="false">About, updates, and community</string>
+    <string name="settings_legacy_0107" formatted="false">App version &amp; updates</string>
+    <string name="settings_legacy_0108" formatted="false">Check for updates</string>
+    <string name="settings_legacy_0109" formatted="false">Checking…</string>
+    <string name="settings_legacy_0110" formatted="false">Up to date</string>
+    <string name="settings_legacy_0111" formatted="false">Update check failed</string>
+    <string name="settings_legacy_0112" formatted="false">Check for updates at startup</string>
+    <string name="settings_legacy_0113" formatted="false">Silently check for new versions when the app starts</string>
+    <string name="settings_legacy_0114" formatted="false">Community &amp; open source</string>
+    <string name="settings_legacy_0115" formatted="false">Open-source project on GitHub</string>
+    <string name="settings_legacy_0116" formatted="false">WanXiang community</string>
+    <string name="settings_legacy_0117" formatted="false">Official QQ group</string>
+    <string name="settings_legacy_0118" formatted="false">Download from GitHub</string>
+    <string name="settings_legacy_0119" formatted="false">Running normally</string>
+    <string name="settings_legacy_0120" formatted="false">Not configured</string>
+    <string name="settings_legacy_0121" formatted="false">Active</string>
+    <string name="settings_legacy_0122" formatted="false">Set active</string>
+    <string name="settings_legacy_0123" formatted="false">Light</string>
+    <string name="settings_legacy_0124" formatted="false">Obsidian</string>
+    <string name="settings_legacy_0125" formatted="false">Follow system</string>
+    <string name="settings_legacy_0126" formatted="false">Choose appearance theme</string>
+    <string name="settings_legacy_0127" formatted="false">Choose execution mode</string>
+    <string name="settings_legacy_0128" formatted="false">System privileges</string>
+    <string name="settings_legacy_0129" formatted="false">Checking privileges and requesting authorization…</string>
+    <string name="settings_legacy_0130" formatted="false">Execution mode authorization failed</string>
+    <string name="settings_legacy_0131" formatted="false">Environment variables</string>
+    <string name="settings_legacy_0132" formatted="false">Inject encrypted variables into terminals, agents, and tools</string>
+    <string name="settings_legacy_0133" formatted="false">Add environment variable</string>
+    <string name="settings_legacy_0134" formatted="false">Edit environment variable</string>
+    <string name="settings_legacy_0135" formatted="false">Delete environment variable</string>
+    <string name="settings_legacy_0136" formatted="false">No environment variables</string>
+    <string name="settings_legacy_0137" formatted="false">Value</string>
+    <string name="settings_legacy_0138" formatted="false">New value (leave blank to keep the current value)</string>
+    <string name="settings_legacy_0139" formatted="false">Note (optional)</string>
+    <string name="settings_legacy_0140" formatted="false">Privacy mode</string>
+    <string name="settings_legacy_0141" formatted="false">Mask configured variable values before sending content to the agent</string>
+    <string name="settings_legacy_0142" formatted="false">Got it</string>
+    <string name="settings_legacy_0143" formatted="false">Copy</string>
+    <string name="settings_legacy_0144" formatted="false">Approval request</string>
+    <string name="settings_legacy_0145" formatted="false">Ask me for approval</string>
+    <string name="settings_legacy_0146" formatted="false">Failed</string>
+    <string name="settings_legacy_0147" formatted="false">Full access</string>
+    <string name="settings_text_0001" formatted="false">- Affiliate Specialization: @ Linux Sandbox O&amp;M Specialization</string>
+    <string name="settings_text_0002" formatted="false">- Failure context and log output:</string>
+    <string name="settings_text_0003" formatted="false">AI Plugin</string>
+    <string name="settings_text_0004" formatted="false">AI self-healing</string>
+    <string name="settings_text_0005" formatted="false">Agent Agent Management and Configuration</string>
+    <string name="settings_text_0006" formatted="false">Android 12 Subprocess Limit Command</string>
+    <string name="settings_text_0007" formatted="false">Android Native Linux PRoot Sandbox to AI Pairing Hub</string>
+    <string name="settings_text_0008" formatted="false">Android Native Linux PRoot Sandbox and AI Pairing Programming Hub</string>
+    <string name="settings_text_0009" formatted="false">GGUF Download URL</string>
+    <string name="settings_text_0010" formatted="false">GGUF file path</string>
+    <string name="settings_text_0011" formatted="false">JSON syntax parsing error</string>
+    <string name="settings_text_0012" formatted="false">JSON configuration copied</string>
+    <string name="settings_text_0013" formatted="false">M3 Obsidian Velvet Dark, Immersive Focus</string>
+    <string name="settings_text_0014" formatted="false">MCP JSON Configuration</string>
+    <string name="settings_text_0015" formatted="false">MCP JSON Configuration (Cursor/Claude format)</string>
+    <string name="settings_text_0016" formatted="false">MCP Plugin and Protocol Ecosystem</string>
+    <string name="settings_text_0017" formatted="false">Max Tokens needs to be a positive integer</string>
+    <string name="settings_text_0018" formatted="false">PRoot host storage mapping (-b)</string>
+    <string name="settings_text_0019" formatted="false">SHA-256 (optional)</string>
+    <string name="settings_text_0020" formatted="false">SSE Endpoint URL</string>
+    <string name="settings_text_0021" formatted="false">Temperature needs to be a number from 0.0 to 2.0</string>
+    <string name="settings_text_0022" formatted="false">Top P needs to be a number from 0.0 to 1.0</string>
+    <string name="settings_text_0023" formatted="false">Web Gateway Service</string>
+    <string name="settings_text_0024" formatted="false">llama.cpp sandbox offline model</string>
+    <string name="settings_text_0025" formatted="false">mcpServers is not a valid JSON object</string>
+    <string name="settings_text_0026" formatted="false">v0.3.0 Stable</string>
+    <string name="settings_text_0027" formatted="false">✓ Ready</string>
+    <string name="settings_text_0028" formatted="false">[Agent self-healing goal and action guide]:</string>
+    <string name="settings_text_0029" formatted="false">[System tool installation failure diagnosis and sandbox self-healing task]</string>
+    <string name="settings_text_0030" formatted="false">One-Time Orders</string>
+    <string name="settings_text_0031" formatted="false">One-click installation</string>
+    <string name="settings_text_0032" formatted="false">Context Token needs to be a positive integer</string>
+    <string name="settings_text_0033" formatted="false">Context Token Budget Cap</string>
+    <string name="settings_text_0034" formatted="false">Context Memory and Intelligent Compression</string>
+    <string name="settings_text_0035" formatted="false">Download</string>
+    <string name="settings_text_0036" formatted="false">Download Catalog</string>
+    <string name="settings_text_0037" formatted="false">Download Lines and Mirror Acceleration:</string>
+    <string name="settings_text_0038" formatted="false">The master agent independently selects roles and delegates them in parallel according to the needs of the task.</string>
+    <string name="settings_text_0039" formatted="false">Main System</string>
+    <string name="settings_text_0040" formatted="false">Interactive Terminal</string>
+    <string name="settings_text_0041" formatted="false">As the initial value of the new session only, a session already exists that can be switched individually at the top of the chat.</string>
+    <string name="settings_text_0042" formatted="false">Only distribute concurrently when explicitly requested by the user in parallel or sub-agent associations</string>
+    <string name="settings_text_0043" formatted="false">Only English, numbers, underscores and hyphens are supported</string>
+    <string name="settings_text_0044" formatted="false">Import from Path</string>
+    <string name="settings_text_0045" formatted="false">Optimize long task token consumption to prevent touching the upper limit of the model context window</string>
+    <string name="settings_text_0046" formatted="false">Transport Protocol Type</string>
+    <string name="settings_text_0047" formatted="false">Low-memory preferred · Chinese-English daily conversation</string>
+    <string name="settings_text_0048" formatted="false">Use the button above to download or import a GGUF model</string>
+    <string name="settings_text_0049" formatted="false">Ex: album photos, project source code</string>
+    <string name="settings_text_0050" formatted="false">Dependencies</string>
+    <string name="settings_text_0051" formatted="false">Fake Running</string>
+    <string name="settings_text_0052" formatted="false">Stop</string>
+    <string name="settings_text_0053" formatted="false">Failed to stop service</string>
+    <string name="settings_text_0054" formatted="false">Full stack development kit</string>
+    <string name="settings_text_0055" formatted="false">All Ecosystems</string>
+    <string name="settings_text_0056" formatted="false">All components are ready</string>
+    <string name="settings_text_0057" formatted="false">Out of memory</string>
+    <string name="settings_text_0058" formatted="false">Freezes the process as Agent reasoning or command execution stops.It is recommended to turn on the following two items:</string>
+    <string name="settings_text_0059" formatted="false">Preparing to pull image...</string>
+    <string name="settings_text_0060" formatted="false">Switching the privileged mode will automatically initiate the authorization detection; the corresponding advanced system and hardware capabilities will be released immediately after the authorization is successful.</string>
+    <string name="settings_text_0061" formatted="false">Delete Subagent</string>
+    <string name="settings_text_0062" formatted="false">Delete service</string>
+    <string name="settings_text_0063" formatted="false">Failed to delete model</string>
+    <string name="settings_text_0064" formatted="false">Join the QQ group (905971993)</string>
+    <string name="settings_text_0065" formatted="false">Assistant Name</string>
+    <string name="settings_text_0066" formatted="false">Protocol: Apache-2.0 License</string>
+    <string name="settings_text_0067" formatted="false">Single Key rpm needs to be a non-negative integer</string>
+    <string name="settings_text_0068" formatted="false">Upper limit of maximum tool rounds per round</string>
+    <string name="settings_text_0069" formatted="false">Maximum number of tool calls per round</string>
+    <string name="settings_text_0070" formatted="false">Uninstall</string>
+    <string name="settings_text_0071" formatted="false">Uninstall Tool</string>
+    <string name="settings_text_0072" formatted="false">Compression Strategy</string>
+    <string name="settings_text_0073" formatted="false">Compression Trigger Threshold (User Round)</string>
+    <string name="settings_text_0074" formatted="false">Parameters (space delimited)</string>
+    <string name="settings_text_0075" formatted="false">You can call Taihui Agent to independently troubleshoot and self-heal in the PRoot sandbox</string>
+    <string name="settings_text_0076" formatted="false">Updatable</string>
+    <string name="settings_text_0077" formatted="false">The development kit is being assembled in the background...</string>
+    <string name="settings_text_0078" formatted="false">Background battery optimization whitelist · Debug monitoring · PRoot console</string>
+    <string name="settings_text_0079" formatted="false">Inject professional specifications and operation guidance in the field into the Agent system prompt words</string>
+    <string name="settings_text_0080" formatted="false">Otherwise, the manufacturer\'s power saving strategy will still terminate the process.</string>
+    <string name="settings_text_0081" formatted="false">Start</string>
+    <string name="settings_text_0082" formatted="false">Starting</string>
+    <string name="settings_text_0083" formatted="false">Starting...</string>
+    <string name="settings_text_0084" formatted="false">Start command</string>
+    <string name="settings_text_0085" formatted="false">Startup failed</string>
+    <string name="settings_text_0086" formatted="false">Startup Type</string>
+    <string name="settings_text_0087" formatted="false">Accessible links will be shown here after launching the gateway</string>
+    <string name="settings_text_0088" formatted="false">Call self-healing</string>
+    <string name="settings_text_0089" formatted="false">Domestic Mirroring</string>
+    <string name="settings_text_0090" formatted="false">Enter custom system prompts here to support macro variables such as {{cur_datetime}}...</string>
+    <string name="settings_text_0091" formatted="false">Automatic detection and online upgrade based on GitHub Releases</string>
+    <string name="settings_text_0092" formatted="false">Copy JSON</string>
+    <string name="settings_text_0093" formatted="false">Complex and parallel tasks will be dispatched at the discretion of the master agent</string>
+    <string name="settings_text_0094" formatted="false">Multi-sandbox coexistence and dynamic switching</string>
+    <string name="settings_text_0095" formatted="false">Automatically compress the history intermediate tool output log when multiple rounds of tool calls exceed the threshold, preserving the start and end of the task and the critical state</string>
+    <string name="settings_text_0096" formatted="false">e.g. sqlite/github/fetch</string>
+    <string name="settings_text_0097" formatted="false">Install</string>
+    <string name="settings_text_0098" formatted="false">Installing</string>
+    <string name="settings_text_0099" formatted="false">Installation failed</string>
+    <string name="settings_text_0100" formatted="false">Installation successful</string>
+    <string name="settings_text_0101" formatted="false">Install New Linux Distribution</string>
+    <string name="settings_text_0102" formatted="false">Install new system</string>
+    <string name="settings_text_0103" formatted="false">Installation method</string>
+    <string name="settings_text_0104" formatted="false">Receiving installation logs...</string>
+    <string name="settings_text_0105" formatted="false">Installation Path</string>
+    <string name="settings_text_0106" formatted="false">Full shared storage (/sdcard)</string>
+    <string name="settings_text_0107" formatted="false">Customize Agent Initializer, Environment Description and Dynamic Macro Variable Injection</string>
+    <string name="settings_text_0108" formatted="false">Container mount path (Linux)</string>
+    <string name="settings_text_0109" formatted="false">Host Path (Android)</string>
+    <string name="settings_text_0110" formatted="false">Import</string>
+    <string name="settings_text_0111" formatted="false">Import or download GGUF for offline reasoning on ARM64 devices via llama.cpp</string>
+    <string name="settings_text_0112" formatted="false">LAN IP</string>
+    <string name="settings_text_0113" formatted="false">Tool ID</string>
+    <string name="settings_text_0114" formatted="false">Tool Information</string>
+    <string name="settings_text_0115" formatted="false">Tool installation/environmental self-test failed</string>
+    <string name="settings_text_0116" formatted="false">The tool has not been installed, please complete the installation in the tool center first</string>
+    <string name="settings_text_0117" formatted="false">Tool not found</string>
+    <string name="settings_text_0118" formatted="false">Tool Call Limit</string>
+    <string name="settings_text_0119" formatted="false">Downloaded</string>
+    <string name="settings_text_0120" formatted="false">Stopped</string>
+    <string name="settings_text_0121" formatted="false">Installed Plugins</string>
+    <string name="settings_text_0122" formatted="false">Model imported</string>
+    <string name="settings_text_0123" formatted="false">Ready</string>
+    <string name="settings_text_0124" formatted="false">Applied</string>
+    <string name="settings_text_0125" formatted="false">The llama.cpp inference engine installation task has been submitted, progress can be viewed in the tool center</string>
+    <string name="settings_text_0126" formatted="false">Existing model transfer task in progress</string>
+    <string name="settings_text_0127" formatted="false">Bound 0.0.0.0</string>
+    <string name="settings_text_0128" formatted="false">Exempted</string>
+    <string name="settings_text_0129" formatted="false">Exempted from battery optimization</string>
+    <string name="settings_text_0130" formatted="false">Connected</string>
+    <string name="settings_text_0131" formatted="false">Apply</string>
+    <string name="settings_text_0132" formatted="false">Update now in-app</string>
+    <string name="settings_text_0133" formatted="false">Development Kit Installation Log</string>
+    <string name="settings_text_0134" formatted="false">Dev Bundles</string>
+    <string name="settings_text_0135" formatted="false">Turn on Context Compaction</string>
+    <string name="settings_text_0136" formatted="false">Start download</string>
+    <string name="settings_text_0137" formatted="false">Start Installation</string>
+    <string name="settings_text_0138" formatted="false">Exceptions</string>
+    <string name="settings_text_0139" formatted="false">Mandatory Chinese (recommended)</string>
+    <string name="settings_text_0140" formatted="false">Mandatory model thinking process in English throughout</string>
+    <string name="settings_text_0141" formatted="false">When a session is associated with a workspace, the base command defaults to the directory as the working path (cwd)</string>
+    <string name="settings_text_0142" formatted="false">When the session history exceeds the number of rounds, smart trimming is started, and the last 4 rounds remain lossless</string>
+    <string name="settings_text_0143" formatted="false">Currently Active</string>
+    <string name="settings_text_0144" formatted="false">Mandatory pedestal</string>
+    <string name="settings_text_0145" formatted="false">Thinking and Reasoning Language Preferences</string>
+    <string name="settings_text_0146" formatted="false">Reflection Presentation</string>
+    <string name="settings_text_0147" formatted="false">Think Stream, Subagents, Skills and Plugins</string>
+    <string name="settings_text_0148" formatted="false">Thinking Flow and Execution Performance</string>
+    <string name="settings_text_0149" formatted="false">The thinking process (including the content being generated) is collapsed by default, click to expand</string>
+    <string name="settings_text_0150" formatted="false">All prebuilt Linux distributions have been installed!</string>
+    <string name="settings_text_0151" formatted="false">Mobile Small Model Recommendation</string>
+    <string name="settings_text_0152" formatted="false">Open app details (self-launch/background run)</string>
+    <string name="settings_text_0153" formatted="false">Open Terminal</string>
+    <string name="settings_text_0154" formatted="false">Execution Context</string>
+    <string name="settings_text_0155" formatted="false">Execute commands (e.g. npx/uvx/python3)</string>
+    <string name="settings_text_0156" formatted="false">Skill name (e.g. Rust compiler expert)</string>
+    <string name="settings_text_0157" formatted="false">Skills Management</string>
+    <string name="settings_text_0158" formatted="false">Mount Point Name</string>
+    <string name="settings_text_0159" formatted="false">Authorization failed</string>
+    <string name="settings_text_0160" formatted="false">Probe Tool</string>
+    <string name="settings_text_0161" formatted="false">Controlling the thought process presentation and tool execution limits of inference models such as DeepSeek</string>
+    <string name="settings_text_0162" formatted="false">Console log copied</string>
+    <string name="settings_text_0163" formatted="false">Description (optional)</string>
+    <string name="settings_text_0164" formatted="false">Prompt template content:</string>
+    <string name="settings_text_0165" formatted="false">Prompt word editing</string>
+    <string name="settings_text_0166" formatted="false">Plugins &amp; Tools Center</string>
+    <string name="settings_text_0167" formatted="false">Action</string>
+    <string name="settings_text_0168" formatted="false">Action incomplete</string>
+    <string name="settings_text_0169" formatted="false">Effects first · Suitable for phones over 6GB</string>
+    <string name="settings_text_0170" formatted="false">Data Directory</string>
+    <string name="settings_text_0171" formatted="false">Document Directory (Documents)</string>
+    <string name="settings_text_0172" formatted="false">Next-generation generic model · Currently operates in text mode</string>
+    <string name="settings_text_0173" formatted="false">New Session Default Tool Permissions</string>
+    <string name="settings_text_0174" formatted="false">Add Sub-Agent Role</string>
+    <string name="settings_text_0175" formatted="false">New Storage Mount Point</string>
+    <string name="settings_text_0176" formatted="false">Add Mount</string>
+    <string name="settings_text_0177" formatted="false">Add Custom Skill</string>
+    <string name="settings_text_0178" formatted="false">Unable to read the selected file</string>
+    <string name="settings_text_0179" formatted="false">Log</string>
+    <string name="settings_text_0180" formatted="false">Log copied to clipboard</string>
+    <string name="settings_text_0181" formatted="false">Date</string>
+    <string name="settings_text_0182" formatted="false">Date Time</string>
+    <string name="settings_text_0183" formatted="false">Time Zone</string>
+    <string name="settings_text_0184" formatted="false">Time</string>
+    <string name="settings_text_0185" formatted="false">Display Name</string>
+    <string name="settings_text_0186" formatted="false">Agent Ecology</string>
+    <string name="settings_text_0187" formatted="false">Agents &amp; Services</string>
+    <string name="settings_text_0188" formatted="false">No service logs yet.After clicking [Start] the gateway will output console information and abnormal error in this real-time.</string>
+    <string name="settings_text_0189" formatted="false">No models yet</string>
+    <string name="settings_text_0190" formatted="false">No related event logs</string>
+    <string name="settings_text_0191" formatted="false">No custom mount points yet</string>
+    <string name="settings_text_0192" formatted="false">Update</string>
+    <string name="settings_text_0193" formatted="false">Changelog:</string>
+    <string name="settings_text_0194" formatted="false">Last Development Kit Assembly</string>
+    <string name="settings_text_0195" formatted="false">Service Name</string>
+    <string name="settings_text_0196" formatted="false">Service Live Console Log</string>
+    <string name="settings_text_0197" formatted="false">Service not started</string>
+    <string name="settings_text_0198" formatted="false">Service Port</string>
+    <string name="settings_text_0199" formatted="false">Service Endpoint URL</string>
+    <string name="settings_text_0200" formatted="false">Not enabled</string>
+    <string name="settings_text_0201" formatted="false">Not Installed</string>
+    <string name="settings_text_0202" formatted="false">No valid MCP service configuration found</string>
+    <string name="settings_text_0203" formatted="false">Not Detected</string>
+    <string name="settings_text_0204" formatted="false">Not exempted</string>
+    <string name="settings_text_0205" formatted="false">Not exempt · Backstage may be frozen</string>
+    <string name="settings_text_0206" formatted="false">Not Running</string>
+    <string name="settings_text_0207" formatted="false">Local LLM</string>
+    <string name="settings_text_0208" formatted="false">Local LLM Reasoning</string>
+    <string name="settings_text_0209" formatted="false">Permissions:</string>
+    <string name="settings_text_0210" formatted="false">Permission list</string>
+    <string name="settings_text_0211" formatted="false">View Installation Log</string>
+    <string name="settings_text_0212" formatted="false">View Guiding Words (Prompt)</string>
+    <string name="settings_text_0213" formatted="false">View details</string>
+    <string name="settings_text_0214" formatted="false">Check out the new version · GitHub open source repository · Official QQ exchange group</string>
+    <string name="settings_text_0215" formatted="false">Check update failed, please check the network</string>
+    <string name="settings_text_0216" formatted="false">Detecting</string>
+    <string name="settings_text_0217" formatted="false">Model ID</string>
+    <string name="settings_text_0218" formatted="false">Model transfer failed</string>
+    <string name="settings_text_0219" formatted="false">Model discovery failed</string>
+    <string name="settings_text_0220" formatted="false">Model Name</string>
+    <string name="settings_text_0221" formatted="false">Model launch failed</string>
+    <string name="settings_text_0222" formatted="false">Model service started and set as current dialog model</string>
+    <string name="settings_text_0223" formatted="false">Model Configuration</string>
+    <string name="settings_text_0224" formatted="false">Downloading and configuring RootFS...</string>
+    <string name="settings_text_0225" formatted="false">Downloading update install package...</string>
+    <string name="settings_text_0226" formatted="false">Downloading model</string>
+    <string name="settings_text_0227" formatted="false">Installing Linux sandbox...</string>
+    <string name="settings_text_0228" formatted="false">Importing models</string>
+    <string name="settings_text_0229" formatted="false">Performing background batch assembly pipeline, you are free to switch to another page</string>
+    <string name="settings_text_0230" formatted="false">Executing Batch Atomic Assembly Pipeline...</string>
+    <string name="settings_text_0231" formatted="false">Verifying GGUF</string>
+    <string name="settings_text_0232" formatted="false">One request header per line, in the format\ "Key: Value", will be appended to the API request</string>
+    <string name="settings_text_0233" formatted="false">Sandbox runtime detection, high-risk operation safety interception and expansion capabilities</string>
+    <string name="settings_text_0234" formatted="false">Sandbox Process</string>
+    <string name="settings_text_0235" formatted="false">Sandbox connectivity and tool detection</string>
+    <string name="settings_text_0236" formatted="false">Instructions for injecting into the system (System Prompt):</string>
+    <string name="settings_text_0237" formatted="false">Add</string>
+    <string name="settings_text_0238" formatted="false">Add MCP Service</string>
+    <string name="settings_text_0239" formatted="false">Add and enable</string>
+    <string name="settings_text_0240" formatted="false">Add Mount</string>
+    <string name="settings_text_0241" formatted="false">Add service</string>
+    <string name="settings_text_0242" formatted="false">Clear</string>
+    <string name="settings_text_0243" formatted="false">Clear token</string>
+    <string name="settings_text_0244" formatted="false">Click “Add Mount” above to map any Android directory to the Linux sandbox</string>
+    <string name="settings_text_0245" formatted="false">Click in the top right corner + Add</string>
+    <string name="settings_text_0246" formatted="false">Click Quick Insert Dynamic Macro Variable:</string>
+    <string name="settings_text_0247" formatted="false">Version: v0.3.0 (Material 3 Expressive)</string>
+    <string name="settings_text_0248" formatted="false">Generate security token</string>
+    <string name="settings_text_0249" formatted="false">User Name</string>
+    <string name="settings_text_0250" formatted="false">The thinking language is autonomously determined by the model based on the context or underlying default policy</string>
+    <string name="settings_text_0251" formatted="false">Claim an exemption for battery optimization</string>
+    <string name="settings_text_0252" formatted="false">Battery optimization and background keepalives</string>
+    <string name="settings_text_0253" formatted="false">Battery level</string>
+    <string name="settings_text_0254" formatted="false">Direct Paste Claude Desktop/Cursor Standard Configuration:</string>
+    <string name="settings_text_0255" formatted="false">Confirm Uninstallation</string>
+    <string name="settings_text_0256" formatted="false">Offline</string>
+    <string name="settings_text_0257" formatted="false">Mobile Programming Assistant · Suitable for phones over 6 GB</string>
+    <string name="settings_text_0258" formatted="false">Mobile High-Quality Model · Currently Running in Text Mode</string>
+    <string name="settings_text_0259" formatted="false">Endpoint did not return an available Agent model</string>
+    <string name="settings_text_0260" formatted="false">Brief description</string>
+    <string name="settings_text_0261" formatted="false">System prompts and person-to-person customizations</string>
+    <string name="settings_text_0262" formatted="false">System Prompt Rule (System Prompt)</string>
+    <string name="settings_text_0263" formatted="false">System core resident</string>
+    <string name="settings_text_0264" formatted="false">System Version</string>
+    <string name="settings_text_0265" formatted="false">System preset quick mount</string>
+    <string name="settings_text_0266" formatted="false">Component Management and Configuration</string>
+    <string name="settings_text_0267" formatted="false">Programming Assistant</string>
+    <string name="settings_text_0268" formatted="false">Edit Sub-Agent Role</string>
+    <string name="settings_text_0269" formatted="false">Gateway Services</string>
+    <string name="settings_text_0270" formatted="false">Network Downloads</string>
+    <string name="settings_text_0271" formatted="false">Download GGUF online</string>
+    <string name="settings_text_0272" formatted="false">Group number: 905971993 · Click to add group/copy group number</string>
+    <string name="settings_text_0273" formatted="false">The newly generated thought process in the chat interface will be rendered by default</string>
+    <string name="settings_text_0274" formatted="false">Introduction to Responsibilities</string>
+    <string name="settings_text_0275" formatted="false">Auto</string>
+    <string name="settings_text_0276" formatted="false">Automatically judge and split tasks</string>
+    <string name="settings_text_0277" formatted="false">Automatic acceleration</string>
+    <string name="settings_text_0278" formatted="false">Auto-Delegation Policy</string>
+    <string name="settings_text_0279" formatted="false">Automatic injection of associated workspace paths</string>
+    <string name="settings_text_0280" formatted="false">Custom</string>
+    <string name="settings_text_0281" formatted="false">Custom Sub-Agent Roles</string>
+    <string name="settings_text_0282" formatted="false">Custom Skills</string>
+    <string name="settings_text_0283" formatted="false">Custom mount</string>
+    <string name="settings_text_0284" formatted="false">Custom Mapping Binding</string>
+    <string name="settings_text_0285" formatted="false">Custom System Prompts (System Prompts)</string>
+    <string name="settings_text_0286" formatted="false">English</string>
+    <string name="settings_text_0287" formatted="false">The assembly task is finished, you can view the full log</string>
+    <string name="settings_text_0288" formatted="false">Assembly kit</string>
+    <string name="settings_text_0289" formatted="false">Override global default System Prompt, support dynamic macro variable injection</string>
+    <string name="settings_text_0290" formatted="false">Role List</string>
+    <string name="settings_text_0291" formatted="false">Role Guidance Words</string>
+    <string name="settings_text_0292" formatted="false">Role Identification</string>
+    <string name="settings_text_0293" formatted="false">The disarm command was executed successfully and the system state was re-read.</string>
+    <string name="settings_text_0294" formatted="false">Trigger command (optional, e.g./rust)</string>
+    <string name="settings_text_0295" formatted="false">Set as Primary System</string>
+    <string name="settings_text_0296" formatted="false">Device Information</string>
+    <string name="settings_text_0297" formatted="false">Visit link</string>
+    <string name="settings_text_0298" formatted="false">Diagnostic mode is on</string>
+    <string name="settings_text_0299" formatted="false">The service is connected, but no tool definitions were returned</string>
+    <string name="settings_text_0300" formatted="false">This role identifier already exists</string>
+    <string name="settings_text_0301" formatted="false">Detail Configuration</string>
+    <string name="settings_text_0302" formatted="false">Language</string>
+    <string name="settings_text_0303" formatted="false">Please enter the HTTPS download address of GGUF first</string>
+    <string name="settings_text_0304" formatted="false">Please check the components to be assembled</string>
+    <string name="settings_text_0305" formatted="false">Please enter GGUF file path</string>
+    <string name="settings_text_0306" formatted="false">Please enter JSON content</string>
+    <string name="settings_text_0307" formatted="false">Automatically compress old messages on out-of-date (sliding window + summary memory)</string>
+    <string name="settings_text_0308" formatted="false">Lightweight Code Completion and Simple Interpretation</string>
+    <string name="settings_text_0309" formatted="false">Running</string>
+    <string name="settings_text_0310" formatted="false">Process keep alive and wake up</string>
+    <string name="settings_text_0311" formatted="false">Remote HTTP</string>
+    <string name="settings_text_0312" formatted="false">Connection failed</string>
+    <string name="settings_text_0313" formatted="false">Proactively terminate when all consecutive rounds of tool calls fail to avoid falling into a dead loop idle</string>
+    <string name="settings_text_0314" formatted="false">Continuous Failure Fuse Threshold</string>
+    <string name="settings_text_0315" formatted="false">Suitable for this machine</string>
+    <string name="settings_text_0316" formatted="false">Select the model below to start the service; it will be automatically set as the current dialog model after successful startup</string>
+    <string name="settings_text_0317" formatted="false">Select File</string>
+    <string name="settings_text_0318" formatted="false">Select the Linux system to download and install:</string>
+    <string name="settings_text_0319" formatted="false">Configuration must contain a command or url field</string>
+    <string name="settings_text_0320" formatted="false">Configuration Details</string>
+    <string name="settings_text_0321" formatted="false">Regenerate token</string>
+    <string name="settings_text_0322" formatted="false">Reset Template</string>
+    <string name="settings_text_0323" formatted="false">Retry</string>
+    <string name="settings_text_0324" formatted="false">Link copied</string>
+    <string name="settings_text_0325" formatted="false">Error</string>
+    <string name="settings_text_0326" formatted="false">Prevent the model from falling into a dead loop in complex tasks; after reaching the round, summarize the output and ask the user to step by step</string>
+    <string name="settings_text_0327" formatted="false">Prevent the model from bursting out in one go A large number of tool calls run out of context or runaway loops</string>
+    <string name="settings_text_0328" formatted="false">Auto-switch with Android device shades</string>
+    <string name="settings_text_0329" formatted="false">Self-launch with app</string>
+    <string name="settings_text_0330" formatted="false">The llama.cpp inference engine needs to be installed first</string>
+    <string name="settings_text_0331" formatted="false">Presets</string>
+    <string name="settings_text_0332" formatted="false">Validate Commands</string>
+    <string name="settings_text_0333" formatted="false">Default Expanded Model Thinking Process</string>
+    <string name="settings_text_0334" formatted="false">📋 JSON Import</string>
+    <string name="settings_text_0335" formatted="false">📝 Form Mode</string>
+    <string name="settings_text_0336" formatted="false">🧠 AI self-healing</string>
+    <string name="settings_long_001" formatted="false">, target.sizeBytes.toDouble ()/(1024 * 1024)} MB space). The code file in the/workspace workspace will not be affected in any way.</string>
+    <string name="settings_long_002" formatted="false">1. Analyze the above PRoot sandbox for failures and errors (such as dpkg dependency corruption, lock residuals, blocked network downloads, missing commandLinks softlinks, or missing environment);</string>
+    <string name="settings_long_003" formatted="false">2. Directly call the base tool to execute targeted repair commands (such as cleaning up the/var/lib/dpkg lock, dpkg --configure -a, apt-get --fix-broken install, manually pulling or patching soft links from alternate sources);</string>
+    <string name="settings_long_004" formatted="false">Android 12 + monitors app-derived subprocesses and may terminate PRoot, compiler, or Agent tasks after the system limit is exceeded.The child process limit is lifted here, not the number of Java/Kotlin threads.</string>
+    <string name="settings_long_005" formatted="false">MCP is an open standard model context protocol.After opening, Taihui will start the corresponding Stdio service or connect the local SSE endpoint in the PRoot sandbox, and dynamically inject professional tool capabilities into the intelligent agent.</string>
+    <string name="settings_long_006" formatted="false">https://github.com/peakSee/Wanxiang · Welcome Star Support</string>
+    <string name="settings_long_007" formatted="false">Taihui will start the front desk service and hold the CPU process lock during Agent execution, but the system battery optimization may still be behind the screen.</string>
+    <string name="settings_long_008" formatted="false">WanXiang supports multiple Linux systems side by side. Every system automatically mounts the /workspace projects; /sdcard external storage is injected according to the toggles in Storage Mounts &amp; Sharing. Each distro keeps its own package manager and software ecosystem fully isolated.</string>
+    <string name="settings_long_009" formatted="false">You have not configured any model archives, you can add Claude, OpenAI or DeepSeek → models by going to [Setting up model archive management]</string>
+    <string name="settings_long_010" formatted="false">Mounts only affect processes inside the Linux sandbox (terminal, agent, builds and background services), not the file explorer, which always accesses host storage directly. Mounts are injected at session startup; only new terminals and builds pick up changes. Full read-write access additionally requires the "All files access" permission in system settings.</string>
+    <string name="settings_long_011" formatted="false">Use Chinese throughout the strongly constrained model thinking process (solve the problem of DeepSeek/Claude thinking about running English)</string>
+    <string name="settings_long_012" formatted="false">Tip: Xiaomi/Huawei/OPPO and other vendor systems also need to manually allow "autostart" and "background operation" in the application details.</string>
+    <string name="settings_long_013" formatted="false">The service has not been started yet. Please click Start in the [Gateway Service] card first. After the startup is successful, the accessible link will be displayed here.Tokens can be generated in advance and injected automatically at startup.</string>
+    <string name="settings_long_014" formatted="false">Architecture: aarch64 · chroot-less user-space virtualization</string>
+    <string name="settings_long_015" formatted="false">Effective when the model is not individually configured with contextTokens; long session history over budget will automatically collapse earlier content</string>
+    <string name="settings_long_017" formatted="false">Paste the HTTPS Straight Chain ending in .gguf.Copy the Download link from the Hugging Face file page.</string>
+    <string name="settings_long_018" formatted="false">The gateway service has bound the full NIC (0.0.0.0).Open the [LAN IP Link] with the LAN device to operate directly, without the need for localhost mapping.</string>
+    <string name="settings_long_019" formatted="false">Enter an absolute path that the app can read, such as/storage/emulated/0/Download/model.gguf.Use Select Files instead when restricted by Android storage permissions.</string>
+    <string name="settings_long_020" formatted="false">Run the GGUF model inside the Linux sandbox via llama.cpp to reason about the data without leaving the device.Support HTTPS/Hugging Face direct link breakpoint download, can also be imported from the phone file selector.</string>
+    <string name="settings_dynamic_system_count">%1$s systems</string>
+    <string name="settings_dynamic_system_mode">%1$s systems · %2$s</string>
+    <string name="settings_dynamic_model_count">%1$s models</string>
+    <string name="settings_dynamic_model_skill_count">%1$s models · %2$s skills</string>
+    <string name="settings_dynamic_skill_count">%1$s skills</string>
+    <string name="settings_dynamic_item_count">%1$s items</string>
+    <string name="settings_dynamic_round_count">%1$s rounds</string>
+    <string name="settings_dynamic_new_version">New version available: v%1$s</string>
+    <string name="settings_dynamic_downloaded">Downloaded: %1$s MB</string>
+    <string name="settings_dynamic_download_progress">Downloading: %1$s / %2$s MB</string>
+    <string name="settings_dynamic_delete_confirm">Delete %1$s?</string>
+    <string name="settings_dynamic_tool_count">Detected %1$s tools</string>
+</resources>

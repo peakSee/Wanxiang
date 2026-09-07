@@ -1,0 +1,142 @@
+#!/bin/sh
+# Lightweight console/Agent guard. The authoritative preflight is
+# /opt/wanxiang/scripts/wanxiang-build.sh.
+set -u
+command_name="${1:-help}"
+[ "$#" -gt 0 ] && shift
+GRADLE_HOME="${GRADLE_HOME:-/opt/gradle-8.14.2}"
+BUILD_ENGINE=/opt/wanxiang/scripts/wanxiang-build.sh
+fail() { printf '%s\n' "==> [WanXiang Guard] ❌ $*" >&2; exit "${2:-125}"; }
+load_android_environment() {
+    requested_java_home="${JAVA_HOME:-}"
+    requested_android_home="${ANDROID_HOME:-}"
+    requested_android_sdk_root="${ANDROID_SDK_ROOT:-}"
+    requested_gradle_home="${GRADLE_HOME:-}"
+    requested_flutter_home="${FLUTTER_HOME:-}"
+    requested_ndk_path="${WANXIANG_NDK_PATH:-}"
+    requested_android_ndk_home="${ANDROID_NDK_HOME:-}"
+    requested_aapt2_path="${WANXIANG_AAPT2_PATH:-}"
+    requested_cmake_home="${WANXIANG_CMAKE_HOME:-}"
+    requested_ninja_home="${WANXIANG_NINJA_HOME:-}"
+    requested_gradle_user_home="${GRADLE_USER_HOME:-}"
+    requested_pub_cache="${PUB_CACHE:-}"
+    requested_tool_dir="${WANXIANG_TOOL_DIR:-}"
+    if [ -f /etc/profile.d/wanxiang-android.sh ]; then . /etc/profile.d/wanxiang-android.sh; fi
+    [ -z "$requested_java_home" ] || JAVA_HOME="$requested_java_home"
+    [ -z "$requested_android_home" ] || ANDROID_HOME="$requested_android_home"
+    [ -z "$requested_android_sdk_root" ] || ANDROID_SDK_ROOT="$requested_android_sdk_root"
+    [ -z "$requested_gradle_home" ] || GRADLE_HOME="$requested_gradle_home"
+    [ -z "$requested_flutter_home" ] || FLUTTER_HOME="$requested_flutter_home"
+    [ -z "$requested_ndk_path" ] || WANXIANG_NDK_PATH="$requested_ndk_path"
+    [ -z "$requested_android_ndk_home" ] || ANDROID_NDK_HOME="$requested_android_ndk_home"
+    [ -z "$requested_aapt2_path" ] || WANXIANG_AAPT2_PATH="$requested_aapt2_path"
+    [ -z "$requested_cmake_home" ] || WANXIANG_CMAKE_HOME="$requested_cmake_home"
+    [ -z "$requested_ninja_home" ] || WANXIANG_NINJA_HOME="$requested_ninja_home"
+    [ -z "$requested_gradle_user_home" ] || GRADLE_USER_HOME="$requested_gradle_user_home"
+    [ -z "$requested_pub_cache" ] || PUB_CACHE="$requested_pub_cache"
+    [ -z "$requested_tool_dir" ] || WANXIANG_TOOL_DIR="$requested_tool_dir"
+    export ANDROID_HOME="${ANDROID_HOME:-/opt/android-sdk}"
+    export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+    export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-${WANXIANG_NDK_PATH:-/opt/wanxiang/toolchains/android/ndk}}"
+    export ANDROID_NDK_ROOT="${ANDROID_NDK_ROOT:-$ANDROID_NDK_HOME}"
+    export WANXIANG_NDK_PATH="${WANXIANG_NDK_PATH:-$ANDROID_NDK_HOME}"
+    export FLUTTER_HOME="${FLUTTER_HOME:-/opt/flutter}"
+    export WANXIANG_CMAKE_HOME="${WANXIANG_CMAKE_HOME:-/opt/wanxiang/tools/android-suite-offline/cmake}"
+    export WANXIANG_NINJA_HOME="${WANXIANG_NINJA_HOME:-/opt/wanxiang/tools/android-suite-offline/bin}"
+    export WANXIANG_TOOL_DIR="${WANXIANG_TOOL_DIR:-/opt/wanxiang/tools}"
+    export WANXIANG_AAPT2_PATH="${WANXIANG_AAPT2_PATH:-$ANDROID_HOME/build-tools/35.0.0/aapt2}"
+}
+is_android_project() {
+    [ -f pubspec.yaml ] && [ -d android ] && return 0
+    [ -f local.properties ] && return 0
+    for file in build.gradle build.gradle.kts settings.gradle settings.gradle.kts app/build.gradle app/build.gradle.kts; do
+        [ -f "$file" ] || continue
+        grep -Eq 'com\.android\.(application|library)|^[[:space:]]*android[[:space:]]*\{' "$file" 2>/dev/null && return 0
+    done
+    return 1
+}
+is_information_only() {
+    [ "$#" -eq 0 ] && return 0
+    for argument in "$@"; do
+        case "$argument" in -v|--version|-h|--help|help|tasks|properties|projects|dependencies|dependencyInsight|components|model|wrapper|init|-*) ;; *) return 1 ;; esac
+    done
+    return 0
+}
+doctor_arm_project() {
+    [ -x "$BUILD_ENGINE" ] || fail "构建自检入口不存在：$BUILD_ENGINE"
+    /bin/sh "$BUILD_ENGINE" doctor "$PWD" || exit $?
+    load_android_environment
+}
+exec_fixed_gradle() {
+    [ -x "$GRADLE_HOME/bin/gradle" ] || [ -d "$GRADLE_HOME/lib" ] || fail "缺少 Gradle: $GRADLE_HOME"
+    export WANXIANG_BUILD_GUARD_BYPASS=1
+    "$GRADLE_HOME/bin/gradle" "$@"
+}
+verify_recent_apk() {
+    verifier=/opt/wanxiang/scripts/wanxiang-build-verify.sh
+    [ -x "$verifier" ] || fail "缺少 APK ABI 验证器"
+    apk=$(find "$PWD" -type f -name '*.apk' ! -name '*unaligned*' -exec ls -t {} + 2>/dev/null | head -n 1)
+    [ -n "$apk" ] || fail "构建完成但未找到 APK 产物"
+    /bin/sh "$verifier" "$apk" || fail "APK 产物验证失败，拒绝继续"
+}
+run_gradle() {
+    mode="$1"; shift
+    for argument in "$@"; do
+        [ "$argument" = "--offline" ] && export WANXIANG_OFFLINE=1
+    done
+    if is_android_project && ! is_information_only "$@"; then
+        doctor_arm_project
+        exec_fixed_gradle "$@" --console=plain --no-daemon -Dorg.gradle.native=false -Pandroid.builder.sdkDownload=false "-Pandroid.aapt2FromMavenOverride=$WANXIANG_AAPT2_PATH"
+        status=$?
+        [ "$status" -eq 0 ] || exit "$status"
+        verify_recent_apk
+        exit 0
+    fi
+    if [ "$mode" = gradlew ] && [ -x ./gradlew ]; then
+        export WANXIANG_BUILD_GUARD_BYPASS=1
+        ./gradlew "$@"
+        status=$?
+        [ "$status" -eq 0 ] || exit "$status"
+        is_android_project && ! is_information_only "$@" && verify_recent_apk
+        exit 0
+    fi
+    exec_fixed_gradle "$@"
+    exit $?
+}
+run_flutter() {
+    for argument in "$@"; do
+        [ "$argument" = "--offline" ] && export WANXIANG_OFFLINE=1
+    done
+    load_android_environment
+    flutter_bin="$FLUTTER_HOME/bin/flutter"
+    [ -x "$flutter_bin" ] || fail "Flutter SDK 未安装: $FLUTTER_HOME"
+    if [ "${1:-}" = build ]; then
+        case "${2:-}" in
+            apk|appbundle)
+                doctor_arm_project
+                has_target=0
+                for argument in "$@"; do case "$argument" in --target-platform|--target-platform=*) has_target=1 ;; esac; done
+                export WANXIANG_BUILD_GUARD_BYPASS=1
+                if [ "$has_target" -eq 0 ]; then
+                    printf '%s\n' '==> [WanXiang Guard] 未指定 APK ABI，强制使用 android-arm64'
+                    "$flutter_bin" "$@" --target-platform android-arm64
+                else
+                    "$flutter_bin" "$@"
+                fi
+                status=$?
+                [ "$status" -eq 0 ] || exit "$status"
+                verify_recent_apk
+                exit 0
+                ;;
+        esac
+    fi
+    export WANXIANG_BUILD_GUARD_BYPASS=1
+    exec "$flutter_bin" "$@"
+}
+case "$command_name" in
+    gradle|gradlew) run_gradle "$command_name" "$@" ;;
+    flutter) run_flutter "$@" ;;
+    wanxiang-build) exec /bin/sh "$BUILD_ENGINE" "$@" ;;
+    help|-h|--help) printf '%s\n' 'WanXiang 控制台构建入口：' '  gradle/gradlew <任务>                       Android 工程自动先自检' '  flutter build apk|appbundle                 自动先自检并默认 arm64' '  wanxiang-build doctor <项目目录>               只执行环境自检' '  wanxiang-build android <项目> <任务> [--qemu]  App 专用构建入口' ;;
+    *) fail "未知入口：$command_name" ;;
+esac

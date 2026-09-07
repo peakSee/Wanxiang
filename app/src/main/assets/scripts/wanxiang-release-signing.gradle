@@ -1,0 +1,33 @@
+// Managed by WanXiang. Release signing for sandbox Android/Flutter builds.
+// Activated only when the host app exports the WANXIANG_KEYSTORE_* environment
+// variables before launching the build; debug builds see no change at all.
+def wanxiangStoreFile = System.getenv('WANXIANG_KEYSTORE_FILE')
+def wanxiangStorePassword = System.getenv('WANXIANG_KEYSTORE_STORE_PASSWORD')
+def wanxiangKeyAlias = System.getenv('WANXIANG_KEYSTORE_KEY_ALIAS')
+def wanxiangKeyPassword = System.getenv('WANXIANG_KEYSTORE_KEY_PASSWORD')
+
+if (wanxiangStoreFile && wanxiangStorePassword && wanxiangKeyAlias && wanxiangKeyPassword) {
+    gradle.afterProject { project ->
+        if (!project.pluginManager.hasPlugin('com.android.application')) {
+            return
+        }
+        def androidExtension = project.extensions.findByName('android')
+        if (androidExtension == null) {
+            return
+        }
+        def keystoreFile = new File(wanxiangStoreFile)
+        if (!keystoreFile.isFile()) {
+            project.logger.warn('WanXiang release signing skipped, keystore missing: ' + wanxiangStoreFile)
+            return
+        }
+        def signingConfig = androidExtension.signingConfigs.maybeCreate('wanxiangRelease')
+        signingConfig.storeFile = keystoreFile
+        signingConfig.storePassword = wanxiangStorePassword
+        signingConfig.keyAlias = wanxiangKeyAlias
+        signingConfig.keyPassword = wanxiangKeyPassword
+        // Force the release build type onto the WanXiang managed key, even if the
+        // project already declares its own signingConfig for release.
+        androidExtension.buildTypes.getByName('release').signingConfig = signingConfig
+        project.logger.lifecycle('WanXiang release signing enabled: ' + wanxiangStoreFile)
+    }
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="components_nav_home">万象</string>
+    <string name="components_nav_agent">智枢</string>
+    <string name="components_nav_workspace">工坊</string>
+    <string name="components_nav_settings">乾坤</string>
+    <string name="components_back">返回</string>
+    <string name="components_wanxiang_logo">万象 Logo</string>
+    <string name="components_close">关闭</string>
+    <string name="components_guide_confirm">知道了</string>
+    <!-- 底部导航副标题 -->
+    <string name="components_nav_subtitle_home">创世</string>
+    <string name="components_nav_subtitle_agent">智能体</string>
+    <string name="components_nav_subtitle_workspace">工作区</string>
+    <string name="components_nav_subtitle_settings">设置</string>
+</resources>

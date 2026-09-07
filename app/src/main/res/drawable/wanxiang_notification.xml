@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome notification icon derived from wanxiang_splash.xml. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M512,150 L792,335 L648,430 L512,520 L376,430 L232,335 Z M512,210 L324,335 L421,399 L512,459 L603,399 L700,335 Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M232,370 L376,466 L448,514 L448,582 L498,616 L498,870 L232,694 Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M792,370 L648,466 L576,514 L576,582 L526,616 L526,870 L792,694 Z" />
+</vector>

@@ -1,0 +1,14 @@
+package {{packageName}}
+
+import de.robv.android.xposed.IXposedHookLoadPackage
+import de.robv.android.xposed.XposedBridge
+import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+
+class MainHook : IXposedHookLoadPackage {
+    override fun handleLoadPackage(loadPackageParam: LoadPackageParam) {
+        if (loadPackageParam.packageName != "{{targetPackage}}") return
+
+        XposedBridge.log("{{appName}} loaded in ${loadPackageParam.packageName}")
+        // Add hooks for the target application here.
+    }
+}

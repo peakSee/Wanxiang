@@ -1,0 +1,72 @@
+name: Build WanXiangDev APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional Release Tag (e.g. v0.2.1-dev)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    name: Build & Package WanXiangDev
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Build WanXiangDev APK
+        env:
+          WANXIANG_DEV_BUILD: "1"
+        run: |
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Identify and Rename Output APK
+        run: |
+          mkdir -p output
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -f "$APK_PATH" ]; then
+            cp "$APK_PATH" output/WanXiangDev-arm64-debug.apk
+            sha256sum output/WanXiangDev-arm64-debug.apk > output/WanXiangDev-arm64-debug.apk.sha256
+            echo "APK ready: output/WanXiangDev-arm64-debug.apk"
+          else
+            echo "Error: No APK generated!" && exit 1
+          fi
+
+      - name: Upload WanXiangDev APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wanxiangdev-apk
+          path: output/*
+          retention-days: 7
+
+      - name: Create GitHub Release (Optional)
+        if: "${{ github.event.inputs.release_tag != '' }}"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ github.event.inputs.release_tag }}"
+          name: "WanXiangDev Preview ${{ github.event.inputs.release_tag }}"
+          files: output/*
+          draft: false
+          prerelease: true

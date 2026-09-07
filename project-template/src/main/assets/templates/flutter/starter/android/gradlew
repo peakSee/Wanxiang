@@ -1,0 +1,17 @@
+#!/bin/sh
+# WanXiang Flutter Android 宿主：优先复用插件装配期已装好的本地 Gradle 8.14.2，
+# 避免 Gradle Wrapper 从 services.gradle.org 下载发行版（国内网络易超时/被重置）。
+DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -x "${GRADLE_HOME:-/opt/gradle-8.14.2}/bin/gradle" ]; then
+    exec "${GRADLE_HOME:-/opt/gradle-8.14.2}/bin/gradle" "$@"
+elif [ -x /opt/gradle-8.7/bin/gradle ]; then
+    exec /opt/gradle-8.7/bin/gradle "$@"
+elif [ -f "$DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+    exec java -jar "$DIR/gradle/wrapper/gradle-wrapper.jar" "$@"
+elif [ -x /usr/local/bin/gradle ]; then
+    exec /usr/local/bin/gradle "$@"
+elif command -v gradle >/dev/null 2>&1; then
+    exec gradle "$@"
+else
+    exec /usr/bin/gradle "$@"
+fi

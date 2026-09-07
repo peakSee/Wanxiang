@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /bin/sh /opt/wanxiang/bin/wanxiang-build-guard wanxiang-build "$@"

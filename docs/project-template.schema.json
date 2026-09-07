@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wanxiang.local/schema/project-template-v1.json",
+  "title": "WanXiang Project Template Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "version"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$", "not": { "pattern": "^builtin\\." } },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "default": "" },
+    "projectType": { "enum": ["ANDROID", "FLUTTER", "GENERAL"], "default": "GENERAL" },
+    "category": { "$ref": "#/$defs/category" },
+    "previewImage": { "type": "string", "default": "", "description": "Optional 270x270 (1:1) image path inside the template package" },
+    "variables": { "type": "array", "items": { "$ref": "#/$defs/variable" }, "default": [] },
+    "hooks": { "$ref": "#/$defs/hooks" },
+    "validation": { "$ref": "#/$defs/validation" }
+  },
+  "$defs": {
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$", "default": "general" },
+        "name": { "type": "string", "default": "General" },
+        "sortOrder": { "type": "integer", "default": 0 }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": { "value": { "type": "string" }, "label": { "type": "string", "default": "" } }
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+        "label": { "type": "string", "default": "" },
+        "description": { "type": "string", "default": "" },
+        "prompt": { "type": "boolean", "default": false },
+        "inputType": { "enum": ["TEXT", "MULTILINE", "NUMBER", "BOOLEAN", "SELECT", "SECRET"], "default": "TEXT" },
+        "placeholder": { "type": "string", "default": "" },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" }, "default": [] },
+        "required": { "type": "boolean", "default": true },
+        "defaultValue": { "type": "string", "default": "" },
+        "validationRegex": { "type": "string", "default": "" }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "beforeCreate": { "type": "string", "pattern": "^(|template-hooks/[^/].*)$", "default": "" },
+        "afterCreate": { "type": "string", "pattern": "^(|template-hooks/[^/].*)$", "default": "" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requiredFiles": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "default": [] },
+        "forbiddenFiles": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "default": [] },
+        "contentRules": { "type": "array", "items": { "$ref": "#/$defs/contentRule" }, "default": [] }
+      }
+    },
+    "contentRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "equals": { "type": "string", "default": "" },
+        "contains": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "excludes": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    }
+  }
+}

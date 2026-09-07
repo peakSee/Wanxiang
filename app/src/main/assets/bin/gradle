@@ -1,0 +1,11 @@
+#!/bin/sh
+# WanXiang-managed Gradle entry. Set WANXIANG_BUILD_GUARD_BYPASS=1 only for a
+# deliberate non-Android diagnostic invocation.
+if [ "${WANXIANG_BUILD_GUARD_BYPASS:-0}" = "1" ] || [ "${WANXIANG_BUILD_ENGINE:-0}" = "1" ]; then
+    gradle_home="${GRADLE_HOME:-/opt/gradle-8.14.2}"
+    if [ -x "$gradle_home/bin/gradle" ]; then
+        exec "$gradle_home/bin/gradle" "$@"
+    fi
+    exec /usr/bin/gradle "$@"
+fi
+exec /bin/sh /opt/wanxiang/bin/wanxiang-build-guard gradle "$@"

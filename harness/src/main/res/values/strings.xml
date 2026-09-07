@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="harness_prompt_tool_call_disabled">## 工具禁用说明\n当前会话已禁用工具调用：请直接回答用户问题，不要尝试调用任何工具（read / write / edit / base 等均不可用）。</string>
+    <string name="harness_prompt_thinking_language_zh">## 思考与推理语言强约束 (Thinking Language Policy)\n重要：你的内部思考推导过程必须全程严格使用中文进行分析与推导，禁止输出非必要的英文！</string>
+    <string name="harness_prompt_thinking_language_en">## Thinking Language Policy\nImportant: Your internal reasoning and thinking process must be conducted strictly in English.</string>
+    <string name="harness_prompt_subagent_none">## 子智能体委派\n当前没有启用的子智能体角色，不要调用 invoke_subagent。</string>
+    <string name="harness_prompt_subagent_lane_system">你是隔离 Lane 中运行的子智能体。聚焦指派任务，不得派发更多子智能体。</string>
+    <string name="harness_prompt_subagent_trigger_manual">仅当用户明确要求并行处理、分头检查或使用子智能体时调用 invoke_subagent；否则由主智能体直接完成。</string>
+    <string name="harness_prompt_privilege_unavailable">## Android 宿主权限\n权限状态暂不可读取；不要调用 host exec，可先调用 host(status)。</string>
+    <string name="harness_prompt_privilege_proot">## Android 宿主权限\n当前实际生效模式为 PRoot/普通应用权限。host exec 不可用；系统设置、pm、input 等宿主操作不要用 base 冒充执行，可提示用户先到设置授权 Shizuku 或 Root。抓取日志（logcat）直接使用无线 ADB（host logcat 或 logcat-grabber），无需 Shizuku/Root。</string>
+    <string name="harness_prompt_privilege_render_failed">## Android 宿主权限\n特权能力章节加载失败，实际可用性未知：先调用 host(status) 实测；返回错误则告知用户到设置页重新授权 Shizuku 或 Root。不要用 base 执行宿主命令。</string>
+</resources>

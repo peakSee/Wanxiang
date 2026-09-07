@@ -1,0 +1,69 @@
+// Managed by WanXiang. Prefer the active toolchain environment and fall back to
+// the standard local offline-suite path.
+def wanxiangNdkPath = System.getenv('WANXIANG_NDK_PATH') ?:
+    System.getenv('ANDROID_NDK_HOME') ?:
+    '/opt/wanxiang/toolchains/android/ndk'
+def wanxiangNdkProperties = new Properties()
+def wanxiangNdkSourceProperties = new File(wanxiangNdkPath, 'source.properties')
+if (wanxiangNdkSourceProperties.isFile()) {
+    wanxiangNdkSourceProperties.withInputStream { wanxiangNdkProperties.load(it) }
+}
+def wanxiangNdkVersion = wanxiangNdkProperties.getProperty('Pkg.Revision', '').trim()
+def wanxiangAndroidPluginIds = [
+    'com.android.application',
+    'com.android.library',
+    'com.android.dynamic-feature',
+    'com.android.test',
+    'com.android.kotlin.multiplatform.library'
+]
+
+gradle.beforeProject { project ->
+    wanxiangAndroidPluginIds.each { pluginId ->
+        project.pluginManager.withPlugin(pluginId) {
+            def androidExtension = project.extensions.findByName('android')
+            if (androidExtension != null && androidExtension.hasProperty('ndkPath')) {
+                androidExtension.ndkPath = wanxiangNdkPath
+                project.logger.info('WanXiang ARM64 NDK: ' + wanxiangNdkPath)
+            }
+        }
+    }
+}
+
+gradle.projectsEvaluated {
+    gradle.rootProject.allprojects.each { project ->
+        def androidExtension = project.extensions.findByName('android')
+        if (androidExtension != null && androidExtension.hasProperty('ndkPath')) {
+            def effective = androidExtension.ndkPath == null ? '' :
+                new File(androidExtension.ndkPath.toString()).canonicalPath
+            def expected = new File(wanxiangNdkPath).canonicalPath
+            if (effective != expected) {
+                throw new GradleException(
+                    'WanXiang blocked Android NDK path drift: ' + effective + ' != ' + expected
+                )
+            }
+            if (wanxiangNdkVersion && androidExtension.hasProperty('ndkVersion')) {
+                def declared = androidExtension.ndkVersion == null ? '' : androidExtension.ndkVersion.toString()
+            if (declared && wanxiangNdkVersion && declared != wanxiangNdkVersion) {
+                project.logger.warn('WanXiang aligning project NDK version ' + declared + ' -> ' + wanxiangNdkVersion)
+                androidExtension.ndkVersion = wanxiangNdkVersion
+            }
+            }
+            // ARM64-only sandbox: AAR dependencies (e.g. androidx.graphics.path)
+            // bundle x86/x86_64 native libraries and AGP packages every ABI
+            // present in the dependency graph unless abiFilters narrows it.
+            // Strip x86 ABIs here; when the project declares no filter at all,
+            // pin arm64-v8a so the final APK matches the host device.
+            try {
+                def ndkOptions = androidExtension.defaultConfig.ndk
+                def abiFilters = ndkOptions.abiFilters
+                abiFilters.removeAll(['x86', 'x86_64', 'armeabi-v7a'])
+                if (abiFilters.isEmpty()) {
+                    abiFilters.add('arm64-v8a')
+                }
+                project.logger.info('WanXiang ARM64 ABI filters: ' + abiFilters)
+            } catch (Throwable t) {
+                project.logger.warn('WanXiang ABI filter injection skipped: ' + t.message)
+            }
+        }
+    }
+}

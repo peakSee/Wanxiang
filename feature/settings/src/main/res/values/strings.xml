@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_language_title">应用语言</string>
+    <string name="settings_language_system">跟随系统语言</string>
+    <string name="settings_language_system_description">根据 Android 设备语言自动选择中文或英文</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_chinese_description">使用简体中文显示应用界面</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_english_description">使用英文显示应用界面</string>
+    <string name="settings_appearance_title">外观与终端</string>
+    <string name="settings_terminal_preview">终端实时效果预览</string>
+    <string name="settings_terminal_appearance">终端外观与控制台</string>
+    <string name="settings_terminal_color_scheme">终端配色方案</string>
+    <string name="settings_terminal_theme_obsidian">曜石黑</string>
+    <string name="settings_terminal_theme_matrix">黑客绿</string>
+    <string name="settings_terminal_theme_amber">复古琥珀</string>
+    <string name="settings_terminal_theme_aurora">深海极光</string>
+    <string name="settings_terminal_font_size">终端字体大小</string>
+    <string name="settings_terminal_haptics">终端触觉按键反馈</string>
+    <string name="settings_terminal_haptics_description">点击辅助按键条与回车时产生微弱触觉震动</string>
+    <string name="settings_theme_style">主题风格</string>
+    <string name="settings_theme_xuantong">玄同 · Xuantong</string>
+    <string name="settings_theme_xuantong_description">默认主题：源自《老子》「万物同归于玄」，曜石夜空与温润素白</string>
+    <string name="settings_theme_chengming">澄明 · Chengming</string>
+    <string name="settings_theme_chengming_description">液态玻璃：毛玻璃折射 + 流光 Aurora，通透清澈</string>
+    <string name="settings_chengming_background">澄明背景</string>
+    <string name="settings_background_none">无背景（默认）</string>
+    <string name="settings_background_custom">使用用户图片作为玻璃折射源</string>
+    <string name="settings_background_upload">上传图片</string>
+    <string name="settings_background_change">更换图片</string>
+    <string name="settings_background_remove">移除背景</string>
+    <string name="settings_background_preview">澄明背景预览</string>
+    <string name="settings_color_mode">深浅色模式</string>
+    <string name="settings_color_system">跟随系统 (Auto)</string>
+    <string name="settings_color_system_description">随 Android 设备深浅色自动无缝切换</string>
+    <string name="settings_color_light">素白浅色 (Light)</string>
+    <string name="settings_color_light_description">明澈素雅，适合日间光线明亮环境</string>
+    <string name="settings_color_dark">深邃曜石 (Dark)</string>
+    <string name="settings_color_dark_description">Material 3 曜石天鹅绒暗色，沉浸专注</string>
+    <string name="settings_interface_scale">页面缩放</string>
+    <string name="settings_scale">缩放比例</string>
+    <string name="settings_terminal_preview_command">wanxiang@debian:~$ echo \"万象沙箱运行正常 🚀\"</string>
+    <string name="settings_terminal_preview_output">万象沙箱运行正常 🚀</string>
+    <string name="settings_tool_center_empty_category_title">该分类下暂无工具</string>
+    <string name="settings_tool_center_empty_category_subtitle">换一个分类，或稍后刷新插件目录再试</string>
+</resources>

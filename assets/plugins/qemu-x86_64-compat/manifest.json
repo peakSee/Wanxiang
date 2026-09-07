@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "qemu-x86-64-compat",
+  "name": "QEMU x86_64 兼容构建环境",
+  "description": "可选的 ARM64 QEMU 用户态模拟与隔离 x86_64 Linux RootFS，用于第三方项目的兼容构建。",
+  "version": "1.0.0",
+  "publisher": "WanXiang",
+  "category": "DEVELOPER_TOOL",
+  "architectures": ["ARM64"],
+  "permissions": ["WORKSPACE_READ", "WORKSPACE_WRITE"],
+  "updateStrategy": "REINSTALL",
+  "installMethod": "LOCAL_PACKAGE",
+  "source": "LOCAL",
+  "offlineOnly": true,
+  "launchType": "command",
+  "commandLinks": ["qemu-x86_64"],
+  "environment": {
+    "WANXIANG_QEMU_COMPAT_ROOT": "/opt/wanxiang/compat/x86_64",
+    "WANXIANG_QEMU_COMPAT_QEMU": "/opt/wanxiang/compat/x86_64/qemu-x86_64",
+    "WANXIANG_QEMU_COMPAT_ROOTFS": "/opt/wanxiang/compat/x86_64/rootfs"
+  }
+}

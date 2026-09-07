@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "android-suite-offline",
+  "name": "Android 全栈开发套件（ARM64 离线版）",
+  "description": "面向 Android APK 开发、Rust 系统/JNI 交叉编译与逆向工程的 ARM64 离线全栈套件，内置 JDK、Android SDK、Build-Tools、AAPT2、NDK、Rust/Cargo、Gradle、CMake、Ninja、Flutter 以及 JADX、Apktool、Dex2jar 反编译套件与 Ripgrep 毫秒级搜索工具",
+  "version": "1.0.1",
+  "latestVersion": "1.0.1",
+  "enabled": true,
+  "publisher": "WanXiang",
+  "category": "DEVELOPER",
+  "launchType": "command",
+  "architectures": ["ARM64"],
+  "permissions": ["WORKSPACE_READ", "WORKSPACE_WRITE"],
+  "updateStrategy": "REINSTALL",
+  "source": "LOCAL",
+  "offlineOnly": true,
+  "installMethod": "LOCAL_PACKAGE",
+  "installSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/install-android-suite.sh\""
+  ],
+  "uninstallSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/uninstall-android-suite.sh\""
+  ],
+  "launchCommand": "gradle --version",
+  "verifyCommand": "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/verify-android-suite.sh\"",
+  "commandLinks": [
+    "java", "javac", "gradle", "cmake", "ninja", "adb", "flutter", "dart",
+    "rustc", "cargo", "rustdoc", "apksigner", "zipalign", "jarsigner", "keytool",
+    "aapt", "aapt2", "dexdump", "readelf", "objdump", "nm", "strings", "cxxfilt",
+    "uber-apk-signer", "smali", "baksmali", "wanxiang-apk-sign", "jadx", "apktool",
+    "d2j-dex2jar", "d2j-baksmali", "d2j-smali", "rg"
+  ],
+  "environment": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "ANDROID_SDK_ROOT": "/opt/android-sdk",
+    "GRADLE_HOME": "/opt/gradle-8.14.2",
+    "JAVA_HOME": "/opt/wanxiang/toolchains/android/jdk",
+    "ANDROID_NDK_HOME": "/opt/wanxiang/toolchains/android/ndk",
+    "RUSTUP_HOME": "/opt/wanxiang/toolchains/rust",
+    "CARGO_HOME": "/root/.cargo",
+    "PATH": "/opt/wanxiang/bin:/opt/wanxiang/toolchains/rust/bin:/opt/wanxiang/tools/android-suite-offline/bin:/opt/wanxiang/toolchains/android/jdk/bin:/opt/gradle-8.14.2/bin:$PATH"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "qemu-x86-64-compat",
+  "name": "QEMU x86_64 用户态兼容层",
+  "description": "仅包含 ARM64 QEMU x86_64 user-mode 模拟器与最小 x86_64 RootFS 的离线兼容插件。",
+  "dependencies": [],
+  "launchType": "command",
+  "version": "1.0.0",
+  "latestVersion": "1.0.0",
+  "enabled": true,
+  "publisher": "WanXiang",
+  "category": "DEVELOPER_TOOL",
+  "architectures": ["ARM64"],
+  "permissions": ["WORKSPACE_READ", "WORKSPACE_WRITE"],
+  "updateStrategy": "REINSTALL",
+  "source": "LOCAL",
+  "offlineOnly": true,
+  "installMethod": "LOCAL_PACKAGE",
+  "installSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/install-qemu-x86-64-compat.sh\""
+  ],
+  "uninstallSteps": [
+    "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/uninstall-qemu-x86-64-compat.sh\""
+  ],
+  "verifyCommand": "/bin/sh \"$WANXIANG_PLUGIN_PAYLOAD/scripts/verify-qemu-x86-64-compat.sh\"",
+  "launchCommand": "qemu-x86_64 --version",
+  "commandLinks": ["qemu-x86_64"],
+  "environment": {
+    "WANXIANG_QEMU_COMPAT_ROOT": "/opt/wanxiang/compat/x86_64",
+    "WANXIANG_QEMU_COMPAT_QEMU": "/opt/wanxiang/compat/x86_64/qemu-x86_64",
+    "WANXIANG_QEMU_COMPAT_ROOTFS": "/opt/wanxiang/compat/x86_64/rootfs"
+  }
+}

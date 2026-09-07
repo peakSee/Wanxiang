@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- SSH 设置页检测 VPN / 观察默认网络（getActiveNetwork / NetworkCallback） -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- SSH 后台保活：持有 WifiLock 防止息屏/后台时 Wi-Fi 无线电源进入省电导致断连 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- 无线 ADB：保持 mDNS 多播接收，自动发现动态配对端口与连接端口。 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Agent 执行期间持有 PARTIAL_WAKE_LOCK 进程锁，防止息屏后 CPU 休眠冻结推理/工具执行 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- 设置页"电池优化与后台运行"入口：申请豁免电池优化 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- APK 逆向模板：枚举已安装应用以提取安装包（读取 /data/app 下的 base.apk） -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- 工坊悬浮小窗：在其他应用或桌面之上显示工坊构建状态与快捷操作 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Harness host 工具执行 settings put 修改系统设置（亮度、动画等）；Shizuku shell UID 自带此权限，
+         但部分 ROM 下 UserService 可能以 app UID 运行，缺少声明会被 SettingsProvider 静默拒绝。
+         此为特殊权限，用户需在"设置→应用→万象→修改系统设置"中手动授权。 -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Android 11+ 包可见性：允许解析 Shizuku App 与 QQ（授权弹窗、群卡片调起与 Binder 交互） -->
+    <queries>
+        <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="com.tencent.mobileqq" />
+        <package android:name="com.tencent.tim" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqqopensdkapi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqqapi" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".WanXiangApplication"
+        android:allowBackup="false"
+        android:icon="@drawable/wanxiang_logo"
+        android:label="${appLabel}"
+        android:localeConfig="@xml/wanxiang_locales_config"
+        android:networkSecurityConfig="@xml/wanxiang_network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/wanxiang_theme">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|fontScale|density|keyboardHidden|navigation"
+            android:theme="@style/wanxiang_theme"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 应用内 APK 更新安装文件提供器 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/wanxiang_file_paths" />
+        </provider>
+        <!-- Shizuku Binder 接收器（硬性要求）：Shizuku App 通过该 Provider 把 Binder 推送到本应用进程，
+             缺失它 Shizuku.pingBinder() 将永远返回 false，表现为"Shizuku 服务未运行"。 -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+        <service
+            android:name=".runtime.service.RuntimeForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+        <service
+            android:name=".service.AgentForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+        <receiver
+            android:name=".service.AgentReplyReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".service.adb.AdbNotificationReceiver"
+            android:exported="false" />
+        <service
+            android:name="top.wanxiang.app.ui.chat.floating.FloatingChatService"
+            android:exported="false" />
+    </application>
+
+</manifest>

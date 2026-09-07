@@ -1,0 +1,47 @@
+#!/bin/sh
+# WanXiang bundled unzip adapter. OpenJDK's jar reader handles ZIP/deflate
+# archives without installing the fragile Ubuntu unzip package.
+set -e
+
+archive=""
+destination="."
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -d)
+            destination="$2"
+            shift 2
+            ;;
+        -d*)
+            destination="${1#-d}"
+            shift
+            ;;
+        -q|-o|-qo|-oq)
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -* )
+            shift
+            ;;
+        *)
+            [ -n "$archive" ] || archive="$1"
+            shift
+            ;;
+    esac
+done
+
+[ -n "$archive" ] || { echo "usage: unzip [-qo] archive.zip [-d directory]" >&2; exit 2; }
+[ -f "$archive" ] || { echo "unzip: archive not found: $archive" >&2; exit 1; }
+mkdir -p "$destination"
+JAR="${JAVA_HOME:-}/bin/jar"
+if [ ! -x "$JAR" ]; then
+    JAR=$(command -v jar 2>/dev/null || true)
+fi
+[ -x "$JAR" ] || { echo "unzip: OpenJDK jar command not found" >&2; exit 1; }
+case "$archive" in
+    /*) absolute_archive="$archive" ;;
+    *) absolute_archive="$(pwd)/$archive" ;;
+esac
+(cd "$destination" && "$JAR" xf "$absolute_archive")

@@ -1,0 +1,202 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: '发布版本标签 (例如 v0.11.0，留空则自动从 Gradle 读取)'
+        required: false
+        default: ''
+      draft:
+        description: '是否发布为草稿'
+        type: boolean
+        default: false
+      prerelease:
+        description: '是否标记为预发布 (Pre-release)'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Build & Publish Release APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version Tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VERSION=$(grep 'val appVersionName' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+            TAG="v${VERSION}"
+          fi
+          echo "TARGET_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "Using version tag: $TAG"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      # 从 Secrets 还原签名 keystore
+      - name: Restore Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::SIGNING_KEYSTORE_BASE64 is not configured"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          if [ ! -s "$RUNNER_TEMP/release.jks" ]; then
+            echo "::error::Decoded release keystore is empty"
+            exit 1
+          fi
+          echo "WANXIANG_RELEASE_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build Release APK
+        env:
+          WANXIANG_RELEASE_STORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          WANXIANG_RELEASE_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          WANXIANG_RELEASE_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for variable in \
+            WANXIANG_RELEASE_STORE_FILE \
+            WANXIANG_RELEASE_STORE_PASSWORD \
+            WANXIANG_RELEASE_KEY_ALIAS \
+            WANXIANG_RELEASE_KEY_PASSWORD; do
+            if [ -z "${!variable:-}" ]; then
+              echo "::error::$variable is not configured"
+              exit 1
+            fi
+          done
+          keytool -list \
+            -keystore "$WANXIANG_RELEASE_STORE_FILE" \
+            -storepass:env WANXIANG_RELEASE_STORE_PASSWORD \
+            -alias "$WANXIANG_RELEASE_KEY_ALIAS" > /dev/null
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Identify and Rename Output APK
+        run: |
+          mkdir -p output
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -f "$APK_PATH" ]; then
+            TAG="${{ env.TARGET_TAG }}"
+            cp "$APK_PATH" "output/WanXiang-arm64-${TAG}.apk"
+            sha256sum "output/WanXiang-arm64-${TAG}.apk" > "output/WanXiang-arm64-${TAG}.apk.sha256"
+            echo "APK_FILE=output/WanXiang-arm64-${TAG}.apk" >> $GITHUB_ENV
+            echo "SHA_FILE=output/WanXiang-arm64-${TAG}.apk.sha256" >> $GITHUB_ENV
+            echo "TAG=$TAG" >> $GITHUB_ENV
+          else
+            echo "Error: No release APK generated!" && exit 1
+          fi
+
+      # 生成两个相邻版本标签之间的 git 提交日志作为 Release Notes
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          CURRENT_TAG="${{ env.TARGET_TAG }}"
+          # 找到上一个版本标签
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -n '2p')
+          echo "当前版本：$CURRENT_TAG，上一版本：$PREV_TAG"
+
+          if git rev-parse "$CURRENT_TAG" >/dev/null 2>&1; then
+            CURRENT_REF="$CURRENT_TAG"
+          else
+            CURRENT_REF="HEAD"
+          fi
+
+          if [ -z "$PREV_TAG" ]; then
+            LOG=$(git log -n 50 --pretty=format:"- %s (%h)" "$CURRENT_REF")
+          else
+            LOG=$(git log --pretty=format:"- %s (%h)" "${PREV_TAG}..${CURRENT_REF}")
+          fi
+
+          # 按 feat/fix/perf/refactor/chore 分组归类
+          FEAT=$(echo "$LOG" | grep -i "^- feat" || true)
+          FIX=$(echo "$LOG" | grep -i "^- fix" || true)
+          PERF=$(echo "$LOG" | grep -i "^- perf\|^- refactor\|^- improve" || true)
+          CHORE=$(echo "$LOG" | grep -Eiv "^- feat|^- fix|^- perf|^- refactor|^- improve" || true)
+
+          {
+            echo "## 万象 $CURRENT_TAG 更新说明"
+            echo ""
+            if [ -n "$PREV_TAG" ]; then
+              echo "> 本版本包含自 \`$PREV_TAG\` 起的全部变更"
+            fi
+            echo ""
+            if [ -n "$FEAT" ]; then
+              echo "### ✨ 新特性"
+              echo "$FEAT"
+              echo ""
+            fi
+            if [ -n "$FIX" ]; then
+              echo "### 🐛 Bug 修复"
+              echo "$FIX"
+              echo ""
+            fi
+            if [ -n "$PERF" ]; then
+              echo "### ⚡ 性能与优化"
+              echo "$PERF"
+              echo ""
+            fi
+            if [ -n "$CHORE" ]; then
+              echo "### 🔧 其他变更"
+              echo "$CHORE"
+              echo ""
+            fi
+            echo "---"
+            echo "**SHA-256 校验**"
+            echo "\`\`\`"
+            cat "${{ env.SHA_FILE }}"
+            echo "\`\`\`"
+          } > release_notes.md
+
+          echo "RELEASE_NOTES_FILE=release_notes.md" >> $GITHUB_ENV
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: output/*
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TARGET_TAG }}
+          name: "万象 ${{ env.TARGET_TAG }}"
+          body_path: release_notes.md
+          files: |
+            ${{ env.APK_FILE }}
+            ${{ env.SHA_FILE }}
+          draft: ${{ github.event.inputs.draft == 'true' }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

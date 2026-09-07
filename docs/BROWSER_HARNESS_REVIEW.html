@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WanXiang 内置浏览器 · Harness 驱动链路代码审查</title>
+<style>
+  :root{
+    --text:#1A1B1C; --secondary:#6B7280; --bg:#F4F3EE; --card:#FFFFFF;
+    --border:#E4E3DD; --accent:#8BC8EA; --red:#EA6668; --orange:#E8893C; --green:#52C41A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--text);
+       font-family:'Roboto','PingFang SC','Segoe UI',Arial,sans-serif;line-height:1.6;}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 64px;}
+  h1{font-size:24px;margin:0 0 6px;}
+  .sub{color:var(--secondary);font-size:13px;margin-bottom:24px;}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;}
+  .pill{padding:4px 12px;border-radius:999px;font-size:12px;background:#fff;border:1px solid var(--border);}
+  .pill.red{color:#fff;background:var(--red);border-color:var(--red);}
+  h2{font-size:18px;margin:36px 0 14px;padding-left:12px;border-left:4px solid var(--accent);}
+  h3{font-size:15px;margin:18px 0 8px;}
+  p{font-size:13.5px;margin:8px 0;}
+  code{background:#fff;border:1px solid var(--border);border-radius:4px;padding:1px 5px;
+       font-family:Consolas,Menlo,monospace;font-size:12px;color:#333;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:12px 0;}
+  .issue{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:14px 0;border-left:5px solid var(--orange);}
+  .issue.high{border-left-color:var(--red);}
+  .issue.low{border-left-color:var(--green);}
+  .issue h3{margin:0 0 8px;display:flex;align-items:center;gap:8px;}
+  .tag{font-size:11px;padding:2px 8px;border-radius:999px;color:#fff;}
+  .tag.high{background:var(--red);} .tag.mid{background:var(--orange);} .tag.low{background:var(--green);}
+  .field{font-size:12px;color:var(--secondary);margin:6px 0;}
+  .field b{color:var(--text);}
+  .chain{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+  .node{background:linear-gradient(135deg,rgba(139,200,234,0.10),rgba(139,200,234,0.22));
+        border:1px solid rgba(139,200,234,0.4);border-radius:10px;padding:8px 12px;margin:6px 0;position:relative;}
+  .node b{font-size:13px;} .node span{display:block;font-size:11.5px;color:var(--secondary);}
+  .arrow{text-align:center;color:var(--accent);font-size:14px;margin:2px 0;}
+  .badge{display:inline-block;background:var(--orange);color:#fff;border-radius:999px;
+         font-size:10.5px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
+  .badge.high{background:var(--red);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0;}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:#fff;font-weight:600;}
+  .foot{color:var(--secondary);font-size:12px;margin-top:32px;border-top:1px solid var(--border);padding-top:12px;}
+  ul{margin:6px 0;padding-left:20px;} li{font-size:13px;margin:4px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🌐 WanXiang 内置浏览器 · Harness 驱动链路代码审查</h1>
+  <div class="sub">范围：feature/browser + runtime/browser + harness 侧 MCP 桥接 · 审查日期：2026-09-02 · 结论：链路可通，但存在 1 处阻断性时序 Bug 与若干安全/多 tab 隐患</div>
+  <div class="meta">
+    <span class="pill red">🔴 高危 × 4</span>
+    <span class="pill" style="border-color:var(--orange);color:var(--orange);">🟠 中危 × 5</span>
+    <span class="pill" style="border-color:var(--green);color:var(--green);">🟡 低危 × 7</span>
+    <span class="pill">✔ 编译/单测已跑通</span>
+  </div>
+
+  <h2>一、结论摘要</h2>
+  <div class="card">
+    <p><b>整条链路是通的：</b>模型 tool_call（<code>mcp__wanxiang-browser-bu__browser_*__&lt;hash&gt;</code>）→ <code>ToolExecutor(MCP)</code> → <code>McpManager</code> → <code>McpHttpTransport</code> → 回环 HTTP <code>127.0.0.1:8787/mcp</code> → <code>McpServerRuntime</code> → <code>BrowserMcpTools</code> → <code>AndroidInAppBrowserEngine</code> → WebView。内置 server 配置已写入 <code>BuiltinMcpPresets</code>（id=<code>wanxiang-browser-builtin</code>，默认启用），UI 与 harness 共用同一 <code>BrowserRegistry</code> 实例，设计正确。</p>
+    <p><b>但当前实现有几个会实际咬人的坑：</b>最严重的是 <code>browser.snapshot</code> 的快照异步发布竞态（首次拿空、之后滞后）；其次是审批风险矩阵完全没落地（安全闭环缺失）与脱敏层未接线（敏感数据可能回灌模型）。多 tab 场景下有全局状态串扰；离屏 tab 截图大概率空白。</p>
+  </div>
+
+  <h2>二、驱动链路总览</h2>
+  <div class="chain">
+    <div class="node"><b>① 模型 tool_call</b><span>mcp__wanxiang-browser-bu__browser_click__&lt;hash&gt;（McpToolApiName 编码/匹配正常）</span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>② ToolExecutor · HarnessTool.MCP</b><span>审批判定入口 → 风险矩阵未按工具粒度落地 <span class="badge high">#2</span></span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>③ McpManager → McpHttpTransport</b><span>SSE→HTTP Streamable 会话 · POST http://127.0.0.1:8787/mcp（tools/call 120s 超时）</span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>④ McpServerRuntime · POST /mcp</b><span>suspend handler 直接 await（无 runBlocking）</span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>⑤ McpToolDispatcher → BrowserMcpTools.invoke</b><span>click/type/press 嵌套 runBlocking + 每次全量重扫 DOM <span class="badge">#6</span> · 脱敏未接线 <span class="badge high">#3</span></span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>⑥ AndroidInAppBrowserEngine</b><span>snapshot 竞态（首次空/滞后）<span class="badge high">#1</span> · refMap 非线程安全 <span class="badge">#7</span> · 离屏截图空白 <span class="badge">#9</span></span></div>
+    <div class="arrow">▼</div>
+    <div class="node"><b>⑦ WebView + BrowserEventBus</b><span>url/title/snapshot 全局单值 → 多 tab 串扰 <span class="badge">#5</span></span></div>
+  </div>
+
+  <h2>三、问题明细</h2>
+
+  <h3>🔴 高危（建议优先处理）</h3>
+
+  <div class="issue high">
+    <h3><span class="tag high">高危</span>#1 browser.snapshot 返回滞后 / 首次为空（时序竞态）</h3>
+    <div class="field"><b>位置：</b>AndroidInAppBrowserEngine.snapshot()（L63-68）、SnapshotBuilder.refresh()（L37-67）</div>
+    <p><code>SnapshotBuilder.refresh()</code> 里 <code>scope.launch { eventBus.publish(SnapshotUpdated) }</code> 是<b>异步</b>发布；而 <code>engine.snapshot()</code> 在 refresh() 返回后<b>立即</b>读 <code>eventBus.snapshot.value</code>。snapshot 调用发生在 CIO 线程（非主线程），Main.immediate 会异步派发 → refresh 返回时快照还没写进 bus → 返回的是<b>上一次</b>快照；首次调用直接返回空 <code>PageSnapshot("...","empty",{})</code>。onPageFinished 里那次同步 publish 掩盖了多数场景，但动态页面/并发时内容会与本次扫描不一致。</p>
+    <p><b>影响：</b>模型第一次 snapshot 拿不到 refs；click/type 引用不存在的 ref 全部失败，是驱动链路最直接的阻断点。</p>
+    <p><b>建议：</b>refresh() 直接返回 PageSnapshot；或 snapshot() 先 await publish 完成再取值；并去掉 click 回调里对 snapshot 的重复全量扫描。</p>
+  </div>
+
+  <div class="issue high">
+    <h3><span class="tag high">高危</span>#2 审批风险矩阵完全没落地（安全闭环缺失）</h3>
+    <div class="field"><b>位置：</b>ApprovalPolicyEngine.decide()（L94）、BrowserMcpTools.TOOLS（risk 字段无人消费）</div>
+    <p>设计文档 §4 承诺 snapshot/screenshot/current_url 等 LOW 免审、open MEDIUM 需审、click HIGH、evaluate/cookies_get CRITICAL+二级确认。实际 <code>HarnessTool.MCP → 一律 ApprovalDecision(true, "high")</code>：ASSISTED/REQUEST 模式下<b>所有</b> MCP 工具（含只读的 snapshot）都要人工审批；反过来 FULL_ACCESS 下 evaluate（页内 JS 注入）、cookies_get 也全部自动放行。另外 <code>browser.evaluate</code> 没有检查 <code>BrowserPreferences.allowEvalJs</code>（默认 false）开关。</p>
+    <p><b>影响：</b>要么模型每读一次页面都被打断（体验崩），要么用户干脆开 FULL_ACCESS 全放行（evaluate/写 cookie 无拦）。安全设计形同虚设。</p>
+    <p><b>建议：</b>在 decide() 里解析 rawToolName + args 反查工具 risk 表，按 risk 档位决定放行/审批/二级确认；evaluate 必须尊重 allowEvalJs。</p>
+  </div>
+
+  <div class="issue high">
+    <h3><span class="tag high">高危</span>#3 SecretRedactingInterceptor 定义了但没接线</h3>
+    <div class="field"><b>位置：</b>runtime/browser/.../secret/SecretRedactingInterceptor.kt（无调用点）；BrowserMcpTools.cookies_get；NetworkInterceptor.onRequestStart（L31 原样存请求头）</div>
+    <p><code>cookies_get</code> 直接返回 <code>document.cookie</code>；page_source 原样返回 HTML；CapturedRequest 把含 Authorization/Cookie 的 requestHeaders 原样存内存。唯一兜底是 ToolExecutor 最外层对 output 的 <code>SecretRedactor.redact()</code>，但那是面向 Linux 环境 secrets 的通用规则，不可靠。设计承诺的"Cookie/Authorization 默认脱敏"浏览器侧没实现。</p>
+    <p><b>影响：</b>用户的会话 Cookie / Authorization 头 / 页面敏感值可能直接回灌给 LLM。</p>
+    <p><b>建议：</b>在 cookies_get / page_source / console / network_list 出口统一过 SecretRedactingInterceptor.apply()。</p>
+  </div>
+
+  <div class="issue high">
+    <h3><span class="tag high">高危</span>#4 "外接桌面 AI"能力是死代码（未接线）</h3>
+    <div class="field"><b>位置：</b>BrowserMcpBootstrap.bootstrap()（L58 写死 loopbackOnly=true, token=null）；builtInConfig()（无调用方）；BuiltinMcpPresets（L163-173 写死 127.0.0.1:8787）</div>
+    <p>设计文档承诺允许 <code>0.0.0.0:8787</code> + Bearer Token 供桌面 Claude/Cursor 通过 adb reverse 接入。实际 bootstrap 不读 <code>allowRemoteConnect</code> 偏好、不生成 token，<code>builtInConfig(allowRemote=...)</code> 定义了但从无调用方，与 presets 里写死的 127.0.0.1 配置重复。</p>
+    <p><b>影响：</b>外接功能从未生效；两处配置未来可能漂移。</p>
+    <p><b>建议：</b>bootstrap 按 prefs 决定绑定 host + 生成 token；删除 builtInConfig 死代码，配置统一以 BuiltinMcpPresets 为唯一来源。</p>
+  </div>
+
+  <h3>🟠 中危（多 tab / 并发 / 性能）</h3>
+
+  <div class="issue">
+    <h3><span class="tag mid">中危</span>#5 BrowserEventBus 全局单值 → 多 tab 串扰</h3>
+    <div class="field"><b>位置：</b>BrowserEventBus（url/title/snapshot 为全局 StateFlow）；BrowserMcpTools.current_url/title；engine 的 storage 类工具用 activeTab()</div>
+    <p>url / title / snapshot 不分 tab，任何 tab 导航都会覆盖全局值。<code>browser.current_url</code> / <code>title</code> 不看 tab 参数；<code>browser.snapshot(tab=t1)</code> 可能返回全局里 t2 的最新快照；cookies/local/session 系列全部操作 <code>activeTab()</code> 而非传入 tab。</p>
+    <p><b>建议：</b>eventBus 状态按 tabId 分片（Map&lt;tabId, State&gt;），工具按 tab 参数取；storage 工具改用 tokenOf(args, engine)。</p>
+  </div>
+
+  <div class="issue">
+    <h3><span class="tag mid">中危</span>#6 click/type/press 嵌套 runBlocking + 每次全量重扫 DOM</h3>
+    <div class="field"><b>位置：</b>BrowserMcpTools.handleWithRef / handleType / handlePress（L106-134）；click 回调（L117-118）</div>
+    <p>在已经 runBlocking 的 CIO handler 里再次 runBlocking 包 suspend 调用（阻塞线程）；且 ref→selector 的回调每次都重新执行 <code>engine.snapshot()</code> 全量注入扫描脚本（又触发 #1 竞态），而不是从 RefResolver 缓存读。selector 依赖 DOM 里残留的 <code>data-wanxiang-ref</code> 属性，SPA 重渲染后失效。</p>
+    <p><b>建议：</b>invoke 全程纯 suspend（去掉内层 runBlocking）；selector 从 SnapshotBuilder 缓存表读取，不要每次重扫。</p>
+  </div>
+
+  <div class="issue">
+    <h3><span class="tag mid">中危</span>#7 refMap 非线程安全</h3>
+    <div class="field"><b>位置：</b>SnapshotBuilder.ResolverRegistry（L102-109，普通 HashMap，跨协程写）</div>
+    <p>evaluateJavascript 返回后代码继续在 CIO 线程执行，多个 tab/并发 snapshot 会在不同线程同时 put 同一个 HashMap → 数据竞争（扩容可能损坏/死循环）。</p>
+    <p><b>建议：</b>换 ConcurrentHashMap，或把写操作集中到主线程/加锁。</p>
+  </div>
+
+  <div class="issue">
+    <h3><span class="tag mid">中危</span>#8 快照文本 Unicode 反转义不完整</h3>
+    <div class="field"><b>位置：</b>SnapshotBuilder.unwrap()（L69-77）</div>
+    <p>只处理 <code>\" \n \\</code>，不处理 evaluateJavascript 返回的 <code>\uXXXX</code>。中文 / emoji / 特殊字符的按钮文案会以 <code>\u767b\u5f55</code> 这种转义字面量呈现给模型，影响可读性和判断。</p>
+    <p><b>建议：</b>直接用 <code>Json.parseToJsonElement</code> 解析返回值，或用 <code>java.net.URLDecoder</code> / 正则解码 \uXXXX。</p>
+  </div>
+
+  <div class="issue">
+    <h3><span class="tag mid">中危</span>#9 离屏 tab 截图可能空白</h3>
+    <div class="field"><b>位置：</b>ScreenshotRecorder.capture()（L42-54）；feature/browser/BrowserScreen 只 embed 当前 active tab</div>
+    <p><code>view.draw(canvas)</code> 软渲依赖 WebView 已 layout 且有尺寸。harness 打开的非 UI 显示 tab（无父容器、宽高 0 → fallback 1080×1920 硬画）大概率渲染空白或异常。</p>
+    <p><b>建议：</b>截图前确保 view 有尺寸（临时 attach / measure），或截图瞬间把目标 tab 设为 active 并等一帧；v1.1 换 PixelCopy（需宿主 Window）。</p>
+  </div>
+
+  <h3>🟡 低危（行为瑕疵 / 清理项）</h3>
+
+  <div class="issue low">
+    <h3><span class="tag low">低危</span>#10-#16 其余问题</h3>
+    <ul>
+      <li><b>#10</b> <code>browser.console_clear</code> 空实现（L77）：返回 ok 但不清 eventBus 的 console。</li>
+      <li><b>#11</b> <code>domFingerprint = UUID.randomUUID()</code>（SnapshotBuilder L63）：每次随机，模型端无法据此判断"页面是否变化"。</li>
+      <li><b>#12</b> <code>postMain</code> / <code>JsEvaluator</code> 超时后副作用仍会执行（engine L239-245、JsEvaluator L17-34）：2s/5s 放弃等待但主线程 block 稍后照常执行，状态不确定；evaluateJavascript 死循环无取消机制。</li>
+      <li><b>#13</b> WebView cleartext 未配置（AndroidWebViewFactory）：跟随 app 全局 networkSecurityConfig，http:// 页面可能打不开（设计承诺的 localhost/白名单域 cleartext 未实现）。</li>
+      <li><b>#14</b> McpServerModule 里 <code>prefs = BrowserPreferences.DEFAULT</code> 写死：用户的 homeUrl / allowEvalJs / allowRemote / desktopUA 偏好不会传导到工具层。</li>
+      <li><b>#15</b> <code>builtInConfig()</code> 死代码：与 BuiltinMcpPresets 配置重复，未来易漂移（同 #4）。</li>
+      <li><b>#16</b> McpServerRuntime：<s>runBlocking 包整个 JSON-RPC（CIO 线程被阻塞，并发受限）</s> —— <i>该条不成立：POST /mcp handler 为 suspend 直接 await，未使用 runBlocking（复核确认，本条降为“小瑕疵”档）</i>；<code>notifications/initialized</code> 返回 method-not-found（客户端忽略，但会留脏日志）；bootstrap 幂等不校验"运行中的 server 是不是浏览器 server"。</li>
+    </ul>
+  </div>
+
+  <h2>四、验证情况</h2>
+  <div class="card">
+    <table>
+      <tr><th>验证项</th><th>命令</th><th>结果</th></tr>
+      <tr><td>core/browser 单元测试（纯 JVM）</td><td>gradlew :core:browser:test</td><td style="color:var(--green);">✔ BUILD SUCCESSFUL</td></tr>
+      <tr><td>harness 模块 Kotlin 编译（含 runtime/browser）</td><td>gradlew :harness:compileDebugKotlin</td><td style="color:var(--green);">✔ BUILD SUCCESSFUL（118 tasks）</td></tr>
+    </table>
+    <p style="color:var(--secondary);font-size:12px;">说明：本次为静态代码审查 + 模块编译验证；WebView 渲染/截图/竞态等行为为基于代码路径的推断，未做真机/模拟器端到端验证（建议补 adb + 手工 case）。</p>
+  </div>
+
+  <h2>五、建议修复优先级</h2>
+  <div class="card">
+    <ul>
+      <li><b>P0：</b>#1 snapshot 竞态（先让模型第一次就能拿到 refs，否则整条链路不可用）。</li>
+      <li><b>P0：</b>#3 脱敏接线（cookies/headers 是敏感数据）。</li>
+      <li><b>P1：</b>#2 审批风险矩阵落地（按工具名分档 + evaluate 尊重 allowEvalJs）。</li>
+      <li><b>P1：</b>#5 多 tab 状态分片（当前单 tab 可用，多 tab 会错乱）。</li>
+      <li><b>P2：</b>#6/#7/#9（性能与并发）、#4（外接能力按需接或删）、其余低危项清理。</li>
+    </ul>
+  </div>
+
+  <h2>六、修复记录（2026-09-02）</h2>
+  <div class="card">
+    <table>
+      <tr><th>问题</th><th>状态</th><th>改动要点</th></tr>
+      <tr><td>#1 snapshot 竞态（P0）</td><td style="color:var(--green);">✔ 已修</td><td>SnapshotBuilder.refresh() 同步 publish 并直接返回 PageSnapshot；engine.snapshot() 不再读全局 eventBus 值</td></tr>
+      <tr><td>#3 脱敏未接线（P0）</td><td style="color:var(--green);">✔ 已修</td><td>McpToolDispatcher.dispatch() 对所有工具输出统一过 SecretRedactingInterceptor.apply()（含 headers 字典重载）</td></tr>
+      <tr><td>#2 审批矩阵未落地（P1）</td><td style="color:var(--green);">✔ 已修</td><td>ApprovalPolicyEngine.decide() 新增 rawToolName 参数，按工具名映射 LOW/MEDIUM/HIGH/CRITICAL：LOW 免审、HIGH/CRITICAL 按档提示，ToolExecutor 已传 rawToolName</td></tr>
+      <tr><td>#5 多 tab 串扰（P1）</td><td style="color:var(--green);">✔ 已修</td><td>BrowserEventBus 按 tabId 分片（tabUrls/tabTitles/tabSnapshots），全局 StateFlow 只反映活跃 tab；新增 urlOf/titleOf/snapshotOf；storage 工具按 tokenOf 取 tab</td></tr>
+      <tr><td>#6 click/type/press（P1）</td><td style="color:var(--green);">✔ 已修</td><td>去掉嵌套 runBlocking（全 suspend）；ref→selector 直接映射 data-wanxiang-ref，不再每次全量重扫 DOM</td></tr>
+      <tr><td>#7 refMap 线程安全</td><td style="color:var(--green);">✔ 已修</td><td>ResolverRegistry 改用 ConcurrentHashMap&lt;String, ConcurrentHashMap&gt;</td></tr>
+      <tr><td>#8 Unicode 反转义</td><td style="color:var(--green);">✔ 已修</td><td>unwrap() 改用 Json.parseToJsonElement 解码（带旧逻辑 fallback）</td></tr>
+      <tr><td>#9 离屏截图空白</td><td style="color:var(--green);">✔ 已修</td><td>ScreenshotRecorder 对未 layout 的 view 先 measure+layout 再 draw</td></tr>
+      <tr><td>#10 console_clear</td><td style="color:var(--green);">✔ 已修</td><td>调用 engine.eventBus.clearConsole()</td></tr>
+      <tr><td>#11 domFingerprint 随机</td><td style="color:var(--green);">✔ 已修</td><td>改为对 refs 内容做 SHA-256 稳定指纹</td></tr>
+      <tr><td>#14 prefs 写死（低危）</td><td style="color:var(--orange);">△ 部分</td><td>本轮保留 DEFAULT 快照并加 TODO 注释，未引入 Hilt 构造期 DataStore 阻塞；留待后续动态注入</td></tr>
+      <tr><td>#16 runBlocking（原低危）</td><td style="color:var(--green);">✔ 复核</td><td>确认 McpServerRuntime 无 runBlocking，该子项不成立；notifications/initialized 脏日志、bootstrap 幂等未校验两点保留为小瑕疵</td></tr>
+      <tr><td>#4/#15 外接能力（低危）</td><td style="color:var(--green);">✔ 已修</td><td>bootstrap 按 allowRemoteConnect 偏好决定 0.0.0.0 绑定并生成 Bearer Token（McpAuthFilter 强制校验）；desktopUserAgent 偏好接入引擎；删除 builtInConfig() 死代码</td></tr>
+      <tr><td>#12 超时后副作用（低危）</td><td style="color:var(--green);">✔ 已修</td><td>postMain/JsEvaluator 超时语义注释 + 日志：明确副作用不可取消、结果已丢弃，提示勿重试同参数操作</td></tr>
+      <tr><td>#13 cleartext（低危）</td><td style="color:var(--green);">✔ 复核</td><td>全局 networkSecurityConfig cleartextTrafficPermitted=true 已允许，http:// 页面可加载，无需改码</td></tr>
+      <tr><td>#14 prefs 写死（低危）</td><td style="color:var(--green);">✔ 已修</td><td>McpServerModule 注入 datastore.BrowserPreferences，启动时读真实偏好映射为工具层快照（失败兜底 DEFAULT）</td></tr>
+    </table>
+    <p style="color:var(--secondary);font-size:12px;">验证：<code>gradlew :harness:compileDebugKotlin :core:browser:test</code> 与 <code>:app:compileDebugKotlin</code> BUILD SUCCESSFUL（含 Hilt 装配图）。两轮修复 commit 随附。</p>
+  </div>
+
+  <div class="foot">
+    审查依据：docs/BROWSER_DESIGN.md · runtime/browser · harness/browser + harness/mcp · core/browser · feature/browser（均已在 2026-09-02 的 HEAD 编译通过）。<br>
+    生成时间：2026-09-02 · 万象 LinuxAIRuntime 代码审查产物。
+  </div>
+</div>
+</body>
+</html>

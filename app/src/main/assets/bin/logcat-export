@@ -1,0 +1,15 @@
+#!/bin/sh
+# WanXiang Logcat Export — 导出应用日志到文件
+set -eu
+
+if [ $# -lt 2 ]; then
+    echo "用法: logcat-export <包名> <目标文件路径> [选项]"
+    echo "示例: logcat-export com.example.app /workspace/logs/app.log -n 500"
+    exit 1
+fi
+
+PACKAGE="$1"
+OUTPUT_FILE="$2"
+shift 2
+
+/opt/wanxiang/bin/logcat-grabber "$PACKAGE" -o "$OUTPUT_FILE" "$@"

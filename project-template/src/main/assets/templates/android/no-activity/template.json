@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "builtin.android-no-activity",
+  "name": "No Activity",
+  "version": "1.0.0",
+  "description": "Minimal Android application without an Activity or launcher entry",
+  "projectType": "ANDROID",
+  "category": { "id": "starter", "name": "Starter", "sortOrder": 0 },
+  "previewImage": "preview.png",
+  "variables": [
+    { "name": "projectName", "label": "Project name" },
+    { "name": "appName", "label": "App name" },
+    { "name": "packageName", "label": "Package name", "prompt": true, "inputType": "TEXT", "placeholder": "com.example.myapp", "validationRegex": "^[a-zA-Z_][\\w]*(\\.[a-zA-Z_][\\w]*)+$" },
+    { "name": "packagePath", "label": "Package path" }
+  ],
+  "validation": {
+    "requiredFiles": ["app/src/main/AndroidManifest.xml", "app/build.gradle.kts"],
+    "contentRules": [
+      { "path": "app/src/main/AndroidManifest.xml", "excludes": ["<activity"] }
+    ]
+  }
+}

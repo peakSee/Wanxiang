@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wanxiang_app_name">WanXiang</string>
+    <string name="wanxiang_update_available">New version available: v%1$s</string>
+    <string name="wanxiang_update_versions">Current: v%1$s  ➔  Latest: v%2$s</string>
+    <string name="wanxiang_update_downloading_package">Downloading update…</string>
+    <string name="wanxiang_update_download_failed">Failed to download the update package. Check your network and try again.</string>
+    <string name="wanxiang_downloading">Downloading…</string>
+    <string name="wanxiang_update_now">Update now</string>
+    <string name="wanxiang_open_github">Open GitHub</string>
+    <string name="wanxiang_later">Later</string>
+    <string name="wanxiang_agent_notification_channel">Agent execution</string>
+    <string name="wanxiang_agent_ready">Agent center ready</string>
+    <string name="wanxiang_agent_default_title">WanXiang Agent</string>
+    <string name="wanxiang_agent_background_running">WanXiang Agent is running in the background</string>
+    <string name="wanxiang_agent_background_locked">Agent is running in the background · Process lock enabled</string>
+    <string name="wanxiang_notification_stop">Stop</string>
+    <string name="wanxiang_notification_reply_to">Reply to %1$s</string>
+    <string name="wanxiang_notification_reply">Reply</string>
+    <string name="wanxiang_agent_task_completed">[%1$s] Task completed</string>
+    <string name="wanxiang_agent_next_task_hint">Reply below with the next task</string>
+    <string name="wanxiang_agent_thinking">Agent is thinking…</string>
+    <string name="wanxiang_runtime_notification_channel">Linux Runtime</string>
+    <string name="wanxiang_runtime_running">Linux Runtime is running</string>
+    <string name="wanxiang_runtime_background_available">Background tools and local services remain available</string>
+</resources>

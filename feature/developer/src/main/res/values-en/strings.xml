@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="developer_text_0001" formatted="false">Ed25519 Public Key (Base64)</string>
+    <string name="developer_text_0002" formatted="false">The Linux environment has been restored to its initial state and the workspace project has not been deleted.</string>
+    <string name="developer_text_0003" formatted="false">Linux environment reset failed</string>
+    <string name="developer_text_0004" formatted="false">RootFS is up to date.</string>
+    <string name="developer_text_0005" formatted="false">RootFS update completed, user data is preserved.</string>
+    <string name="developer_text_0006" formatted="false">Runtime initialization failed</string>
+    <string name="developer_text_0007" formatted="false">Runtime Core Competencies Tested</string>
+    <string name="developer_text_0008" formatted="false">Shell command</string>
+    <string name="developer_text_0009" formatted="false">Download and initialize</string>
+    <string name="developer_text_0010" formatted="false">Download cache</string>
+    <string name="developer_text_0011" formatted="false">Save configuration</string>
+    <string name="developer_text_0012" formatted="false">Stop</string>
+    <string name="developer_text_0013" formatted="false">Health check</string>
+    <string name="developer_text_0014" formatted="false">Health check error</string>
+    <string name="developer_text_0015" formatted="false">Health check passed</string>
+    <string name="developer_text_0016" formatted="false">Shared runtime cleaned up.</string>
+    <string name="developer_text_0017" formatted="false">Close</string>
+    <string name="developer_text_0018" formatted="false">Prepare PRoot</string>
+    <string name="developer_text_0019" formatted="false">Prepare PRoot Boot Components</string>
+    <string name="developer_text_0020" formatted="false">Create workspace</string>
+    <string name="developer_text_0021" formatted="false">Create Running Directory</string>
+    <string name="developer_text_0022" formatted="false">Initializing</string>
+    <string name="developer_text_0023" formatted="false">Initialization complete.</string>
+    <string name="developer_text_0024" formatted="false">Refresh</string>
+    <string name="developer_text_0025" formatted="false">Cancel</string>
+    <string name="developer_text_0026" formatted="false">Cancel download</string>
+    <string name="developer_text_0027" formatted="false">Deleting only inactive downloads and temporary files will not affect your Linux system, tools, or workspace.</string>
+    <string name="developer_text_0028" formatted="false">Runtime can be cleaned up</string>
+    <string name="developer_text_0029" formatted="false">Background Linux Processes and Disk Usage</string>
+    <string name="developer_text_0030" formatted="false">Background processes</string>
+    <string name="developer_text_0031" formatted="false">No</string>
+    <string name="developer_text_0032" formatted="false">Command cannot be empty.</string>
+    <string name="developer_text_0033" formatted="false">Command diagnostics</string>
+    <string name="developer_text_0034" formatted="false">Execute one-time shell commands in an isolated Linux environment</string>
+    <string name="developer_text_0035" formatted="false">Copy</string>
+    <string name="developer_text_0036" formatted="false">Copy all</string>
+    <string name="developer_text_0037" formatted="false">Failed</string>
+    <string name="developer_text_0038" formatted="false">Storage usage</string>
+    <string name="developer_text_0039" formatted="false">The current Linux RootFS, installed tools, and sandboxed cache will be deleted, but the/workspace project and phone shared storage will be preserved.This action cannot be undone.</string>
+    <string name="developer_text_0040" formatted="false">The new version will be downloaded and verified online, leaving/root and/opt/wanxiang.The background Linux process stops during the update and automatically restores the old version if it fails.</string>
+    <string name="developer_text_0041" formatted="false">The shared runtime that is not referenced by the tool will be removed and cannot be automatically recovered.</string>
+    <string name="developer_text_0042" formatted="false">Workspace</string>
+    <string name="developer_text_0043" formatted="false">Workspace writable</string>
+    <string name="developer_text_0044" formatted="false">Tool data</string>
+    <string name="developer_text_0045" formatted="false">Tool manifest configuration saved.</string>
+    <string name="developer_text_0046" formatted="false">Tool source</string>
+    <string name="developer_text_0047" formatted="false">Tool binaries</string>
+    <string name="developer_text_0048" formatted="false">Closed (do not write to local log file)</string>
+    <string name="developer_text_0049" formatted="false">Ready</string>
+    <string name="developer_text_0050" formatted="false">Up to date</string>
+    <string name="developer_text_0051" formatted="false">Developer console</string>
+    <string name="developer_text_0052" formatted="false">Error</string>
+    <string name="developer_text_0053" formatted="false">Reference count is 0</string>
+    <string name="developer_text_0054" formatted="false">There is currently no shared runtime that can be safely cleaned up.</string>
+    <string name="developer_text_0055" formatted="false">There are no background processes currently enlisted.</string>
+    <string name="developer_text_0056" formatted="false">Restore Linux to its initial state</string>
+    <string name="developer_text_0057" formatted="false">Restore Linux to its initial state?</string>
+    <string name="developer_text_0058" formatted="false">Run command</string>
+    <string name="developer_text_0059" formatted="false">Tip: People who can control the address of the checklist can also provide the public key, and the self-filled key is only used to prevent transmission corruption/verify content consistency, and cannot provide end-to-end tamper-proof.For a true trust anchor, have a fixed public key built into the APK.</string>
+    <string name="developer_text_0060" formatted="false">Log copied</string>
+    <string name="developer_text_0061" formatted="false">Log copied to clipboard</string>
+    <string name="developer_text_0062" formatted="false">Yes</string>
+    <string name="developer_text_0063" formatted="false">Agent execution flow, tool call and error details local persistence</string>
+    <string name="developer_text_0064" formatted="false">The agent log has been cleared.</string>
+    <string name="developer_text_0065" formatted="false">Agent Local Debug Log</string>
+    <string name="developer_text_0066" formatted="false">Agent Diagnostics</string>
+    <string name="developer_text_0067" formatted="false">No logs yet</string>
+    <string name="developer_text_0068" formatted="false">Update Linux RootFS?</string>
+    <string name="developer_text_0069" formatted="false">Update RootFS</string>
+    <string name="developer_text_0070" formatted="false">Not initialized</string>
+    <string name="developer_text_0071" formatted="false">Architecture</string>
+    <string name="developer_text_0072" formatted="false">View logs</string>
+    <string name="developer_text_0073" formatted="false">Check available space</string>
+    <string name="developer_text_0074" formatted="false">Check for updates</string>
+    <string name="developer_text_0075" formatted="false">A new version of RootFS has been detected and can be updated.</string>
+    <string name="developer_text_0076" formatted="false">Available Updates Detected</string>
+    <string name="developer_text_0077" formatted="false">Inspection Device Architecture</string>
+    <string name="developer_text_0078" formatted="false">Downloading and verifying tool manifest…</string>
+    <string name="developer_text_0079" formatted="false">Checking OCI manifest for RootFS…</string>
+    <string name="developer_text_0080" formatted="false">Loading</string>
+    <string name="developer_text_0081" formatted="false">Reading storage information...</string>
+    <string name="developer_text_0082" formatted="false">Manifest HTTPS Address</string>
+    <string name="developer_text_0083" formatted="false">Clean up</string>
+    <string name="developer_text_0084" formatted="false">Clear download cache</string>
+    <string name="developer_text_0085" formatted="false">Clear download cache?</string>
+    <string name="developer_text_0086" formatted="false">Clear</string>
+    <string name="developer_text_0087" formatted="false">Unknown version</string>
+    <string name="developer_text_0088" formatted="false">Confirm update</string>
+    <string name="developer_text_0089" formatted="false">Confirm cleanup</string>
+    <string name="developer_text_0090" formatted="false">Confirm reset</string>
+    <string name="developer_text_0091" formatted="false">Signature HTTPS address</string>
+    <string name="developer_text_0092" formatted="false">System</string>
+    <string name="developer_text_0093" formatted="false">Failed to read cleanup runtime</string>
+    <string name="developer_text_0094" formatted="false">Failed to read daemon</string>
+    <string name="developer_text_0095" formatted="false">Failed to read storage occupancy</string>
+    <string name="developer_text_0096" formatted="false">Resource management</string>
+    <string name="developer_text_0097" formatted="false">Run health check</string>
+    <string name="developer_text_0098" formatted="false">Runtime Basics</string>
+    <string name="developer_text_0099" formatted="false">The runtime cache has been cleared.</string>
+    <string name="developer_text_0100" formatted="false">Only share dependencies that are not referenced by any tool are listed here, and cleanup will perform package management cleanup inside the Linux sandbox.</string>
+    <string name="developer_text_0101" formatted="false">Remote manifest update: HTTPS + Ed25519 checksum (custom public key only prevents transmission damage, not tamper-proof trust anchor)</string>
+    <string name="developer_text_0102" formatted="false">Suitable for rapid diagnostics without creating a persistent terminal session</string>
+    <string name="developer_text_0103" formatted="false">Configure DNS</string>
+    <string name="developer_text_0104" formatted="false">Configure your Linux system</string>
+    <string name="developer_text_0105" formatted="false">Configure environment variables</string>
+    <string name="developer_text_0106" formatted="false">Re-check initialization</string>
+    <string name="developer_text_0107" formatted="false">Retry initialization</string>
+    <string name="developer_text_0108" formatted="false">Error</string>
+    <string name="developer_active_process_count">%1$s active processes</string>
+    <string name="developer_rootfs_update_failed">RootFS update failed: %1$s</string>
+    <string name="developer_rootfs_check_failed">RootFS update check failed: %1$s</string>
+    <string name="developer_stop_process_failed">Failed to stop process: %1$s</string>
+    <string name="developer_health_check_failed">Health check failed: %1$s</string>
+    <string name="developer_initialization_failed">Initialization failed: %1$s</string>
+    <string name="developer_command_failed">Command failed: %1$s</string>
+    <string name="developer_manifest_updated">Tool manifest updated: %1$s tools.</string>
+    <string name="developer_log_enabled_size">Enabled (file size: %1$s)</string>
+    <string name="developer_update_failed">Update failed: %1$s</string>
+    <string name="developer_clean_runtime_confirm">Clean up %1$s?</string>
+    <string name="developer_cleanup_failed">Cleanup failed: %1$s</string>
+    <string name="developer_device_space_available">Device space available: %1$s</string>
+    <string name="developer_reset_failed">Reset failed: %1$s</string>
+</resources>

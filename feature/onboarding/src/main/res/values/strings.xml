@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_title">万象 · 启程准备</string>
+    <string name="onboarding_description">正在为你准备纯用户空间 Linux PRoot 沙箱引擎与代码工作区。</string>
+    <string name="onboarding_distribution">Linux 发行版</string>
+    <string name="onboarding_mirror">镜像加速线路</string>
+    <string name="onboarding_mirror_auto">自动择优线路 (Recommended)</string>
+    <string name="onboarding_mirror_official">官方源 (Global CDN)</string>
+    <string name="onboarding_mirror_china">国内镜像加速线路</string>
+    <string name="onboarding_initialization_failed">初始化失败，请检查网络后重试</string>
+    <string name="onboarding_retry">重试下载与就绪</string>
+    <string name="onboarding_preparing">正在准备环境…</string>
+    <string name="onboarding_initialize">一键初始化沙箱</string>
+    <string name="onboarding_recheck">已装过环境？点此重试就绪（不重新下载）</string>
+    <string name="onboarding_import">从文件导入 Linux 发行版</string>
+    <string name="onboarding_import_hint">支持 ARM64 RootFS：.tar、.tar.gz、.tgz、.tar.xz、.tar.zst；需包含 Bash、/bin/sh 和 os-release。</string>
+    <string name="onboarding_connect_model">连接 AI 大模型</string>
+    <string name="onboarding_connect_model_description">配置你所喜爱的模型服务商与 API Key，开启智能结对编程。</string>
+    <string name="onboarding_base_url">Base URL（接口地址）</string>
+    <string name="onboarding_api_key">API Key（可选）</string>
+    <string name="onboarding_model_selection">模型选择 / 推荐预设</string>
+    <string name="onboarding_model_empty">请先刷新或手动填写</string>
+    <string name="onboarding_model_id">模型 ID（可手动输入）</string>
+    <string name="onboarding_later">稍后配置</string>
+    <string name="onboarding_enter">进入万象</string>
+    <string name="onboarding_provider_preset">服务商预设</string>
+</resources>

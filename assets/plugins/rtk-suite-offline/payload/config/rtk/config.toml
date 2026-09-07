@@ -1,0 +1,12 @@
+[tracking]
+enabled = false
+history_days = 0
+
+[tee]
+enabled = false
+mode = "never"
+max_files = 0
+max_file_size = 0
+
+[telemetry]
+enabled = false
