@@ -101,6 +101,8 @@ fun GitPanel(
     onProbeCredential: (String) -> Unit = {},
     onPullNow: () -> Unit = {},
     onDismissPullDirty: () -> Unit = {},
+    onStash: () -> Unit = {},
+    onStashPop: () -> Unit = {},
     aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
     onAiGenerate: () -> Unit = {},
     credentialHealth: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
@@ -186,7 +188,7 @@ fun GitPanel(
                         onOpenClone = { showCloneDialog = true },
                     )
                     state.error != null -> CenterHint(state.error, isError = true)
-                    page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate)
+                    page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate, onStash, onStashPop)
                     page == 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
                     page == 2 -> LogTab(state, onCommitDetail)
                 }
@@ -544,6 +546,8 @@ private fun StatusTab(
     onDeleteUntracked: (String) -> Unit,
     aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
     onAiGenerate: () -> Unit = {},
+    onStash: () -> Unit = {},
+    onStashPop: () -> Unit = {},
 ) {
     val staged = state.staged
     val unstaged = state.unstaged
@@ -613,6 +617,22 @@ private fun StatusTab(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(vertical = 8.dp),
             ) { Text("推送", maxLines = 1) }
+        }
+
+        // 第三排：stash（工作区脏时可存；有 stash 时可恢复）
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RuntimeOutlinedButton(
+                onClick = onStash,
+                enabled = !clean,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(vertical = 8.dp),
+            ) { Text("存起改动", maxLines = 1) }
+            RuntimeOutlinedButton(
+                onClick = onStashPop,
+                enabled = state.stashCount > 0,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(vertical = 8.dp),
+            ) { Text(if (state.stashCount > 0) "恢复 ${state.stashCount} 号" else "无 stash", maxLines = 1) }
         }
 
         if (clean) {

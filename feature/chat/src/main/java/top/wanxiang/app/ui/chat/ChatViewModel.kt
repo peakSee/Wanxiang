@@ -249,10 +249,13 @@ class ChatViewModel @Inject constructor(
             val hasIdentity = runGitRead(ws, "git config user.name")?.isNotBlank() == true &&
                 runGitRead(ws, "git config user.email")?.isNotBlank() == true
             val hasRemote = runGitRead(ws, "git remote")?.isNotBlank() == true
+            val stashCount = runGitRead(ws, "git stash list")
+                ?.lines()?.count { it.isNotBlank() } ?: 0
             _gitPanelState.value = GitPanelState(
                 loading = false,
                 branch = branch,
                 aheadBehind = aheadBehind,
+                stashCount = stashCount,
                 staged = staged,
                 unstaged = unstaged,
                 untracked = untracked,
@@ -329,6 +332,14 @@ class ChatViewModel @Inject constructor(
         _gitPanelState.value = _gitPanelState.value.copy(pullDirtyConfirm = false)
     }
     fun gitPush() = runGitNetworkOp(cmd = "git push", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+    /** 一键 stash 当前所有改动（含未跟踪），message 可选。 */
+    fun gitStash(message: String = "") = runGitWrite(
+        "git stash push -u${if (message.isNotBlank()) " -m " + shellQuote(message) else ""}",
+    )
+    /** 弹出最近一个 stash（保留记录用 apply；彻底用 pop）。 */
+    fun gitStashPop() = runGitWrite("git stash pop")
+    fun gitStashApply() = runGitWrite("git stash apply")
+    fun gitStashDrop(index: Int = 0) = runGitWrite("git stash drop stash@{$index}")
     fun gitCheckout(branch: String) = runGitWrite("git checkout ${shellQuote(branch)}")
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
@@ -1629,6 +1640,8 @@ data class GitPanelState(
     val commits: List<String> = emptyList(),
     val hasIdentity: Boolean = false,
     val hasRemote: Boolean = false,
+    /** 当前 `git stash list` 条数（>0 时可 pop）。 */
+    val stashCount: Int = 0,
     val notARepo: Boolean = false,
     val diffPath: String? = null,
     val diffText: String? = null,
