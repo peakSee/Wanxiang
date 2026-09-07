@@ -86,6 +86,13 @@ class WorkshopPreferences @Inject constructor(private val store: SettingsDataSto
     suspend fun resetScripts() = store.resetWorkshopScripts()
 }
 
+/** Git HTTPS 凭证仓库（GitHub / Gitee / GitLab 私有仓库 PAT 等），整表加密。 */
+@Singleton
+class GitPreferences @Inject constructor(private val store: SettingsDataStore) {
+    val credentials get() = store.gitCredentials
+    suspend fun setCredentials(value: List<GitCredential>) = store.setGitCredentials(value)
+}
+
 /** Per-distro SSH settings exposed only to the runtime service and its settings UI. */
 @Singleton
 class SshPreferences @Inject constructor(private val store: SettingsDataStore) {

@@ -165,6 +165,8 @@ fun ChatScreen(
     val notice by viewModel.notice.collectAsStateWithLifecycle()
     val subagentResult by viewModel.subagentResult.collectAsStateWithLifecycle()
     val gitPanelState by viewModel.gitPanelState.collectAsStateWithLifecycle()
+    val gitCredentials by viewModel.gitCredentials.collectAsStateWithLifecycle()
+    val matchedCredId by viewModel.matchedCredentialId.collectAsStateWithLifecycle()
 
     // 弹窗开关与编辑目标：用 rememberSaveable 保存，旋转 / 进程重建后不丢失
     var showSessions by rememberSaveable { mutableStateOf(false) }
@@ -659,6 +661,11 @@ fun ChatScreen(
             onDeleteBranch = viewModel::gitDeleteBranch,
             onInitRepo = viewModel::gitInit,
             onClone = viewModel::gitClone,
+            credentials = gitCredentials,
+            matchedCredentialId = matchedCredId,
+            onAddCredential = viewModel::addGitCredential,
+            onDeleteCredential = viewModel::deleteGitCredential,
+            onProbeCredential = viewModel::probeCredential,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onDeleteUntracked = viewModel::gitDeleteUntracked,

@@ -40,6 +40,8 @@ class SettingsDataStore @Inject constructor(
     private val workshopFlutterScriptKey = stringPreferencesKey("workshop_flutter_script")
     // 工坊 Android 签名（keystore）注册表；整表 JSON 密文存储，口令不落明文。
     private val workshopKeystoresKey = stringPreferencesKey("workshop_keystores_ciphertext")
+    // Git HTTPS 凭证（GitHub/Gitee/GitLab 私有仓库 PAT）；同样整表加密，不落明文。
+    private val gitCredentialsKey = stringPreferencesKey("git_credentials_ciphertext")
     // ===== 内置浏览器偏好：数据源（datastore key 集中放在 BrowserPreferencesKeys） =====
     private val browserDefaultFamilyKey = BrowserPreferencesKeys.DefaultFamily
     private val browserHomeUrlKey = BrowserPreferencesKeys.HomeUrl
@@ -115,6 +117,26 @@ class SettingsDataStore @Inject constructor(
                 prefs.remove(workshopKeystoresKey)
             } else {
                 prefs[workshopKeystoresKey] = secretManager.encrypt(WorkshopKeystoreCodec.encode(value))
+            }
+        }
+    }
+
+    /** Git 凭证列表（解密后的明文记录，仅本机内存中使用）。解密失败视为空表。 */
+    val gitCredentials: Flow<List<GitCredential>> = context.settingsDataStore.data.map { prefs ->
+        val ciphertext = prefs[gitCredentialsKey]
+        if (ciphertext.isNullOrBlank()) {
+            emptyList()
+        } else {
+            GitCredentialCodec.decode(secretManager.decrypt(ciphertext))
+        }
+    }
+
+    suspend fun setGitCredentials(value: List<GitCredential>) {
+        context.settingsDataStore.edit { prefs ->
+            if (value.isEmpty()) {
+                prefs.remove(gitCredentialsKey)
+            } else {
+                prefs[gitCredentialsKey] = secretManager.encrypt(GitCredentialCodec.encode(value))
             }
         }
     }

@@ -15,6 +15,8 @@ import top.wanxiang.app.core.database.McpServerRepository
 import top.wanxiang.app.core.database.AgentApprovalRepository
 import top.wanxiang.app.core.database.AgentApprovalRequestEntity
 import top.wanxiang.app.core.datastore.AgentPreferences
+import top.wanxiang.app.core.datastore.GitCredential
+import top.wanxiang.app.core.datastore.GitPreferences
 import top.wanxiang.app.harness.HarnessLoop
 import top.wanxiang.app.harness.HarnessMessage
 import top.wanxiang.app.harness.UserMessage
@@ -91,6 +93,7 @@ class ChatViewModel @Inject constructor(
     private val aiModelDao: AiModelRepository,
     private val workspaceManager: WorkspaceManager,
     private val settingsDataStore: AgentPreferences,
+    private val gitPreferences: GitPreferences,
     private val linuxRuntime: top.wanxiang.app.runtime.LinuxRuntime,
     private val terminalSessionManager: TerminalSessionManager,
     private val mcpManager: McpManager,
@@ -294,18 +297,102 @@ class ChatViewModel @Inject constructor(
     fun gitStageAll() = runGitWrite("git add -A")
     fun gitUnstageAll() = runGitWrite("git reset HEAD")
     fun gitCommit(message: String) = runGitWrite("git commit -m ${shellQuote(message)}")
-    fun gitPull() = runGitWrite("git pull")
-    fun gitPush() = runGitWrite("git push")
+    fun gitPull() = runGitNetworkOp(cmd = "git pull", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+    fun gitPush() = runGitNetworkOp(cmd = "git push", resolveHostFromOrigin = true, timeoutMs = 180_000L)
     fun gitCheckout(branch: String) = runGitWrite("git checkout ${shellQuote(branch)}")
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
     fun gitInit() = runGitWrite("git init")
-    fun gitClone(url: String) = runGitWrite("git clone --depth 1 ${shellQuote(url)} .")
+    fun gitClone(url: String) = runGitNetworkOp(
+        cmd = "git clone --depth 1 ${shellQuote(url)} .",
+        resolveHostFromOrigin = false,
+        explicitHost = GitAuth.hostOf(url),
+        timeoutMs = 600_000L,
+    )
     fun gitConfigIdentity(name: String, email: String) = runGitWrite("git config user.name ${shellQuote(name)} && git config user.email ${shellQuote(email)}")
     fun gitRevert(path: String) = runGitWrite("git checkout -- ${shellQuote(path)}")
     fun gitDeleteUntracked(path: String) = runGitWrite("rm -- ${shellQuote(path)}")
     fun gitCreateTag(name: String) = runGitWrite("git tag ${shellQuote(name)}")
     fun gitDeleteTag(name: String) = runGitWrite("git tag -d ${shellQuote(name)}")
+
+    /**
+     * 网络型 git 操作（clone/pull/push），带凭证注入。凭证不落 `.git/config`：通过
+     * `GIT_CONFIG_KEY_0=credential.helper` + 一次性 `mktemp` 文件传给 git，跑完立即删除。
+     * - clone：从入参 URL 解析 host；
+     * - pull/push：从当前仓库 `origin` 反查 host。
+     */
+    private fun runGitNetworkOp(
+        cmd: String,
+        resolveHostFromOrigin: Boolean,
+        explicitHost: String? = null,
+        timeoutMs: Long,
+    ) {
+        val ws = currentGitWs()
+        viewModelScope.launch(Dispatchers.IO) {
+            val host = if (resolveHostFromOrigin) {
+                GitAuth.hostOf(runGitRead(ws, "git remote get-url origin").orEmpty().trim())
+            } else {
+                explicitHost
+            }
+            val creds = gitPreferences.credentials.first()
+            val cred = GitAuth.findCredential(creds, host)
+            val effective = if (cred != null) GitAuth.wrap(cmd, cred) else cmd
+            linuxRuntime.execute(
+                top.wanxiang.app.runtime.shell.ShellCommand(
+                    commandLine = "$effective 2>&1 || true",
+                    workingDirectory = ws,
+                    timeoutMs = timeoutMs,
+                ),
+            )
+            refreshGitStatus()
+        }
+    }
+
+    // ===== Git 凭证 CRUD（HTTPS 私有仓库：GitHub/Gitee/GitLab PAT 等）=====
+
+    /** 已保存的 Git 凭证列表（加密存储，UI 只显示名称+主机+用户名，token 掩码）。 */
+    val gitCredentials: StateFlow<List<GitCredential>> = gitPreferences.credentials
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 当前工作区 URL 命中的凭证 id（Git 面板顶部提示用），无匹配则 null。 */
+    private val _matchedCredentialId = MutableStateFlow<String?>(null)
+    val matchedCredentialId: StateFlow<String?> = _matchedCredentialId.asStateFlow()
+
+    fun addGitCredential(name: String, host: String, username: String, token: String) {
+        val trimmedHost = host.trim().lowercase().removePrefix("https://").removeSuffix("/")
+        if (name.isBlank() || trimmedHost.isBlank() || username.isBlank() || token.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = gitPreferences.credentials.first()
+            val updated = current + GitCredential(
+                id = java.util.UUID.randomUUID().toString(),
+                name = name.trim(),
+                host = trimmedHost,
+                username = username.trim(),
+                token = token.trim(),
+                createdAtMillis = System.currentTimeMillis(),
+            )
+            gitPreferences.setCredentials(updated)
+        }
+    }
+
+    fun deleteGitCredential(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = gitPreferences.credentials.first()
+            gitPreferences.setCredentials(current.filterNot { it.id == id })
+        }
+    }
+
+    /** 用给定 URL 探测是否有可用凭证（clone 对话框显示「将自动使用」提示）。 */
+    fun probeCredential(url: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val host = GitAuth.hostOf(url)
+            val creds = gitPreferences.credentials.first()
+            _matchedCredentialId.value = GitAuth.findCredential(creds, host)?.id
+        }
+    }
+
+    private fun currentGitWs(): String =
+        workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
 
     fun loadCommitDetail(hash: String) {
         val ws = workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }

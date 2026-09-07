@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -81,6 +82,11 @@ fun GitPanel(
     onDeleteTag: (String) -> Unit = {},
     onCommitDetail: (String) -> Unit = {},
     onClearCommitDetail: () -> Unit = {},
+    credentials: List<top.wanxiang.app.core.datastore.GitCredential> = emptyList(),
+    matchedCredentialId: String? = null,
+    onAddCredential: (name: String, host: String, username: String, token: String) -> Unit = { _, _, _, _ -> },
+    onDeleteCredential: (String) -> Unit = {},
+    onProbeCredential: (String) -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -97,6 +103,11 @@ fun GitPanel(
     var credentialEmail by rememberSaveable { mutableStateOf("") }
     var showCloneDialog by rememberSaveable { mutableStateOf(false) }
     var cloneUrl by rememberSaveable { mutableStateOf("") }
+    var showAddPatDialog by rememberSaveable { mutableStateOf(false) }
+    var newPatName by rememberSaveable { mutableStateOf("") }
+    var newPatHost by rememberSaveable { mutableStateOf("github.com") }
+    var newPatUser by rememberSaveable { mutableStateOf("") }
+    var newPatToken by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -121,12 +132,20 @@ fun GitPanel(
             Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("状态") })
             Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("分支") })
             Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("历史") })
+            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("凭证") })
         }
 
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
             }
+
+            // 凭证标签页始终可访问（不必先有仓库）；其余分支需要仓库
+            selectedTab == 3 -> CredentialsTab(
+                credentials = credentials,
+                onAdd = { showAddPatDialog = true },
+                onDelete = onDeleteCredential,
+            )
 
             state.notARepo -> NotARepoView(onInit = onInitRepo, onOpenClone = { showCloneDialog = true })
 
@@ -179,20 +198,124 @@ fun GitPanel(
             text = {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "输入远程仓库地址，克隆到当前工作区。例如万象源码：\nhttps://github.com/peakSee/Wanxiang.git",
+                        "输入远程仓库地址，克隆到当前工作区。私有仓库（GitHub/Gitee/GitLab PAT）会自动使用凭证标签页里匹配的 HTTPS 令牌。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     OutlinedTextField(
                         value = cloneUrl,
-                        onValueChange = { cloneUrl = it },
+                        onValueChange = {
+                            cloneUrl = it
+                            onProbeCredential(it.trim())
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("https://github.com/...") },
+                        placeholder = { Text("https://github.com/owner/repo.git") },
                         singleLine = true,
                     )
+                    if (matchedCredentialId != null) {
+                        val matched = credentials.firstOrNull { it.id == matchedCredentialId }
+                        if (matched != null) {
+                            Text(
+                                "✓ 将自动使用凭证：${matched.name}（${matched.username}@${matched.host}）",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    } else if (cloneUrl.isNotBlank() && GitAuth.hostOf(cloneUrl) != null) {
+                        Text(
+                            "此主机没有保存的凭证，公有仓库可直接克隆；私有仓库请先到「凭证」标签页添加。",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             },
         )
+    }
+
+    if (showAddPatDialog) {
+        RuntimeAlertDialog(
+            onDismissRequest = { showAddPatDialog = false },
+            confirmButton = {
+                RuntimeButton(
+                    onClick = {
+                        if (newPatName.isNotBlank() && newPatHost.isNotBlank() && newPatUser.isNotBlank() && newPatToken.isNotBlank()) {
+                            onAddCredential(newPatName.trim(), newPatHost.trim(), newPatUser.trim(), newPatToken.trim())
+                            newPatName = ""; newPatHost = "github.com"; newPatUser = ""; newPatToken = ""
+                            showAddPatDialog = false
+                        }
+                    },
+                ) { Text("保存") }
+            },
+            dismissButton = { RuntimeTextButton(onClick = { showAddPatDialog = false }) { Text("取消") } },
+            title = { Text("新增 HTTPS 凭证") },
+            text = {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "为 GitHub / Gitee / GitLab 等 HTTPS 私有仓库保存一份凭证，克隆和推送会自动使用。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(value = newPatName, onValueChange = { newPatName = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("名称（例如：GitHub 我的账号）") }, singleLine = true)
+                    OutlinedTextField(value = newPatHost, onValueChange = { newPatHost = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("主机（github.com / gitee.com / gitlab.com）") }, singleLine = true)
+                    OutlinedTextField(value = newPatUser, onValueChange = { newPatUser = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("用户名（Gitee/GitHub 用账号名；GitLab 可填 oauth2）") }, singleLine = true)
+                    OutlinedTextField(value = newPatToken, onValueChange = { newPatToken = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Personal Access Token / 密码") }, singleLine = true)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CredentialsTab(
+    credentials: List<top.wanxiang.app.core.datastore.GitCredential>,
+    onAdd: () -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "已保存的 HTTPS 凭证（加密存储，运行时一次性使用不落盘）",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            RuntimeButton(onClick = onAdd) { Text("新增") }
+        }
+        if (credentials.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    "还没有凭证。添加一个 GitHub/Gitee/GitLab 的 Personal Access Token，就能克隆或推送私有仓库。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            credentials.forEach { cred ->
+                RuntimeCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(cred.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${cred.username}@${cred.host}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("token: ${cred.token.take(4)}${"\u2022".repeat(8)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        RuntimeIconButton(onClick = { onDelete(cred.id) }) {
+                            RuntimeIcon(RuntimeIconName.Close, Modifier.size(16.dp), MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
