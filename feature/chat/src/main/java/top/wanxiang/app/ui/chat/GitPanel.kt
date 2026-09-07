@@ -147,11 +147,14 @@ fun GitPanel(
                 onDelete = onDeleteCredential,
             )
 
-            state.notARepo -> NotARepoView(onInit = onInitRepo, onOpenClone = { showCloneDialog = true })
+            // notARepo（明确不是仓库）与 branch=null（有 git status 但拿不到分支，
+            // 例如 chat 未绑工作区 / 空仓库）两种情况都给「克隆 / 初始化」入口。
+            state.notARepo || state.branch == null -> NotARepoView(
+                onInit = onInitRepo,
+                onOpenClone = { showCloneDialog = true },
+            )
 
             state.error != null -> CenterHint(state.error, isError = true)
-
-            state.branch == null -> CenterHint(stringResource(R.string.chat_git_no_repo))
 
             else -> when (selectedTab) {
                 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onDeleteUntracked)
@@ -182,23 +185,22 @@ fun GitPanel(
     }
 
     if (showCloneDialog) {
+        val doClone = {
+            val u = cloneUrl.trim()
+            if (u.isNotBlank()) {
+                showCloneDialog = false
+                onClone(u)
+            }
+        }
         RuntimeAlertDialog(
             onDismissRequest = { showCloneDialog = false },
-            confirmButton = {
-                RuntimeButton(onClick = {
-                    val url = cloneUrl.trim()
-                    if (url.isNotBlank()) {
-                        showCloneDialog = false
-                        onClone(url)
-                    }
-                }) { Text("克隆") }
-            },
+            confirmButton = { RuntimeButton(onClick = doClone) { Text("克隆") } },
             dismissButton = { RuntimeTextButton(onClick = { showCloneDialog = false }) { Text("取消") } },
             title = { Text("克隆远程仓库") },
             text = {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "输入远程仓库地址，克隆到当前工作区。私有仓库（GitHub/Gitee/GitLab PAT）会自动使用凭证标签页里匹配的 HTTPS 令牌。",
+                        "私有仓库会自动使用「凭证」标签页里匹配的 HTTPS PAT。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -211,6 +213,8 @@ fun GitPanel(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("https://github.com/owner/repo.git") },
                         singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { doClone() }),
                     )
                     if (matchedCredentialId != null) {
                         val matched = credentials.firstOrNull { it.id == matchedCredentialId }
@@ -234,19 +238,16 @@ fun GitPanel(
     }
 
     if (showAddPatDialog) {
+        val savePat = {
+            if (newPatName.isNotBlank() && newPatHost.isNotBlank() && newPatUser.isNotBlank() && newPatToken.isNotBlank()) {
+                onAddCredential(newPatName.trim(), newPatHost.trim(), newPatUser.trim(), newPatToken.trim())
+                newPatName = ""; newPatHost = "github.com"; newPatUser = ""; newPatToken = ""
+                showAddPatDialog = false
+            }
+        }
         RuntimeAlertDialog(
             onDismissRequest = { showAddPatDialog = false },
-            confirmButton = {
-                RuntimeButton(
-                    onClick = {
-                        if (newPatName.isNotBlank() && newPatHost.isNotBlank() && newPatUser.isNotBlank() && newPatToken.isNotBlank()) {
-                            onAddCredential(newPatName.trim(), newPatHost.trim(), newPatUser.trim(), newPatToken.trim())
-                            newPatName = ""; newPatHost = "github.com"; newPatUser = ""; newPatToken = ""
-                            showAddPatDialog = false
-                        }
-                    },
-                ) { Text("保存") }
-            },
+            confirmButton = { RuntimeButton(onClick = savePat) { Text("保存") } },
             dismissButton = { RuntimeTextButton(onClick = { showAddPatDialog = false }) { Text("取消") } },
             title = { Text("新增 HTTPS 凭证") },
             text = {
@@ -254,7 +255,15 @@ fun GitPanel(
                     OutlinedTextField(value = newPatName, onValueChange = { newPatName = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("名称（如 GitHub 我的账号）") }, singleLine = true)
                     OutlinedTextField(value = newPatHost, onValueChange = { newPatHost = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("主机（github.com / gitee.com）") }, singleLine = true)
                     OutlinedTextField(value = newPatUser, onValueChange = { newPatUser = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("用户名（GitLab 可填 oauth2）") }, singleLine = true)
-                    OutlinedTextField(value = newPatToken, onValueChange = { newPatToken = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("PAT / 密码") }, singleLine = true)
+                    OutlinedTextField(
+                        value = newPatToken,
+                        onValueChange = { newPatToken = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("PAT / 密码 — 填完按键盘上的「完成」即保存") },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { savePat() }),
+                    )
                 }
             },
         )
