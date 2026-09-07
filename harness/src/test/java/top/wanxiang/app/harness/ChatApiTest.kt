@@ -50,6 +50,20 @@ class ChatApiTest {
     }
 
     @Test
+    fun `identical chat requests hit cache with one http call`() = runBlocking {
+        server.enqueue(
+            MockResponse().setBody("""{"choices":[{"message":{"role":"assistant","content":"cached"}}]}"""),
+        )
+        val msg = listOf(ApiMessage(role = "user", content = "hi"))
+        val m = model()
+        val first = api.chat(m, msg)
+        val second = api.chat(m, msg)
+        assertEquals("cached", first.content)
+        assertEquals("cached", second.content)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun `parses tool calls response`() = runBlocking {
         server.enqueue(
             MockResponse().setBody(

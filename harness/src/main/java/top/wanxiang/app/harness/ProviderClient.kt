@@ -50,9 +50,13 @@ internal class ChatApi(
     private val okHttpClient: OkHttpClient,
     private val json: Json,
 ) {
+    private val requestCache = LlmRequestCache()
+
     suspend fun chat(model: ModelConfig, messages: List<ApiMessage>): ChatResult =
         withContext(Dispatchers.IO) {
-            withRetry {
+            val cacheKey = requestCacheKey(model, messages)
+            requestCache.get(cacheKey)?.let { cached -> return@withContext cached }
+            val result = withRetry {
                 okHttpClient.newCall(buildRequest(model, messages, stream = false)).execute().use { response ->
                     val body = response.body.string()
                     if (!response.isSuccessful) {
@@ -79,6 +83,8 @@ internal class ChatApi(
                 )
             }
             }
+            requestCache.put(cacheKey, result)
+            result
         }
 
     /**
@@ -119,6 +125,9 @@ internal class ChatApi(
         code == 408 || code >= 500 -> throw ProviderClient.serverErrorException(code, body)
         else -> throw IllegalStateException(ProviderClient.formatHttpErrorMessage(code, body))
     }
+
+    private fun requestCacheKey(model: ModelConfig, messages: List<ApiMessage>): String =
+        "${model.hashCode()}|${messages.hashCode()}"
 
     /**
      * 流式调用：逐行读取 SSE（data: ...），每个内容增量立即通过 [onDelta] 回调
