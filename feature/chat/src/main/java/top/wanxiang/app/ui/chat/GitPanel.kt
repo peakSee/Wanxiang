@@ -251,15 +251,10 @@ fun GitPanel(
             title = { Text("新增 HTTPS 凭证") },
             text = {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "为 GitHub / Gitee / GitLab 等 HTTPS 私有仓库保存一份凭证，克隆和推送会自动使用。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(value = newPatName, onValueChange = { newPatName = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("名称（例如：GitHub 我的账号）") }, singleLine = true)
-                    OutlinedTextField(value = newPatHost, onValueChange = { newPatHost = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("主机（github.com / gitee.com / gitlab.com）") }, singleLine = true)
-                    OutlinedTextField(value = newPatUser, onValueChange = { newPatUser = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("用户名（Gitee/GitHub 用账号名；GitLab 可填 oauth2）") }, singleLine = true)
-                    OutlinedTextField(value = newPatToken, onValueChange = { newPatToken = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Personal Access Token / 密码") }, singleLine = true)
+                    OutlinedTextField(value = newPatName, onValueChange = { newPatName = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("名称（如 GitHub 我的账号）") }, singleLine = true)
+                    OutlinedTextField(value = newPatHost, onValueChange = { newPatHost = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("主机（github.com / gitee.com）") }, singleLine = true)
+                    OutlinedTextField(value = newPatUser, onValueChange = { newPatUser = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("用户名（GitLab 可填 oauth2）") }, singleLine = true)
+                    OutlinedTextField(value = newPatToken, onValueChange = { newPatToken = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("PAT / 密码") }, singleLine = true)
                 }
             },
         )
