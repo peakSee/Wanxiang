@@ -111,6 +111,7 @@ class ChatViewModel @Inject constructor(
     private val profileWriter: top.wanxiang.app.core.tools.AiProfileWriter,
     private val privilegeManager: top.wanxiang.app.runtime.privilege.PrivilegeManager,
     private val pathManager: top.wanxiang.app.runtime.RuntimePathManager,
+    private val providerClient: top.wanxiang.app.harness.ProviderClient,
 ) : ViewModel() {
 
     /**
@@ -423,6 +424,49 @@ class ChatViewModel @Inject constructor(
             _matchedCredentialId.value = GitAuth.findCredential(creds, host)?.id
         }
     }
+
+    // ===== AI 生成 commit message（万象独有：把 staged diff 交给当前激活模型，产出 Conventional Commits 消息）=====
+
+    private val _aiCommit = MutableStateFlow<GitAiCommitState>(GitAiCommitState.Idle)
+    val aiCommit: StateFlow<GitAiCommitState> = _aiCommit.asStateFlow()
+
+    /** 触发一次 AI 生成。若正在 loading 忽略。 */
+    fun aiGenerateCommitMessage() {
+        if (_aiCommit.value is GitAiCommitState.Loading) return
+        val ws = currentGitWs()
+        _aiCommit.value = GitAiCommitState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            // 8KB diff 上限：过大模型也读不完 + 计费高
+            val diff = runGitRead(ws, "git diff --staged --stat && echo === && git diff --staged | head -c 8192")
+                .orEmpty()
+                .trim()
+            if (diff.isBlank()) {
+                _aiCommit.value = GitAiCommitState.Error("没有已暂存的改动，请先 stage 文件")
+                return@launch
+            }
+            try {
+                val model = providerClient.resolveModel()
+                val messages = listOf(
+                    top.wanxiang.app.harness.ApiMessage(
+                        role = "system",
+                        content = "你是 Git 提交消息助手。根据用户给的 diff，写一条 Conventional Commits 风格的消息：" +
+                            "第一行 `<type>(<scope>): <简短摘要>` 不超过 72 字符；空一行；body 说明「为什么这么做」而非「改了哪些行」（≤ 4 行）。" +
+                            "type 从 feat/fix/refactor/docs/test/chore/perf/build/ci 里选。中文输出，禁止 markdown 代码块包裹，只输出消息本身。",
+                    ),
+                    top.wanxiang.app.harness.ApiMessage(role = "user", content = "以下是 diff：\n\n$diff"),
+                )
+                val result = providerClient.chat(model, messages)
+                val text = result.content?.trim().orEmpty()
+                _aiCommit.value = if (text.isBlank()) GitAiCommitState.Error("模型返回空，试试再点一次")
+                    else GitAiCommitState.Done(text)
+            } catch (t: Throwable) {
+                _aiCommit.value = GitAiCommitState.Error("AI 生成失败：${t.message ?: "未知"}")
+            }
+        }
+    }
+
+    fun consumeAiCommit() { _aiCommit.value = GitAiCommitState.Idle }
+
 
     private fun currentGitWs(): String =
         workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
@@ -1291,6 +1335,14 @@ class ChatViewModel @Inject constructor(
             profileWriter.deleteProfile(id)
         }
     }
+}
+
+/** AI 生成 commit 消息的状态机：Idle / Loading / Done(text) / Error(reason)。 */
+sealed interface GitAiCommitState {
+    data object Idle : GitAiCommitState
+    data object Loading : GitAiCommitState
+    data class Done(val message: String) : GitAiCommitState
+    data class Error(val reason: String) : GitAiCommitState
 }
 
 internal fun mergeHistoricalAndLiveEvents(

@@ -25,6 +25,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +93,8 @@ fun GitPanel(
     onProbeCredential: (String) -> Unit = {},
     onPullNow: () -> Unit = {},
     onDismissPullDirty: () -> Unit = {},
+    aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
+    onAiGenerate: () -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -162,7 +165,7 @@ fun GitPanel(
             state.error != null -> CenterHint(state.error, isError = true)
 
             else -> when (selectedTab) {
-                0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked)
+                0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate)
                 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
                 2 -> LogTab(state, onCommitDetail)
             }
@@ -458,6 +461,8 @@ private fun StatusTab(
     onRevert: (String) -> Unit,
     onRevertAll: () -> Unit = {},
     onDeleteUntracked: (String) -> Unit,
+    aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
+    onAiGenerate: () -> Unit = {},
 ) {
     val staged = state.staged
     val unstaged = state.unstaged
@@ -466,6 +471,13 @@ private fun StatusTab(
 
     var showCommitDialog by rememberSaveable { mutableStateOf(false) }
     var commitMessage by rememberSaveable { mutableStateOf("") }
+    // AI 完成后把生成的消息回填到 commitMessage
+    LaunchedEffect(aiCommit) {
+        when (aiCommit) {
+            is top.wanxiang.app.ui.chat.GitAiCommitState.Done -> commitMessage = aiCommit.message
+            else -> {}
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -568,6 +580,7 @@ private fun StatusTab(
     }
 
     if (showCommitDialog) {
+        val aiLoading = aiCommit is top.wanxiang.app.ui.chat.GitAiCommitState.Loading
         RuntimeAlertDialog(
             onDismissRequest = { showCommitDialog = false },
             confirmButton = {
@@ -579,12 +592,25 @@ private fun StatusTab(
             dismissButton = { RuntimeTextButton(onClick = { showCommitDialog = false }) { Text("取消") } },
             title = { Text("提交改动") },
             text = {
-                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Column(
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RuntimeButton(
+                            onClick = onAiGenerate,
+                            enabled = !aiLoading && staged.isNotEmpty(),
+                        ) { Text(if (aiLoading) "✨ 生成中..." else "✨ AI 生成", style = MaterialTheme.typography.labelMedium) }
+                        if (staged.isEmpty()) Text("需先暂存改动", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (aiCommit is top.wanxiang.app.ui.chat.GitAiCommitState.Error) {
+                        Text(aiCommit.reason, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
                     OutlinedTextField(
                         value = commitMessage,
                         onValueChange = { commitMessage = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("提交信息") },
+                        placeholder = { Text("提交信息（可让 AI 生成后手动微调）") },
                     )
                 }
             },
