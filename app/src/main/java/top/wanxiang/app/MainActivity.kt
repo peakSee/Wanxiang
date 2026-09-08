@@ -179,21 +179,29 @@ class MainActivity : AppCompatActivity() {
                 LaunchedEffect(onboarding.completed) {
                     if (!onboarding.completed) return@LaunchedEffect
                     val autoCheck = updatePreferences.autoCheckUpdates.first()
-                    if (!autoCheck) return@LaunchedEffect
+                    if (!autoCheck) {
+                        android.util.Log.i("WanxiangUpdate", "auto check 关闭，跳过")
+                        return@LaunchedEffect
+                    }
                     // P0-1 冷却：同 versionCode 用户已「稍后再说」→ 本次不弹；上次自动检查 <6h → 本次跳过
                     val dismissedCode = updatePreferences.dismissedUpdateVersionCode.first()
                     val lastCheckMs = updatePreferences.lastUpdateCheckTimeMs.first()
                     val nowMs = System.currentTimeMillis()
+                    val ageMin = (nowMs - lastCheckMs) / 60_000
                     val coolingDown = nowMs - lastCheckMs < top.wanxiang.app.core.datastore.UpdatePreferences.UPDATE_AUTO_CHECK_COOLDOWN_MS
+                    android.util.Log.i("WanxiangUpdate", "上次检查 ${ageMin} 分钟前（6h 冷却）→ cooling=$coolingDown dismissedCode=$dismissedCode")
                     if (coolingDown) return@LaunchedEffect
                     updatePreferences.setLastUpdateCheckTime(nowMs)
                     val res = appUpdateManager.checkUpdateMerged(currentVersionName)
                     res.onSuccess { info ->
+                        android.util.Log.i("WanxiangUpdate", "云端 ${info.latestVersion} hasUpdate=${info.hasUpdate} versionCode=${info.versionCode}")
                         if (info.hasUpdate && info.versionCode != dismissedCode) {
                             // P0-2 忙碌延后：延迟 3 秒，避开用户冷启后立刻输入或操作的窗口
                             kotlinx.coroutines.delay(3_000L)
                             updateInfo = info
                         }
+                    }.onFailure {
+                        android.util.Log.w("WanxiangUpdate", "检查失败：${it.message}")
                     }
                 }
 

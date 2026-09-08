@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import top.wanxiang.app.runtime.debug.DebugActionBus
 
 /**
@@ -19,10 +22,17 @@ import top.wanxiang.app.runtime.debug.DebugActionBus
 @AndroidEntryPoint
 class DebugReceiver : BroadcastReceiver() {
     @Inject lateinit var bus: DebugActionBus
+    @Inject lateinit var updatePreferences: top.wanxiang.app.core.datastore.UpdatePreferences
 
     override fun onReceive(context: Context, intent: Intent) {
         val act = intent.getStringExtra("act").orEmpty()
         when (intent.action) {
+            ACTION_RESET_COOLDOWN -> {
+                CoroutineScope(Dispatchers.IO).launch {
+                    updatePreferences.clearUpdateCooldown()
+                    android.util.Log.i("WanxiangUpdate", "DEBUG: cooldown cleared")
+                }
+            }
             ACTION_CLONE -> {
                 val url = intent.getStringExtra("url").orEmpty()
                 if (url.isNotBlank()) bus.emit(DebugActionBus.Action.CloneRepo(url))
@@ -72,5 +82,6 @@ class DebugReceiver : BroadcastReceiver() {
         const val ACTION_CLONE = "top.wanxiang.app.DEBUG_CLONE"
         const val ACTION_DIAG = "top.wanxiang.app.DEBUG_DIAG"
         const val ACTION_GIT = "top.wanxiang.app.DEBUG_GIT"
+        const val ACTION_RESET_COOLDOWN = "top.wanxiang.app.DEBUG_RESET_COOLDOWN"
     }
 }
