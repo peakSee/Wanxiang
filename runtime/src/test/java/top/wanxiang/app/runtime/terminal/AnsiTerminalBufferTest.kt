@@ -105,9 +105,9 @@ class AnsiTerminalBufferTest {
         assertEquals("", line.cells[1].character)
         assertEquals("好", line.cells[2].character)
         assertEquals("", line.cells[3].character)
-        assertEquals("太", line.cells[4].character)
+        assertEquals("万", line.cells[4].character)
         assertEquals("", line.cells[5].character)
-        assertEquals("墟", line.cells[6].character)
+        assertEquals("象", line.cells[6].character)
         assertEquals("", line.cells[7].character)
     }
 }
