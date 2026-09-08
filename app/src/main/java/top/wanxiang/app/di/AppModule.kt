@@ -38,6 +38,7 @@ import top.wanxiang.app.core.database.StorageMountBindingDao
 import top.wanxiang.app.core.database.ToolSettingsDao
 import top.wanxiang.app.core.database.AgentApprovalDao
 import top.wanxiang.app.core.database.QuickPhraseDao
+import top.wanxiang.app.core.database.WorkflowDao
 import top.wanxiang.app.core.database.HarnessRuntimeDao
 import top.wanxiang.app.core.database.AndroidAppDao
 import top.wanxiang.app.harness.WorkspaceFileAccess
@@ -156,6 +157,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideQuickPhraseDao(database: AppDatabase): QuickPhraseDao = database.quickPhraseDao()
+
+    @Provides
+    @Singleton
+    fun provideWorkflowDao(database: AppDatabase): WorkflowDao = database.workflowDao()
 
     @Provides
     @Singleton

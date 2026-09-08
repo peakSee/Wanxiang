@@ -1,5 +1,19 @@
 package top.wanxiang.app.ui.chat
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.PaddingValues
+import top.wanxiang.app.ui.components.RuntimeIcon
+import top.wanxiang.app.ui.components.RuntimeIconName
+import top.wanxiang.app.harness.workflow.ProactiveWorkflowSuggestion
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import top.wanxiang.app.ui.components.RuntimeAlertDialog
@@ -57,7 +71,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import top.wanxiang.app.feature.chat.R
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -123,6 +136,7 @@ fun ChatScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val input by viewModel.input.collectAsStateWithLifecycle()
     val pendingAttachments by viewModel.pendingAttachments.collectAsStateWithLifecycle()
+    val workflowSuggestions by viewModel.workflowSuggestions.collectAsStateWithLifecycle()
     val attachmentExtracting by viewModel.attachmentExtracting.collectAsStateWithLifecycle()
     val attachmentExtractedTexts by viewModel.extractedTexts.collectAsStateWithLifecycle()
     val attachmentStatuses: Map<String, top.wanxiang.app.ui.chat.AttachmentStatus> = buildMap {
@@ -515,6 +529,9 @@ fun ChatScreen(
                     attachmentsProcessing = attachmentsProcessing,
                     onAttachmentsPicked = viewModel::onAttachmentsPicked,
                     onRemoveAttachment = viewModel::removeAttachment,
+                    workflowSuggestions = workflowSuggestions,
+                    onLaunchWorkflowSuggestion = viewModel::launchWorkflowSuggestion,
+                    onDismissWorkflowSuggestion = viewModel::dismissWorkflowSuggestion,
                     onSend = viewModel::sendFromComposer,
                     onStop = viewModel::stop,
                     lastAssistantMessageId = lastAssistantMessageId,
@@ -987,6 +1004,9 @@ private fun ChatPaneContent(
     workspace: String,
     workspaceProject: WorkspaceProject? = null,
     attachmentStatuses: Map<String, top.wanxiang.app.ui.chat.AttachmentStatus> = emptyMap(),
+    workflowSuggestions: List<ProactiveWorkflowSuggestion> = emptyList(),
+    onLaunchWorkflowSuggestion: (ProactiveWorkflowSuggestion) -> Unit = {},
+    onDismissWorkflowSuggestion: (String) -> Unit = {},
     onOpenFile: ((projectName: String, relativePath: String) -> Unit)?,
     onEditMessage: (UserMessage) -> Unit,
     onDeleteMessage: (String) -> Unit,
@@ -1118,6 +1138,12 @@ private fun ChatPaneContent(
             onDismiss = onDismissMcpRecommendation,
         )
 
+        ProactiveWorkflowBanner(
+            suggestions = workflowSuggestions,
+            onLaunch = onLaunchWorkflowSuggestion,
+            onDismiss = onDismissWorkflowSuggestion,
+        )
+
         ChatComposer(
             listState = listState,
             running = running,
@@ -1193,6 +1219,81 @@ private fun McpRecommendationBanner(
                 }
                 TextButton(onClick = { onDismiss(recommendation.presetId) }) {
                     Text(stringResource(R.string.chat_ignore), color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+        }
+    }
+}
+
+/** Event-driven workflow actions shown directly above the composer as interactive pills. */
+@Composable
+private fun ProactiveWorkflowBanner(
+    suggestions: List<ProactiveWorkflowSuggestion>,
+    onLaunch: (ProactiveWorkflowSuggestion) -> Unit,
+    onDismiss: (String) -> Unit,
+) {
+    if (suggestions.isEmpty()) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        suggestions.forEach { suggestion ->
+            Surface(
+                modifier = Modifier.clip(RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.90f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)),
+                tonalElevation = 2.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    RuntimeIcon(RuntimeIconName.Hub, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    Column(
+                        modifier = Modifier
+                            .clickable { onLaunch(suggestion) }
+                            .padding(end = 4.dp),
+                    ) {
+                        Text(
+                            text = if (suggestion.projectName.isNotBlank()) "${suggestion.projectName} · ${suggestion.title}" else suggestion.title,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            maxLines = 1,
+                        )
+                        if (suggestion.description.isNotBlank()) {
+                            Text(
+                                text = suggestion.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.75f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = { onLaunch(suggestion) },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(28.dp),
+                    ) {
+                        Text("运行", style = MaterialTheme.typography.labelSmall)
+                    }
+                    IconButton(
+                        onClick = { onDismiss(suggestion.workflowId) },
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        RuntimeIcon(
+                            RuntimeIconName.Close,
+                            Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.65f),
+                        )
+                    }
                 }
             }
         }

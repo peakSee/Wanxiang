@@ -124,7 +124,7 @@ internal class AnthropicApi(
                             val block = event["content_block"] as? JsonObject
                             if (block != null && block["type"]?.jsonPrimitive?.contentOrNull == "tool_use") {
                                 toolCalls.getOrPut(index) { ToolCallAccumulator() }.apply {
-                                    id = ToolCallIdNormalizer.normalize(block["id"]?.jsonPrimitive?.contentOrNull)
+                                    id = block["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
                                     name = block["name"]?.jsonPrimitive?.contentOrNull.orEmpty()
                                     publishProgress(onToolProgress)
                                 }
@@ -367,7 +367,8 @@ internal class AnthropicApi(
                 "text" -> text.append(obj["text"]?.jsonPrimitive?.contentOrNull.orEmpty())
                 "thinking" -> reasoning.append(obj["thinking"]?.jsonPrimitive?.contentOrNull.orEmpty())
                 "tool_use" -> calls += ApiToolCallSpec(
-                    id = ToolCallIdNormalizer.normalize(obj["id"]?.jsonPrimitive?.contentOrNull),
+                    id = obj["id"]?.jsonPrimitive?.contentOrNull?.ifBlank { ToolCallIdNormalizer.normalize(null) }
+                        ?: ToolCallIdNormalizer.normalize(null),
                     name = obj["name"]?.jsonPrimitive?.contentOrNull.orEmpty(),
                     argumentsJson = obj["input"]?.toString() ?: "{}",
                 )

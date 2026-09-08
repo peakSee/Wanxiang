@@ -168,6 +168,8 @@
     <string name="chat_reverse_decode">Unpack and decompile</string>
     <string name="chat_reverse_decode_description">Run the JADX or apktool unpacking workflow</string>
     <string name="chat_reverse_decode_prompt">Safely unpack and decompile the original APK in this project. Preserve the original file and write output to a new directory.</string>
+    <string name="chat_command_workflow">Workflows</string>
+    <string name="chat_command_workflow_description">Launch a saved workflow (DAG automation)</string>
     <string name="chat_command_run">Run code</string>
     <string name="chat_command_run_description">Run the current workspace entry point, such as python main.py or npm start</string>
     <string name="chat_command_install">Install dependencies</string>

@@ -11,10 +11,42 @@ import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+interface FileSystemOps {
+    fun symlink(target: String, linkPath: String)
+    fun chmod(path: String, mode: Int)
+}
+
+internal class AndroidFileSystemOps : FileSystemOps {
+    override fun symlink(target: String, linkPath: String) {
+        try {
+            Os.symlink(target, linkPath)
+        } catch (e: NoClassDefFoundError) {
+            Files.createSymbolicLink(File(linkPath).toPath(), File(target).toPath())
+        } catch (e: UnsatisfiedLinkError) {
+            Files.createSymbolicLink(File(linkPath).toPath(), File(target).toPath())
+        }
+    }
+
+    override fun chmod(path: String, mode: Int) {
+        try {
+            Os.chmod(path, mode)
+        } catch (e: Throwable) {
+            val file = File(path)
+            if (mode and 0x100 != 0) file.setReadable(true, false)
+            if (mode and 0x80 != 0) file.setWritable(true, false)
+            if (mode and 0x40 != 0) file.setExecutable(true, false)
+        }
+    }
+}
+
 @Singleton
-class TarStreamExtractor @Inject constructor(
-    private val logger: AppLogger,
+class TarStreamExtractor internal constructor(
+    private val logWarning: (String, Throwable?) -> Unit,
+    private val fsOps: FileSystemOps,
 ) : RootfsExtractor {
+
+    @Inject
+    constructor(logger: AppLogger) : this({ msg, err -> logger.w(msg, err) }, AndroidFileSystemOps())
 
     override suspend fun extract(
         input: InputStream,
@@ -22,7 +54,8 @@ class TarStreamExtractor @Inject constructor(
         handleWhiteouts: Boolean,
     ) = withContext(Dispatchers.IO) {
         destination.mkdirs()
-        val destinationRoot = destination.canonicalFile
+        ensurePathWritable(destination, destination)
+        val destPath = destination.toPath().toAbsolutePath().normalize()
 
         var pendingLongName: String? = null
         var pendingLongLink: String? = null
@@ -39,7 +72,7 @@ class TarStreamExtractor @Inject constructor(
 
             val header = parseHeader(headerBytes)
             if (header == null) {
-                logger.w("Skipping invalid tar header block")
+                logWarning("Skipping invalid tar header block", null)
                 continue
             }
 
@@ -72,22 +105,31 @@ class TarStreamExtractor @Inject constructor(
             pendingLongLink = null
             pendingPax = emptyMap()
 
-            val target = File(destination, entryName).canonicalFile
-            if (!isInside(root = destinationRoot, candidate = target)) {
-                logger.w("Skipping tar entry outside destination: $entryName")
+            val cleanEntryName = entryName.trimStart('/', '.').replace('\\', '/')
+            if (cleanEntryName.isBlank()) {
                 skipPaddedData(input, header.size)
                 continue
             }
 
+            val candidate = destPath.resolve(cleanEntryName).normalize()
+            if (!candidate.startsWith(destPath)) {
+                logWarning("Skipping tar entry outside destination: $entryName", null)
+                skipPaddedData(input, header.size)
+                continue
+            }
+            val target = candidate.toFile()
+
             if (handleWhiteouts) {
-                val parent = target.parentFile ?: destinationRoot
+                val parent = target.parentFile ?: destination
                 when {
                     target.name == ".wh..wh..opq" -> {
+                        ensurePathWritable(parent, destination)
                         parent.listFiles().orEmpty().forEach(::deleteTree)
                         skipPaddedData(input, header.size)
                         continue
                     }
                     target.name.startsWith(".wh.") -> {
+                        ensurePathWritable(parent, destination)
                         deleteTree(File(parent, target.name.removePrefix(".wh.")))
                         skipPaddedData(input, header.size)
                         continue
@@ -97,78 +139,134 @@ class TarStreamExtractor @Inject constructor(
 
             when (header.typeFlag) {
                 TYPE_DIRECTORY -> {
+                    ensurePathWritable(target.parentFile ?: destination, destination)
                     target.mkdirs()
-                    applyMode(target, header.mode)
+                    // 必须保留 owner rwx (0700)，否则后续同一目录下的文件/子目录解压时会触发 EACCES (Permission denied)
+                    val safeDirMode = if (header.mode > 0) (header.mode and MODE_MASK) or MODE_OWNER_RWX else MODE_DIR_DEFAULT
+                    applyMode(target, safeDirMode)
                 }
                 TYPE_SYMLINK -> {
+                    ensurePathWritable(target.parentFile ?: destination, destination)
                     target.parentFile?.mkdirs()
-                    if (target.exists()) target.delete()
-                    runCatching { Os.symlink(linkName, target.absolutePath) }
-                        .onFailure {
-                            // Android 11+ 部分设备 Os.symlink 抛 UnsatisfiedLinkError；
-                            // 走 java.nio.Files.createSymbolicLink 兜底（内部也调 symlink(2) 但 API 稳定）
-                            runCatching {
-                                java.nio.file.Files.createSymbolicLink(target.toPath(), java.nio.file.Paths.get(linkName))
-                            }.onFailure { logger.w("Failed to symlink $target", it) }
-                        }
+                    deleteTree(target)
+                    val effectiveLink = computeRelativeSymlink(destination, target, linkName)
+                    try {
+                        fsOps.symlink(effectiveLink, target.absolutePath)
+                    } catch (e: Throwable) {
+                        logWarning("Failed to create symlink $effectiveLink at ${target.absolutePath}, retrying after force delete", e)
+                        deleteTree(target)
+                        fsOps.symlink(effectiveLink, target.absolutePath)
+                    }
                 }
                 TYPE_HARDLINK -> {
+                    ensurePathWritable(target.parentFile ?: destination, destination)
                     target.parentFile?.mkdirs()
-                    val source = File(destination, linkName).canonicalFile
-                    if (!isInside(root = destinationRoot, candidate = source)) {
-                        logger.w("Skipping hardlink outside destination: $linkName")
+                    val cleanLinkName = linkName.trimStart('/', '.').replace('\\', '/')
+                    val candidateSource = destPath.resolve(cleanLinkName).normalize()
+                    if (!candidateSource.startsWith(destPath)) {
+                        logWarning("Skipping hardlink outside destination: $linkName", null)
                         skipPaddedData(input, header.size)
                         continue
                     }
-                    deferredHardlinks += target to source
+                    deferredHardlinks += target to candidateSource.toFile()
                 }
                 TYPE_REGULAR, TYPE_REGULAR_ALT -> {
+                    ensurePathWritable(target.parentFile ?: destination, destination)
                     target.parentFile?.mkdirs()
+                    deleteTree(target)
                     target.outputStream().use { output ->
                         copyData(input, header.size, output)
                     }
-                    applyMode(target, header.mode)
+                    val safeFileMode = if (header.mode > 0) (header.mode and MODE_MASK) or MODE_OWNER_RW else MODE_FILE_DEFAULT
+                    applyMode(target, safeFileMode)
                 }
                 else -> {
                     skipPaddedData(input, header.size)
                 }
             }
         }
+
         deferredHardlinks.forEach { (target, source) ->
             if (!source.isFile) return@forEach
-            if (target.exists()) deleteTree(target)
+            ensurePathWritable(target.parentFile ?: destination, destination)
+            deleteTree(target)
             target.parentFile?.mkdirs()
             runCatching { Files.createLink(target.toPath(), source.toPath()) }
                 .onFailure {
-                    logger.w("Hardlink unsupported, copying ${source.name} instead", it)
+                    logWarning("Hardlink unsupported, copying ${source.name} instead", it)
                     source.copyTo(target, overwrite = true)
                 }
+        }
+
+        // 解压完成后，确保所有目录都有 owner rwx 权限，防止 rootfs 被宿主锁定无法读写或清理
+        destination.walkBottomUp().forEach { file ->
+            if (file.isDirectory) {
+                file.setReadable(true, true)
+                file.setWritable(true, true)
+                file.setExecutable(true, true)
+            }
+        }
+    }
+
+    internal fun computeRelativeSymlink(
+        destination: File,
+        targetFile: File,
+        linkName: String,
+    ): String {
+        if (!linkName.startsWith("/")) return linkName
+        val destPath = destination.toPath().toAbsolutePath().normalize()
+        val parentDir = targetFile.parentFile ?: destination
+        val parentPath = parentDir.toPath().toAbsolutePath().normalize()
+        val targetInGuest = destPath.resolve(linkName.trimStart('/')).normalize()
+        if (!targetInGuest.startsWith(destPath)) {
+            return parentPath.relativize(destPath).toString().replace('\\', '/')
+        }
+        return parentPath.relativize(targetInGuest).toString().replace('\\', '/')
+    }
+
+    private fun ensurePathWritable(file: File, root: File) {
+        var curr: File? = file
+        val rootParent = root.parentFile
+        while (curr != null && curr != rootParent) {
+            if (curr.exists() && !curr.canWrite()) {
+                curr.setWritable(true, true)
+                runCatching { fsOps.chmod(curr.absolutePath, MODE_OWNER_RWX) }
+            }
+            curr = curr.parentFile
         }
     }
 
     private fun deleteTree(file: File) {
-        if (file.isDirectory && !Files.isSymbolicLink(file.toPath())) file.deleteRecursively() else file.delete()
+        val path = file.toPath()
+        if (Files.isSymbolicLink(path)) {
+            runCatching { Files.delete(path) }
+            return
+        }
+        if (file.isDirectory) {
+            file.walkBottomUp().forEach { sub ->
+                if (!sub.canWrite()) {
+                    sub.setWritable(true, true)
+                }
+                val subPath = sub.toPath()
+                if (Files.isSymbolicLink(subPath)) {
+                    runCatching { Files.delete(subPath) }
+                } else if (!sub.isDirectory) {
+                    sub.delete()
+                }
+            }
+            file.delete()
+        } else {
+            if (!file.canWrite()) {
+                file.setWritable(true, true)
+            }
+            runCatching { Files.deleteIfExists(path) }
+        }
     }
 
     private fun applyMode(file: File, mode: Int) {
         if (mode <= 0) return
-        val ok = runCatching { Os.chmod(file.absolutePath, mode) }.isSuccess
-        if (!ok) {
-            // Os.chmod 在部分 Android 版本 / SELinux 上下文里会 EACCES。
-            // 兜底用 java.io.File#setReadable/setWritable/setExecutable（走 syscall chmod 但由
-            // framework 层包装，权限模型对 app 更宽松）。三档对应 owner r/w/x 位。
-            runCatching {
-                if (mode and 0x100 != 0) file.setReadable(true, false)
-                if (mode and 0x080 != 0) file.setWritable(true, false)
-                if (mode and 0x040 != 0) file.setExecutable(true, false)
-            }.onFailure { logger.w("Failed to chmod and Java fallback for ${file.absolutePath}", it) }
-        }
-    }
-
-    private fun isInside(root: File, candidate: File): Boolean {
-        val rootPath = root.absolutePath
-        val candidatePath = candidate.absolutePath
-        return candidatePath == rootPath || candidatePath.startsWith(rootPath + File.separator)
+        runCatching { fsOps.chmod(file.absolutePath, mode) }
+            .onFailure { logWarning("Failed to chmod ${file.absolutePath} to ${Integer.toOctalString(mode)}", it) }
     }
 
     private fun parseHeader(bytes: ByteArray): TarHeader? {
@@ -310,8 +408,13 @@ class TarStreamExtractor @Inject constructor(
         const val TYPE_LONG_LINK = 'K'
         const val TYPE_PAX = 'x'
         const val TYPE_GLOBAL_PAX = 'g'
-
         val ZERO: Byte = 0
+
+        const val MODE_MASK = 0xfff // 07777
+        const val MODE_OWNER_RWX = 0x1c0 // 0700
+        const val MODE_DIR_DEFAULT = 0x1ed // 0755
+        const val MODE_OWNER_RW = 0x180 // 0600
+        const val MODE_FILE_DEFAULT = 0x1a4 // 0644
     }
 }
 

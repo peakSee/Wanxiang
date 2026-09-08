@@ -94,6 +94,8 @@ class ChatViewModel @Inject constructor(
     private val sessionDao: HarnessSessionRepository,
     private val aiModelDao: AiModelRepository,
     private val workspaceManager: WorkspaceManager,
+    private val proactiveWorkflowAdvisor: top.wanxiang.app.harness.workflow.ProactiveWorkflowAdvisor,
+    private val workflowRepository: top.wanxiang.app.core.database.WorkflowRepository,
     private val settingsDataStore: AgentPreferences,
     private val gitPreferences: GitPreferences,
     private val linuxRuntime: top.wanxiang.app.runtime.LinuxRuntime,
@@ -1411,9 +1413,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** 斜杠指令建议列表（当输入以 / 开头时实时过滤展示，自动合并已激活的专精技能）。 */
-    val matchingCommands: StateFlow<List<SlashCommandItem>> = kotlinx.coroutines.flow.combine(_input, agentSkillRepository.activeSkills) { text, skills ->
-        if (text.startsWith("/")) SlashCommands.filterCommands(context, text, skills)
+    /** 斜杠指令建议列表（当输入以 / 开头时实时过滤展示，自动合并已激活的专精技能与工作流 /wf）。 */
+    val matchingCommands: StateFlow<List<SlashCommandItem>> = kotlinx.coroutines.flow.combine(
+        _input,
+        agentSkillRepository.activeSkills,
+        workflowRepository.observeDefinitions(),
+    ) { text, skills, workflows ->
+        if (text.startsWith("/")) SlashCommands.filterCommands(context, text, skills, workflows)
         else emptyList()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -1720,9 +1726,46 @@ class ChatViewModel @Inject constructor(
         send(fullMessage, imageUrls)
     }
 
+    // ===== 工作流（taixu v0.13 /wf 命令 + 主动建议，逻辑逐字对齐）=====
+    private val _workflowLaunchRequests = kotlinx.coroutines.flow.MutableSharedFlow<WorkflowLaunchRequest>(extraBufferCapacity = 8)
+    val workflowLaunchRequests: kotlinx.coroutines.flow.SharedFlow<WorkflowLaunchRequest> get() = _workflowLaunchRequests
+    private val _workflowSuggestions = MutableStateFlow<List<top.wanxiang.app.harness.workflow.ProactiveWorkflowSuggestion>>(emptyList())
+    val workflowSuggestions: StateFlow<List<top.wanxiang.app.harness.workflow.ProactiveWorkflowSuggestion>> = _workflowSuggestions.asStateFlow()
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { workflowRepository.ensureBuiltins() }
+                .onFailure { android.util.Log.w("Workflow", "ensureBuiltins 失败: ${it.message}") }
+        }
+        viewModelScope.launch {
+            proactiveWorkflowAdvisor.observeSuggestions().collect { suggestion ->
+                _workflowSuggestions.update { current ->
+                    (listOf(suggestion) + current.filterNot { it.workflowId == suggestion.workflowId }).take(3)
+                }
+            }
+        }
+    }
+
+    fun dismissWorkflowSuggestion(workflowId: String) {
+        _workflowSuggestions.update { suggestions -> suggestions.filterNot { it.workflowId == workflowId } }
+    }
+
+    fun launchWorkflowSuggestion(suggestion: top.wanxiang.app.harness.workflow.ProactiveWorkflowSuggestion) {
+        dismissWorkflowSuggestion(suggestion.workflowId)
+        _workflowLaunchRequests.tryEmit(
+            WorkflowLaunchRequest(suggestion.workflowId, suggestion.projectName, suggestion.initialVariables),
+        )
+    }
+
     fun send(customText: String? = null, imageUrls: List<String> = emptyList()) {
         val rawText = (customText ?: _input.value).trim()
         if (rawText.isBlank() && imageUrls.isEmpty()) return
+        WORKFLOW_COMMAND.matchEntire(rawText)?.let { match ->
+            setInput("")
+            val projectName = workspace.value.trim('/').removePrefix("workspace/").substringBefore('/').takeIf(String::isNotBlank).orEmpty()
+            _workflowLaunchRequests.tryEmit(WorkflowLaunchRequest(match.groupValues[1].takeIf(String::isNotBlank), projectName))
+            return
+        }
         setInput("")
 
         val pinnedIds = _pinnedMentionIds.value
@@ -2300,3 +2343,13 @@ data class MentionItem(
 enum class MentionType {
     SKILL, MCP_SERVER
 }
+
+/** /wf 启动请求（nav 层收集后 push WorkflowDestination，对齐 taixu v0.13）。 */
+data class WorkflowLaunchRequest(
+    val workflowId: String?,
+    val projectName: String,
+    val initialVariables: Map<String, String> = emptyMap(),
+)
+
+/** `/wf` 或 `/wf <workflowId>`；组 1 为可选工作流 id。 */
+private val WORKFLOW_COMMAND = Regex("^/wf(?:\\s+([A-Za-z0-9_.-]+))?$")

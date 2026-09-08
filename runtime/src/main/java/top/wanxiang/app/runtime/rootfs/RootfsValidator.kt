@@ -19,26 +19,28 @@ class RootfsValidator @Inject constructor(
         ) { "RootFS 缺少 os-release" }
 
         val bash = resolveFirstExecutable(rootfs, BASH_PATHS)
-            ?: throw IllegalArgumentException("RootFS 缺少 Bash")
-        val bashInfo = elfInspector.requireAarch64(bash.file)
-        val interpreterPath = bashInfo.interpreter
+        val posixShell = resolveFirstExecutable(rootfs, POSIX_SHELL_PATHS)
+            ?: throw IllegalArgumentException("RootFS 缺少可用的 /bin/sh")
+        val primary = bash ?: posixShell
+        val primaryInfo = elfInspector.requireAarch64(primary.file)
+        val interpreterPath = primaryInfo.interpreter
             ?.takeIf { it.startsWith('/') }
-            ?: throw IllegalArgumentException("Bash 缺少有效的 ELF 解释器路径")
+            ?: throw IllegalArgumentException("${primary.guestPath} 缺少有效的 ELF 解释器路径")
         val interpreter = resolveGuestPath(rootfs, interpreterPath)
         require(interpreter.isFile) {
-            "Bash 的 ELF 解释器不存在：$interpreterPath"
+            "${primary.guestPath} 的 ELF 解释器不存在：$interpreterPath"
         }
         elfInspector.requireAarch64(interpreter)
 
-        val posixShell = resolveFirstExecutable(rootfs, POSIX_SHELL_PATHS)
-            ?: throw IllegalArgumentException("RootFS 缺少可用的 /bin/sh")
-        val shInfo = elfInspector.requireAarch64(posixShell.file)
-        require(shInfo.interpreter == interpreterPath) {
-            "/bin/sh 与 Bash 使用了不同的 ELF 解释器"
+        if (bash != null) {
+            val shInfo = elfInspector.requireAarch64(posixShell.file)
+            require(shInfo.interpreter == interpreterPath) {
+                "/bin/sh 与 Bash 使用了不同的 ELF 解释器"
+            }
         }
 
         return RootfsValidation(
-            bashPath = bash.guestPath,
+            bashPath = primary.guestPath,
             posixShellPath = posixShell.guestPath,
             interpreterPath = interpreterPath,
         )

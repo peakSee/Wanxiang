@@ -398,10 +398,9 @@ internal class ResponsesApi(
                     }
                 }
                 "function_call" -> calls += ApiToolCallSpec(
-                    id = ToolCallIdNormalizer.normalize(
-                        item["call_id"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
-                            ?: item["id"]?.jsonPrimitive?.contentOrNull
-                    ),
+                    id = item["call_id"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                        ?: item["id"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                        ?: ToolCallIdNormalizer.normalize(null),
                     name = item["name"]?.jsonPrimitive?.contentOrNull.orEmpty(),
                     argumentsJson = item["arguments"]?.jsonPrimitive?.contentOrNull?.ifBlank { "{}" } ?: "{}",
                 )

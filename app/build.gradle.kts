@@ -146,8 +146,12 @@ extensions.configure<ApplicationExtension> {
                 "META-INF/LICENSE.md",
                 "META-INF/LICENSE-notice.md",
                 "META-INF/license.txt",
-                "META-INF/notice.txt"
+                "META-INF/notice.txt",
             )
+            // bcprov 被无线 ADB 密钥栈使用，但其后量子密码(pqc)子模块（含 picnic
+            // lowmc 表 ~1.2MB 二进制 .properties 资源，R8 不清理资源）全项目零引用，
+            // 参照 taixu 7526e16 减包思路剔除（对齐其"离线只留必需"策略）。
+            excludes += "org/bouncycastle/pqc/**"
         }
     }
 }

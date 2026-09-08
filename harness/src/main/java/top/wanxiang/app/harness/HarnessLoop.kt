@@ -1479,10 +1479,11 @@ class HarnessLoop @Inject constructor(
         rawToolName: String?,
         output: String,
     ) {
+        val toolCallId = ToolCallIdNormalizer.normalize(spec.id)
         messageProjector.append(
             sessId,
             ToolCall(
-                id = spec.id,
+                id = toolCallId,
                 createdAt = now(),
                 tool = tool,
                 args = args,
@@ -1495,7 +1496,7 @@ class HarnessLoop @Inject constructor(
             ToolResult(
                 id = newId(),
                 createdAt = now(),
-                toolCallId = spec.id,
+                toolCallId = toolCallId,
                 success = false,
                 output = output,
             ),
@@ -1635,9 +1636,9 @@ class HarnessLoop @Inject constructor(
         ) { item, pause ->
             if (pause.isAborted()) return@dispatch
             val toolCall = ToolCall(
-                // Preserve the provider protocol id across execution, approval,
-                // persistence and the subsequent tool result.
-                id = item.spec.id,
+                // Preserve the provider protocol id prefix with a unique suffix across
+                // execution, approval, persistence and the subsequent tool result.
+                id = ToolCallIdNormalizer.normalize(item.spec.id),
                 createdAt = now(),
                 tool = item.tool,
                 args = item.args,

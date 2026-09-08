@@ -194,7 +194,8 @@
     <string name="workspace_menu_import">Import</string>
     <string name="workspace_menu_templates">Templates</string>
     <string name="workspace_menu_plugins">Plugins</string>
-    <string name="workspace_menu_settings">Workshop settings</string>
+            <string name="workspace_menu_workflows">Workflows</string>
+        <string name="workspace_menu_settings">Workshop settings</string>
     <string name="workspace_action_next">Next</string>
     <string name="workspace_action_previous">Back</string>
     <string name="workspace_action_close">Close</string>

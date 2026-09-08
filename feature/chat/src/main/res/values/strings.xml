@@ -183,6 +183,8 @@
     <string name="chat_reverse_decode">解包并反编译</string>
     <string name="chat_reverse_decode_description">执行 JADX 或 apktool 解包流程</string>
     <string name="chat_reverse_decode_prompt">请对当前工程内的原始 APK 执行安全解包和反编译，保留原始文件并把产物写入新的输出目录。</string>
+    <string name="chat_command_workflow">工作流</string>
+    <string name="chat_command_workflow_description">启动已保存的工作流（DAG 自动化任务）</string>
     <string name="chat_command_run">运行代码</string>
     <string name="chat_command_run_description">执行当前工作区的入口代码（如 python main.py / npm start）</string>
     <string name="chat_command_install">安装依赖</string>

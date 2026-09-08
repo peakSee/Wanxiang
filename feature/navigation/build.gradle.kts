@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":feature:chat"))
     implementation(project(":feature:terminal"))
     implementation(project(":feature:workspace"))
+    implementation(project(":feature:workflow"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:developer"))
     implementation(project(":feature:custom_iteration"))

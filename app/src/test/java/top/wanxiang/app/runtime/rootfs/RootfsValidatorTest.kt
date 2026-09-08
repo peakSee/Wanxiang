@@ -25,6 +25,26 @@ class RootfsValidatorTest {
     }
 
     @Test
+    fun validatesPosixShellFallbackWhenBashIsMissing() {
+        val rootfs = temporaryFolder.newFolder("rootfs-alpine")
+        File(rootfs, "etc").mkdirs()
+        File(rootfs, "etc/os-release").writeText("ID=alpine\n")
+        File(rootfs, "bin").mkdirs()
+        File(rootfs, "lib").mkdirs()
+        ElfInspectorTest.writeElf(
+            File(rootfs, "bin/sh"),
+            interpreter = "/lib/ld-musl-aarch64.so.1",
+        )
+        ElfInspectorTest.writeElf(File(rootfs, "lib/ld-musl-aarch64.so.1"))
+
+        val validation = RootfsValidator(ElfInspector()).validate(rootfs)
+
+        assertEquals("/bin/sh", validation.bashPath)
+        assertEquals("/bin/sh", validation.posixShellPath)
+        assertEquals("/lib/ld-musl-aarch64.so.1", validation.interpreterPath)
+    }
+
+    @Test
     fun rejectsRootfsWhenInterpreterIsMissing() {
         val rootfs = validRootfs()
         File(rootfs, "lib/ld-linux-aarch64.so.1").delete()

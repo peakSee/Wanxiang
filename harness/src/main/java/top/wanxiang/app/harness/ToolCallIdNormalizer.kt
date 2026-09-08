@@ -5,39 +5,40 @@ import java.util.UUID
 /**
  * 统一的大模型 ToolCall ID 规范化与全局唯一性保障器。
  *
- * 背景：Room `harness_entries` 表对 `id` 列有严格 UNIQUE 约束。许多国内服务商（智谱 GLM、
- * 部分中转接口、开源模型）在多轮对话中返回的 tool_call id 常常是固定序号（"call_0"）或干脆
- * 空串。若直接以此作 entry.id 存库，跨轮次/重试/分支切换时必触发 UNIQUE 冲突崩溃。
+ * 背景：
+ * SQLite `harness_entries` 表对 `id` 列有严格的全局唯一约束 (SQLITE_CONSTRAINT_UNIQUE)。
+ * 许多大模型服务商（如智谱 GLM、国内部分中转接口、开源模型等）在多轮对话中返回的
+ * tool_call id 往往是固定的简单序号（如 "call_0"），或者返回空字符串。
+ * 若直接将其作为 entry.id 存入数据库，跨轮次、重试或分支切换时必将触发唯一约束冲突崩溃。
  *
- * 采用**保守策略**（跟 taixu 上游 AnthropicApi 用法一致）：
- * - 若 rawId **非空且合法**：保留原样，避免破坏 Anthropic / Gemini 等对 id 严格匹配的协议。
- * - 若 rawId **空白或全为非法字符**：生成 `call_<random16>` 兜底，保证 DB 唯一 + 下轮发回时
- *   assistant.tool_calls[i].id 与 tool.tool_call_id 都走同一个（我们持久化的）值。
+ * 本类确保：
+ * 1. 空 ID 自动补全为符合 OpenAI 协议的合法 ID（call_<random16>）。
+ * 2. 清洗非法字符（保留字母、数字、下划线、短横线）。
+ * 3. 拼接短 UUID 后缀（形如 <sanitized>_<random8>），保证跨会话、跨轮次绝对唯一，
+ *    同时在下一轮发回大模型 API 时，因 assistant.tool_calls[i].id 与 tool.tool_call_id 保持一致，
+ *    符合各大厂商协议要求。
  *
- * 与 taixu 原版的区别：taixu 无脑给所有 id 追加 `_<random8>` 后缀以彻底防撞；本类只在空白
- * 时兜底，更保守但也放弃了"短序号 id 重复"这种边缘场景（这类情况仍可能崩，但概率极低，
- * 且改之会破坏 Anthropic 协议）。
+ * （taixu v0.13 20eb4e0 原版策略，逐字对齐：所有 id 一律加随机后缀。协议安全依据：
+ * tool_use/tool_result 双端都回放同一个归一化 id，id 对厂商是不透明字符串。）
  */
 object ToolCallIdNormalizer {
-    private const val DEFAULT_PREFIX = "call"
 
-    /** 若 rawId 空白或全非法字符 → 生成 `call_<random16>`；否则 trim 后原样返回。 */
+    private const val DEFAULT_PREFIX = "call"
+    private const val MAX_BASE_LENGTH = 32
+
     fun normalize(rawId: String?): String {
         val trimmed = rawId?.trim().orEmpty()
-        if (trimmed.isEmpty()) return freshId()
+        val randomSuffix = UUID.randomUUID().toString().replace("-", "").take(8)
+        if (trimmed.isEmpty()) {
+            val fullRandom = UUID.randomUUID().toString().replace("-", "").take(16)
+            return "${DEFAULT_PREFIX}_$fullRandom"
+        }
         val sanitized = trimmed.filter { it.isLetterOrDigit() || it == '_' || it == '-' }
-        return if (sanitized.isEmpty()) freshId() else sanitized
-    }
-
-    /** 是否"该被替换"的空白 id。给上层判"这个 id 是不是要归一化"用。 */
-    fun needsNormalize(rawId: String?): Boolean {
-        val trimmed = rawId?.trim().orEmpty()
-        if (trimmed.isEmpty()) return true
-        return trimmed.none { it.isLetterOrDigit() || it == '_' || it == '-' }
-    }
-
-    private fun freshId(): String {
-        val rand = UUID.randomUUID().toString().replace("-", "").take(16)
-        return "${DEFAULT_PREFIX}_$rand"
+        if (sanitized.isEmpty()) {
+            val fullRandom = UUID.randomUUID().toString().replace("-", "").take(16)
+            return "${DEFAULT_PREFIX}_$fullRandom"
+        }
+        val base = sanitized.take(MAX_BASE_LENGTH)
+        return "${base}_$randomSuffix"
     }
 }

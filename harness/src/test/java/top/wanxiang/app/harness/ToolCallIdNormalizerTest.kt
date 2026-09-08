@@ -5,61 +5,48 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * 覆盖 [ToolCallIdNormalizer] 的 4 个关键场景：
- * - 空白 → 生成合法非重复 call_xxx
- * - 已存在的合法 id → 原样保留（保 provider 兼容）
- * - 混排非法字符 → sanitize 或 fresh
- * - 超长 → 保留（保守版不截断，DB 无长度约束）
- */
 class ToolCallIdNormalizerTest {
+
     @Test
-    fun `blank or whitespace input gets a valid fresh call id`() {
-        val a = ToolCallIdNormalizer.normalize(null)
-        val b = ToolCallIdNormalizer.normalize("")
-        val c = ToolCallIdNormalizer.normalize("   ")
-        for (id in listOf(a, b, c)) {
-            assertTrue("应以 call_ 开头: $id", id.startsWith("call_"))
-            assertTrue("长度合理", id.length >= 12)
-        }
-        // 三个不同空白 → 三次都要 unique
-        assertNotEquals(a, b)
-        assertNotEquals(b, c)
+    fun `null or blank rawId generates valid call_ prefix with unique suffix`() {
+        val id1 = ToolCallIdNormalizer.normalize(null)
+        val id2 = ToolCallIdNormalizer.normalize("")
+        val id3 = ToolCallIdNormalizer.normalize("   ")
+
+        assertTrue("id1 must start with call_: $id1", id1.startsWith("call_"))
+        assertTrue("id2 must start with call_: $id2", id2.startsWith("call_"))
+        assertTrue("id3 must start with call_: $id3", id3.startsWith("call_"))
+
+        assertNotEquals("id1 and id2 must be unique", id1, id2)
+        assertNotEquals("id2 and id3 must be unique", id2, id3)
     }
 
     @Test
-    fun `valid provider id is preserved exactly to keep provider compat`() {
-        // Anthropic / Gemini / OpenAI 都可能对 tool_use_id 严格匹配，不能篡改
-        val valid = "toolu_01A09q90qw90lq917835lq9"
-        val normalized = ToolCallIdNormalizer.normalize(valid)
-        assertEquals(valid, normalized)
+    fun `fixed rawId preserves base prefix and appends unique suffix`() {
+        val fixedId = "call_0"
+        val norm1 = ToolCallIdNormalizer.normalize(fixedId)
+        val norm2 = ToolCallIdNormalizer.normalize(fixedId)
+
+        assertTrue("norm1 should retain base prefix: $norm1", norm1.startsWith("call_0_"))
+        assertTrue("norm2 should retain base prefix: $norm2", norm2.startsWith("call_0_"))
+        assertNotEquals("Successive normalizations of the same fixed ID must be globally unique", norm1, norm2)
     }
 
     @Test
-    fun `hostile chars are sanitized, all-illegal falls back to fresh`() {
-        val withBad = "abc/../def"
-        val cleaned = ToolCallIdNormalizer.normalize(withBad)
-        assertTrue("只保留字母数字_-", cleaned.all { it.isLetterOrDigit() || it == '_' || it == '-' })
-        assertTrue("保留合法字母部分", cleaned.contains("abc"))
+    fun `sanitizes illegal protocol characters while preserving valid ones`() {
+        val hostile = "call:test/special@name#1!"
+        val normalized = ToolCallIdNormalizer.normalize(hostile)
 
-        val allBad = "///***"
-        val fallback = ToolCallIdNormalizer.normalize(allBad)
-        assertTrue("全非法字符 走 生成 路径", fallback.startsWith("call_"))
+        assertTrue("Should clean illegal chars: $normalized", normalized.startsWith("calltestspecialname1_"))
+        // Valid OpenAI/Anthropic ID pattern: only alphanumeric, underscore, and dash
+        assertTrue("Must only contain protocol-safe characters", normalized.matches(Regex("^[a-zA-Z0-9_-]+$")))
     }
 
     @Test
-    fun `long id is kept as-is`() {
-        val long = "a".repeat(200)
-        assertEquals(long, ToolCallIdNormalizer.normalize(long))
-    }
+    fun `long rawId is capped to reasonable length before appending suffix`() {
+        val veryLong = "a".repeat(100)
+        val normalized = ToolCallIdNormalizer.normalize(veryLong)
 
-    @Test
-    fun `needsNormalize only true for blank or all-illegal`() {
-        assertTrue(ToolCallIdNormalizer.needsNormalize(null))
-        assertTrue(ToolCallIdNormalizer.needsNormalize(""))
-        assertTrue(ToolCallIdNormalizer.needsNormalize("  \t\n "))
-        assertTrue(ToolCallIdNormalizer.needsNormalize("///***"))
-        org.junit.Assert.assertFalse(ToolCallIdNormalizer.needsNormalize("call_abc"))
-        org.junit.Assert.assertFalse(ToolCallIdNormalizer.needsNormalize("toolu_01XYZ"))
+        assertTrue("Base should be capped so total length remains reasonable", normalized.length <= 45)
     }
 }

@@ -125,6 +125,11 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/wanxiang_gui_accessibility_service" />
         </service>
+<!-- 工作流运行悬浮 HUD（taixu v0.13 对齐）：exported=false，仅本应用拉起 -->
+        <service
+            android:name="top.wanxiang.app.ui.workflow.hud.WorkflowHudService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>

@@ -196,7 +196,8 @@
     <string name="workspace_menu_import">导入</string>
     <string name="workspace_menu_templates">模板管理</string>
     <string name="workspace_menu_plugins">插件</string>
-    <string name="workspace_menu_settings">工坊设置</string>
+            <string name="workspace_menu_workflows">工作流</string>
+        <string name="workspace_menu_settings">工坊设置</string>
     <string name="workspace_action_next">下一步</string>
     <string name="workspace_action_previous">上一步</string>
     <string name="workspace_action_close">关闭</string>
