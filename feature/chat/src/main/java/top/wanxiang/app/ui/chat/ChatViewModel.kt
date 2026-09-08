@@ -188,6 +188,9 @@ class ChatViewModel @Inject constructor(
                     top.wanxiang.app.runtime.debug.DebugActionBus.Action.RefreshStatus -> refreshGitStatus()
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.AddCred ->
                         addGitCredential(action.name, action.host, action.user, action.token)
+                    top.wanxiang.app.runtime.debug.DebugActionBus.Action.ClearCreds -> {
+                        viewModelScope.launch(Dispatchers.IO) { gitPreferences.setCredentials(emptyList()) }
+                    }
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.VerifyCred ->
                         verifyGitCredential(action.id)
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.FetchRepos ->

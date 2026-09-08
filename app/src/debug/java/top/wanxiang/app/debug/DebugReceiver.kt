@@ -43,6 +43,7 @@ class DebugReceiver : BroadcastReceiver() {
                         token = intent.getStringExtra("token").orEmpty(),
                     ),
                 )
+                "clear_creds" -> bus.emit(DebugActionBus.Action.ClearCreds)
                 "verify_cred" -> intent.getStringExtra("id")?.let { bus.emit(DebugActionBus.Action.VerifyCred(it)) }
                 "fetch_repos" -> intent.getStringExtra("host")?.let { bus.emit(DebugActionBus.Action.FetchRepos(it)) }
                 "ai_commit" -> bus.emit(DebugActionBus.Action.AiGenerateCommit)

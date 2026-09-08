@@ -23,6 +23,8 @@ class DebugActionBus @Inject constructor() {
         data object RefreshStatus : Action
         /** 加一条凭证（对应「凭证」页新增）。 */
         data class AddCred(val name: String, val host: String, val user: String, val token: String) : Action
+        /** 清空所有凭证（测试后擦干净用）。 */
+        data object ClearCreds : Action
         /** 触发凭证健康检查（对应凭证行右侧圆形按钮）。 */
         data class VerifyCred(val id: String) : Action
         /** 触发 fetch my repos（对应 clone 对话框「浏览我的仓库」）。 */
