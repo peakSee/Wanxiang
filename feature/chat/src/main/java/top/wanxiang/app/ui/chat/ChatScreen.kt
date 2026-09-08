@@ -324,6 +324,9 @@ fun ChatScreen(
                 val actionLabel = when (snapshot.action) {
                     is top.wanxiang.app.ui.chat.GitOpAction.SwitchWorkspaceTo -> "切过去"
                     is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean -> "清空再试"
+                    is top.wanxiang.app.ui.chat.GitOpAction.UndoRename -> "撤销"
+                    is top.wanxiang.app.ui.chat.GitOpAction.StashPop -> "还原 stash"
+                    is top.wanxiang.app.ui.chat.GitOpAction.CopyError -> "复制"
                     is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> "重试"
                     null -> null
                 }
@@ -338,8 +341,10 @@ fun ChatScreen(
                             viewModel.switchWorkspace(snapshot.action.path)
                         is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean ->
                             viewModel.retryCloneAfterClean(snapshot.action.url, snapshot.action.targetDir)
-                        is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> { /* 未来扩展 */ }
-                        null -> {}
+                        is top.wanxiang.app.ui.chat.GitOpAction.UndoRename ->
+                            viewModel.gitRenameBranch(snapshot.action.newName, snapshot.action.oldName)
+                        is top.wanxiang.app.ui.chat.GitOpAction.StashPop -> viewModel.gitStashPop()
+                        else -> {}
                     }
                 }
                 viewModel.consumeGitOpMessage()
@@ -348,8 +353,11 @@ fun ChatScreen(
                 val actionLabel = when (snapshot.action) {
                     is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean -> "清空再试"
                     is top.wanxiang.app.ui.chat.GitOpAction.SwitchWorkspaceTo -> "切过去"
+                    is top.wanxiang.app.ui.chat.GitOpAction.UndoRename -> "撤销"
+                    is top.wanxiang.app.ui.chat.GitOpAction.StashPop -> "还原 stash"
+                    is top.wanxiang.app.ui.chat.GitOpAction.CopyError -> "复制错误"
                     is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> null
-                    null -> null
+                    null -> "复制错误"   // 默认给复制，用户可粘出来问
                 }
                 val result = if (actionLabel != null) {
                     snackbarHostState.showSnackbar(snapshot.message, actionLabel = actionLabel, duration = SnackbarDuration.Long)
@@ -360,7 +368,15 @@ fun ChatScreen(
                     when (snapshot.action) {
                         is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean ->
                             viewModel.retryCloneAfterClean(snapshot.action.url, snapshot.action.targetDir)
-                        else -> {}
+                        is top.wanxiang.app.ui.chat.GitOpAction.UndoRename ->
+                            viewModel.gitRenameBranch(snapshot.action.newName, snapshot.action.oldName)
+                        is top.wanxiang.app.ui.chat.GitOpAction.StashPop -> viewModel.gitStashPop()
+                        else -> { /* CopyError 走下面 */ }
+                    }
+                    // 无 action 或 CopyError → 复制错误文本到剪贴板（用户能粘出来问）
+                    if (snapshot.action == null || snapshot.action is top.wanxiang.app.ui.chat.GitOpAction.CopyError) {
+                        val cm = appContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("git-error", snapshot.message))
                     }
                 }
                 viewModel.consumeGitOpMessage()
@@ -769,6 +785,7 @@ fun ChatScreen(
             onAiGenerate = viewModel::aiGenerateCommitMessage,
             credentialHealth = gitCredHealth,
             onVerifyCredential = viewModel::verifyGitCredential,
+            onVerifyAllCredentials = viewModel::verifyAllCredentials,
             repoListState = gitRepoList,
             onFetchRepos = viewModel::fetchUserRepos,
             onClearRepoList = viewModel::clearRepoList,

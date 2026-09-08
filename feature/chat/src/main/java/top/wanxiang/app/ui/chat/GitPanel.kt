@@ -109,6 +109,7 @@ fun GitPanel(
     onAiGenerate: () -> Unit = {},
     credentialHealth: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
     onVerifyCredential: (String) -> Unit = {},
+    onVerifyAllCredentials: () -> Unit = {},
     repoListState: top.wanxiang.app.ui.chat.GitRepoListState = top.wanxiang.app.ui.chat.GitRepoListState.Idle,
     onFetchRepos: (String) -> Unit = {},
     onClearRepoList: () -> Unit = {},
@@ -190,6 +191,7 @@ fun GitPanel(
                     onDelete = onDeleteCredential,
                     health = credentialHealth,
                     onVerify = onVerifyCredential,
+                    onVerifyAll = onVerifyAllCredentials,
                 )
                 else -> when {
                     state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -430,6 +432,7 @@ private fun CredentialsTab(
     onDelete: (String) -> Unit,
     health: Map<String, top.wanxiang.app.ui.chat.GitCredHealth> = emptyMap(),
     onVerify: (String) -> Unit = {},
+    onVerifyAll: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -445,6 +448,9 @@ private fun CredentialsTab(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
+            if (credentials.isNotEmpty()) {
+                RuntimeTextButton(onClick = onVerifyAll) { Text("全部重验", style = MaterialTheme.typography.labelSmall) }
+            }
             RuntimeButton(onClick = onAdd) { Text("新增") }
         }
         if (credentials.isEmpty()) {
@@ -469,9 +475,9 @@ private fun CredentialsTab(
                             Text("token: ${cred.token.take(4)}${"\u2022".repeat(8)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             when (val h = health[cred.id]) {
                                 is top.wanxiang.app.ui.chat.GitCredHealth.Ok ->
-                                    Text("✓ Token 有效", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+                                    Text("✓ Token 有效${h.checkedAtMillis.relativeAgo()}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                                 is top.wanxiang.app.ui.chat.GitCredHealth.Invalid ->
-                                    Text("✗ Token 无效 (HTTP ${h.code})", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                                    Text("✗ Token 无效 (HTTP ${h.code})${h.checkedAtMillis.relativeAgo()}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                                 is top.wanxiang.app.ui.chat.GitCredHealth.Unknown ->
                                     Text("⚠ ${h.reason}", color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall)
                                 is top.wanxiang.app.ui.chat.GitCredHealth.Checking ->
@@ -1181,6 +1187,19 @@ private fun colorForAuthor(author: String): Color {
 }
 
 // ======================= 状态配色 =======================
+
+/** 时间戳 → "（2 分钟前）"；0 或近未来返回空串。 */
+private fun Long.relativeAgo(): String {
+    if (this <= 0L) return ""
+    val diff = System.currentTimeMillis() - this
+    if (diff < 0) return ""
+    return when {
+        diff < 60_000 -> "（刚刚）"
+        diff < 60 * 60_000 -> "（${diff / 60_000} 分钟前）"
+        diff < 24 * 60 * 60_000 -> "（${diff / (60 * 60_000)} 小时前）"
+        else -> "（${diff / (24 * 60 * 60_000)} 天前）"
+    }
+}
 
 private fun statusColor(status: Char): Color = when (status) {
     'A' -> Color(0xFF2E7D32)  // 新增 绿

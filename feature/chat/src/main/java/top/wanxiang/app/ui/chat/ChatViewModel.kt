@@ -431,10 +431,14 @@ class ChatViewModel @Inject constructor(
             runStreamingGitOp(label = "推送", cmd = cmd, resolveHostFromOrigin = true, timeoutMs = 300_000L)
         }
     }
-    /** 一键 stash 当前所有改动（含未跟踪），message 可选。 */
-    fun gitStash(message: String = "") = runGitWrite(
-        "git stash push -u${if (message.isNotBlank()) " -m " + shellQuote(message) else ""}",
-    )
+    /** 一键 stash 当前所有改动（含未跟踪），完成后 Snackbar 带 [还原 stash] 一键 pop。 */
+    fun gitStash(message: String = "") {
+        runGitWriteWithSuccess(
+            cmd = "git stash push -u${if (message.isNotBlank()) " -m " + shellQuote(message) else ""}",
+            successMessage = "✓ 已 stash（改动被暂存，工作区已干净）",
+            successAction = GitOpAction.StashPop,
+        )
+    }
     /** 弹出最近一个 stash（保留记录用 apply；彻底用 pop）。 */
     fun gitStashPop() = runGitWrite("git stash pop")
     fun gitStashApply() = runGitWrite("git stash apply")
@@ -649,9 +653,11 @@ class ChatViewModel @Inject constructor(
     fun gitRevert(path: String) = runGitWrite("git checkout -- ${shellQuote(path)}")
     /** 一键回退所有已修改未暂存文件（等价 IDE 里 "Rollback" 未暂存部分）；未跟踪文件不动。 */
     fun gitRevertAllUnstaged() = runGitWrite("git checkout -- .")
-    /** 重命名分支：在目标分支上执行 -m 会连带切换，所以先记下当前分支再切回。 */
-    fun gitRenameBranch(oldName: String, newName: String) = runGitWrite(
-        "git branch -m ${shellQuote(oldName)} ${shellQuote(newName)}",
+    /** 重命名分支：完成后 Snackbar 带 [撤销] 一键换回。 */
+    fun gitRenameBranch(oldName: String, newName: String) = runGitWriteWithSuccess(
+        cmd = "git branch -m ${shellQuote(oldName)} ${shellQuote(newName)}",
+        successMessage = "✓ $oldName 已重命名为 $newName",
+        successAction = GitOpAction.UndoRename(oldName = oldName, newName = newName),
     )
     /** 删除远程分支（不可撤销，UI 应二次确认）。 */
     fun gitDeleteRemoteBranch(name: String) = runGitNetworkOp(
@@ -991,6 +997,14 @@ class ChatViewModel @Inject constructor(
     private val _credHealth = MutableStateFlow<Map<String, GitCredHealth>>(emptyMap())
     val credHealth: StateFlow<Map<String, GitCredHealth>> = _credHealth.asStateFlow()
 
+    /** 一键重验：对所有已保存凭证并发跑一次 verify（用户不必一条条点）。 */
+    fun verifyAllCredentials() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val list = gitPreferences.credentials.first()
+            list.forEach { c -> verifyGitCredential(c.id) }
+        }
+    }
+
     fun verifyGitCredential(id: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _credHealth.value = _credHealth.value + (id to GitCredHealth.Checking)
@@ -1020,7 +1034,7 @@ class ChatViewModel @Inject constructor(
             }
             val code = result.getOrNull()?.stdout?.trim()?.takeLast(3).orEmpty()
             val h = when {
-                code == "200" -> GitCredHealth.Ok
+                code == "200" -> GitCredHealth.Ok()
                 code == "401" || code == "403" -> GitCredHealth.Invalid(code)
                 code == "000" || code.isBlank() || !code.all { it.isDigit() } -> GitCredHealth.Unknown("网络不通（可能手机没挂代理或 host 不可达）")
                 else -> GitCredHealth.Unknown("HTTP $code")
@@ -1052,6 +1066,25 @@ class ChatViewModel @Inject constructor(
 
     private fun runGitWrite(cmd: String) {
         val ws = workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
+        runGitWriteRaw(ws, cmd, successMessage = null, successAction = null)
+    }
+
+    /** 通用「一次 git 写操作 + 完成时给 Snackbar 提示 + 可带一个撤销/还原动作」。 */
+    private fun runGitWriteWithSuccess(
+        cmd: String,
+        successMessage: String,
+        successAction: GitOpAction? = null,
+    ) {
+        val ws = workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
+        runGitWriteRaw(ws, cmd, successMessage, successAction)
+    }
+
+    private fun runGitWriteRaw(
+        ws: String,
+        cmd: String,
+        successMessage: String?,
+        successAction: GitOpAction?,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val result = runCatching {
                 linuxRuntime.execute(
@@ -1064,10 +1097,16 @@ class ChatViewModel @Inject constructor(
             }
             val r = result.getOrNull()
             val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
-            // 只在失败时提示；成功的 stage/commit/init 通过下面的 refreshGitStatus 视觉可见（列表变化）不啰嗦
-            if (r != null && !r.isSuccess) {
+            if (r != null && r.isSuccess) {
+                if (successMessage != null) {
+                    _gitOpMessage.value = GitOpMessage.Ok(successMessage, successAction)
+                }
+            } else {
                 val op = cmd.substringAfter("git ").substringBefore(' ').ifBlank { "git" }
-                _gitOpMessage.value = GitOpMessage.Error("$op 失败：\n" + out.take(500))
+                _gitOpMessage.value = GitOpMessage.Error(
+                    "$op 失败：\n" + out.take(500),
+                    action = GitOpAction.CopyError,
+                )
             }
             refreshGitStatus()
         }
@@ -1965,11 +2004,12 @@ sealed interface GitAiCommitState {
     data class Error(val reason: String) : GitAiCommitState
 }
 
-/** 凭证健康检查的四种状态。 */
+/** 凭证健康检查的四种状态（checkedAtMillis 用于「N 分钟前验证过」显示）。 */
 sealed interface GitCredHealth {
-    data object Ok : GitCredHealth
-    data class Invalid(val code: String) : GitCredHealth
-    data class Unknown(val reason: String) : GitCredHealth
+    val checkedAtMillis: Long get() = 0L
+    data class Ok(override val checkedAtMillis: Long = System.currentTimeMillis()) : GitCredHealth
+    data class Invalid(val code: String, override val checkedAtMillis: Long = System.currentTimeMillis()) : GitCredHealth
+    data class Unknown(val reason: String, override val checkedAtMillis: Long = System.currentTimeMillis()) : GitCredHealth
     data object Checking : GitCredHealth
 }
 
@@ -2000,6 +2040,12 @@ sealed interface GitOpAction {
     data class RetryWithClean(val url: String, val targetDir: String) : GitOpAction
     /** 网络错误重试。 */
     data class RetrySame(val command: String) : GitOpAction
+    /** 复制错误详情到剪贴板（用户可粘给助手/日志）。 */
+    data object CopyError : GitOpAction
+    /** 撤销上一步 rename（Snackbar 点一下就换回去）。 */
+    data class UndoRename(val oldName: String, val newName: String) : GitOpAction
+    /** stash push 后一键 pop。 */
+    data object StashPop : GitOpAction
 }
 
 /** 流式进度条数据。git 每次输出进度 chunk 更新一次。 */
