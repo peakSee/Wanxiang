@@ -101,6 +101,8 @@ fun GitPanel(
     onProbeCredential: (String) -> Unit = {},
     onPullNow: () -> Unit = {},
     onDismissPullDirty: () -> Unit = {},
+    onConfirmCheckoutDirty: (String) -> Unit = {},
+    onDismissCheckoutConfirm: () -> Unit = {},
     onStash: () -> Unit = {},
     onStashPop: () -> Unit = {},
     aiCommit: top.wanxiang.app.ui.chat.GitAiCommitState = top.wanxiang.app.ui.chat.GitAiCommitState.Idle,
@@ -365,6 +367,22 @@ fun GitPanel(
             dismissButton = {
                 RuntimeTextButton(onClick = onDismissPullDirty) { Text("取消") }
             },
+        )
+    }
+
+    state.pendingCheckout?.let { target ->
+        RuntimeAlertDialog(
+            onDismissRequest = onDismissCheckoutConfirm,
+            title = { Text("确认切换分支") },
+            text = {
+                Text(
+                    "本地有未提交改动（已暂存 ${state.staged.size}、未暂存 ${state.unstaged.size}）。" +
+                        "切到 `$target` 可能覆盖工作区或产生冲突。建议先 stash 或提交。",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            },
+            confirmButton = { RuntimeButton(onClick = { onConfirmCheckoutDirty(target) }) { Text("仍然切换") } },
+            dismissButton = { RuntimeTextButton(onClick = onDismissCheckoutConfirm) { Text("取消") } },
         )
     }
 }

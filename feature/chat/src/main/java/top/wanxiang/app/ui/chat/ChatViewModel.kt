@@ -403,7 +403,30 @@ class ChatViewModel @Inject constructor(
     fun gitStashPop() = runGitWrite("git stash pop")
     fun gitStashApply() = runGitWrite("git stash apply")
     fun gitStashDrop(index: Int = 0) = runGitWrite("git stash drop stash@{$index}")
-    fun gitCheckout(branch: String) = runGitWrite("git checkout ${shellQuote(branch)}")
+    /**
+     * 切分支前检查工作区是否脏（P1-12）：
+     * - 若 dirty + 无 `checkoutDirtyConfirm` → 弹二次确认（可能覆盖或冲突）
+     * - 干净或已确认 → 直接 checkout
+     */
+    fun gitCheckout(branch: String) {
+        val s = _gitPanelState.value
+        val dirty = s.staged.isNotEmpty() || s.unstaged.isNotEmpty()
+        if (dirty && s.pendingCheckout != branch) {
+            _gitPanelState.value = s.copy(pendingCheckout = branch)
+            return
+        }
+        _gitPanelState.value = _gitPanelState.value.copy(pendingCheckout = null)
+        runGitWrite("git checkout ${shellQuote(branch)}")
+    }
+
+    fun confirmCheckoutDirty(branch: String) {
+        _gitPanelState.value = _gitPanelState.value.copy(pendingCheckout = null)
+        runGitWrite("git checkout ${shellQuote(branch)}")
+    }
+
+    fun dismissCheckoutConfirm() {
+        _gitPanelState.value = _gitPanelState.value.copy(pendingCheckout = null)
+    }
     fun gitCreateBranch(name: String) = runGitWrite("git checkout -b ${shellQuote(name)}")
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
     fun gitInit() = runGitWrite("git init")
@@ -611,7 +634,7 @@ class ChatViewModel @Inject constructor(
      */
     /**
      * pull/push 通用流式：设 progress → 用 forcePty 让 git 吐进度 → 解析 → 完成清理。
-     * 与 clone 共用 [applyGitProgress] + [translateGitError]。
+     * 与 clone 共用 [applyGitProgress] + [translateGitError]。**网络类失败自动 3 次退避重试**。
      */
     private fun runStreamingGitOp(
         label: String,
@@ -622,35 +645,49 @@ class ChatViewModel @Inject constructor(
         val ws = currentGitWs()
         viewModelScope.launch(Dispatchers.IO) {
             cancelRequested.set(false)
-            _gitProgress.value = GitProgress(label = "$label 中…")
             val host = if (resolveHostFromOrigin) {
                 GitAuth.hostOf(runGitRead(ws, "git remote get-url origin").orEmpty().trim())
             } else null
             val creds = gitPreferences.credentials.first()
             val cred = GitAuth.findCredential(creds, host)
             val effective = if (cred != null) GitAuth.wrap(cmd, cred) else cmd
-            val result = runCatching {
-                linuxRuntime.execute(
-                    top.wanxiang.app.runtime.shell.ShellCommand(
-                        commandLine = "$effective 2>&1",
-                        workingDirectory = ws,
-                        timeoutMs = timeoutMs,
-                        onOutput = { chunk -> applyGitProgress(chunk, "$label 中…") },
-                        forcePty = true,
-                    ),
-                )
+            var attempt = 0
+            var lastOut = ""
+            var lastExit: Int? = null
+            while (attempt < 3 && !cancelRequested.get()) {
+                if (attempt > 0) {
+                    _gitProgress.value = GitProgress(label = "$label 重试第 $attempt 次…")
+                    delay(1_000L * attempt)
+                } else {
+                    _gitProgress.value = GitProgress(label = "$label 中…")
+                }
+                val result = runCatching {
+                    linuxRuntime.execute(
+                        top.wanxiang.app.runtime.shell.ShellCommand(
+                            commandLine = "$effective 2>&1",
+                            workingDirectory = ws,
+                            timeoutMs = timeoutMs,
+                            onOutput = { chunk -> applyGitProgress(chunk, "$label 中…") },
+                            forcePty = true,
+                        ),
+                    )
+                }.getOrNull()
+                lastOut = ((result?.stdout ?: "") + "\n" + (result?.stderr ?: "")).trim()
+                lastExit = result?.exitCode
+                if (result != null && result.isSuccess) {
+                    _gitProgress.value = null
+                    _gitOpMessage.value = GitOpMessage.Ok("✓ $label 完成")
+                    refreshGitStatus()
+                    return@launch
+                }
+                if (!isRetryable(lastOut)) break
+                attempt++
             }
             _gitProgress.value = null
-            val r = result.getOrNull()
-            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
-            if (r != null && r.isSuccess) {
-                _gitOpMessage.value = GitOpMessage.Ok("✓ $label 完成")
-            } else {
-                _gitOpMessage.value = GitOpMessage.Error(
-                    message = "$label 失败：\n" + translateGitError(out, ""),
-                    action = GitOpAction.RetrySame(cmd),
-                )
-            }
+            _gitOpMessage.value = GitOpMessage.Error(
+                message = "$label 失败：\n" + translateGitError(lastOut),
+                action = if (isRetryable(lastOut)) GitOpAction.RetrySame(cmd) else null,
+            )
             refreshGitStatus()
         }
     }
@@ -760,8 +797,9 @@ class ChatViewModel @Inject constructor(
         if (name.isBlank() || trimmedHost.isBlank() || username.isBlank() || token.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             val current = gitPreferences.credentials.first()
+            val newId = java.util.UUID.randomUUID().toString()
             val updated = current + GitCredential(
-                id = java.util.UUID.randomUUID().toString(),
+                id = newId,
                 name = name.trim(),
                 host = trimmedHost,
                 username = username.trim(),
@@ -769,6 +807,8 @@ class ChatViewModel @Inject constructor(
                 createdAtMillis = System.currentTimeMillis(),
             )
             gitPreferences.setCredentials(updated)
+            // 保存后**立即**跑一次健康检查，用户能一眼看到凭证是不是有效（P1-9）
+            verifyGitCredential(newId)
         }
     }
 
@@ -2039,6 +2079,8 @@ data class GitPanelState(
     val diffLoading: Boolean = false,
     /** 本地脏时 pull 前需要用户二次确认（可能被覆盖或产生冲突）。 */
     val pullDirtyConfirm: Boolean = false,
+    /** 本地脏时切分支前的二次确认（branch 名）。非空 = 需确认。 */
+    val pendingCheckout: String? = null,
     val commitDetailHash: String? = null,
     val commitDetailText: String? = null,
     val commitDetailLoading: Boolean = false,

@@ -739,6 +739,8 @@ fun ChatScreen(
             onProbeCredential = viewModel::probeCredential,
             onPullNow = viewModel::gitPullNow,
             onDismissPullDirty = viewModel::dismissPullDirtyConfirm,
+            onConfirmCheckoutDirty = viewModel::confirmCheckoutDirty,
+            onDismissCheckoutConfirm = viewModel::dismissCheckoutConfirm,
             onStash = { viewModel.gitStash() },
             onStashPop = viewModel::gitStashPop,
             aiCommit = gitAiCommit,
