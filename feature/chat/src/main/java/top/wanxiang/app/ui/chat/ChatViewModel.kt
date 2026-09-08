@@ -207,6 +207,8 @@ class ChatViewModel @Inject constructor(
                         gitRenameBranch(action.old, action.new)
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitDeleteRemote ->
                         gitDeleteRemoteBranch(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitCheckout ->
+                        gitCheckout(action.branch)
                 }
             }
         }

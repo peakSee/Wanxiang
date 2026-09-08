@@ -39,6 +39,7 @@ class DebugActionBus @Inject constructor() {
         data object GitRevertAll : Action
         data class GitRenameBranch(val old: String, val new: String) : Action
         data class GitDeleteRemote(val name: String) : Action
+        data class GitCheckout(val branch: String) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

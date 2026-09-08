@@ -110,3 +110,7 @@ ex*.png
 sw*.png
 *_ocr.txt
 *_tsv.tsv
+cd*.png
+cf*.png
+*_ocr.txt
+*_tsv.tsv

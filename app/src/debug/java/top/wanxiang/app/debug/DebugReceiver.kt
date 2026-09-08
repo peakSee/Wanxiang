@@ -57,6 +57,7 @@ class DebugReceiver : BroadcastReceiver() {
                     new = intent.getStringExtra("new").orEmpty(),
                 ))
                 "delete_remote" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteRemote(it)) }
+                "checkout" -> intent.getStringExtra("branch")?.let { bus.emit(DebugActionBus.Action.GitCheckout(it)) }
                 "diag" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.Diagnostic(it)) }
             }
         }
