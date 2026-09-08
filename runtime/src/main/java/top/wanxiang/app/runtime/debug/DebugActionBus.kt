@@ -46,6 +46,15 @@ class DebugActionBus @Inject constructor() {
         data class SetProxy(val value: String) : Action
         /** 模拟用户"选择了一个附件"→ 走完整 extract 链路（附件卡上会显示 解析中 → ✓ N 字符）。 */
         data class SimulateAttachment(val guestPath: String, val name: String, val sizeBytes: Long = 0L) : Action
+        /** 直接调对应 ChatViewModel 方法，测 stage/commit/tag/pushTag 等。 */
+        data class GitStageAll(val on: Boolean) : Action
+        data class GitCommit(val message: String) : Action
+        data class GitCreateTag(val name: String) : Action
+        data class GitPushTag(val name: String) : Action
+        data class GitDeleteTagLocal(val name: String) : Action
+        data class GitDeleteTagRemote(val name: String) : Action
+        /** 通用「在 git 工作区里跑任意 shell 命令」（测 pull/ls-remote 等非核心方法时的兜底）。 */
+        data class GitRaw(val cmd: String) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

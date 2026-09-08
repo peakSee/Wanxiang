@@ -243,6 +243,25 @@ class ChatViewModel @Inject constructor(
                         _pendingAttachments.update { it + fakeAtt }
                         viewModelScope.launch(Dispatchers.IO) { extractTextForAttachment(fakeAtt) }
                     }
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitStageAll ->
+                        if (action.on) gitStageAll() else gitUnstageAll()
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitCommit ->
+                        gitCommit(action.message)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitCreateTag ->
+                        gitCreateTag(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitPushTag ->
+                        gitPushTag(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitDeleteTagLocal ->
+                        gitDeleteTag(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitDeleteTagRemote ->
+                        gitDeleteRemoteTag(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitRaw -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val out = runGitRead(currentGitWs(), action.cmd + " 2>&1") ?: "<null>"
+                            android.util.Log.i("WanxiangDiag", "GitRaw '${action.cmd}' → $out")
+                            _gitOpMessage.value = GitOpMessage.Error("GitRaw:\n$out".take(600))
+                        }
+                    }
                 }
             }
         }
@@ -668,6 +687,20 @@ class ChatViewModel @Inject constructor(
     fun gitDeleteUntracked(path: String) = runGitWrite("rm -- ${shellQuote(path)}")
     fun gitCreateTag(name: String) = runGitWrite("git tag ${shellQuote(name)}")
     fun gitDeleteTag(name: String) = runGitWrite("git tag -d ${shellQuote(name)}")
+    /** 推单个 tag 到 origin（用网络 op 走 credential + proxy）。 */
+    fun gitPushTag(name: String) = runStreamingGitOp(
+        label = "推送标签 $name",
+        cmd = "git push origin ${shellQuote(name)}",
+        resolveHostFromOrigin = true,
+        timeoutMs = 180_000L,
+    )
+    /** 删远端 tag。 */
+    fun gitDeleteRemoteTag(name: String) = runStreamingGitOp(
+        label = "删远端标签 $name",
+        cmd = "git push origin --delete ${shellQuote(name)}",
+        resolveHostFromOrigin = true,
+        timeoutMs = 180_000L,
+    )
 
     /**
      * 网络型 git 操作（clone/pull/push），带凭证注入。凭证不落 `.git/config`：通过

@@ -85,6 +85,13 @@ class DebugReceiver : BroadcastReceiver() {
                         ),
                     )
                 }
+                "stage_all" -> bus.emit(DebugActionBus.Action.GitStageAll(intent.getBooleanExtra("on", true)))
+                "commit" -> intent.getStringExtra("msg")?.let { bus.emit(DebugActionBus.Action.GitCommit(it)) }
+                "create_tag" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitCreateTag(it)) }
+                "push_tag" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitPushTag(it)) }
+                "del_tag_local" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteTagLocal(it)) }
+                "del_tag_remote" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteTagRemote(it)) }
+                "raw" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.GitRaw(it)) }
                 "diag" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.Diagnostic(it)) }
             }
         }
