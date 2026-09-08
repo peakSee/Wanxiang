@@ -504,12 +504,26 @@ class ChatViewModel @Inject constructor(
         val repoName = trimmed.trimEnd('/').substringAfterLast('/').removeSuffix(".git").ifBlank { "repo" }
         val ws = currentGitWs()
         viewModelScope.launch(Dispatchers.IO) {
-            // 工作区不存在 → 明确告知用户（不再让 PRoot 静默回退到 / 导致 clone 到根目录）
+            // 工作区不存在 → 自动 mkdir -p 重建（clone 本质上是创建项目动作，父目录不该要求预先存在）。
+            // 若 mkdir 也失败（比如 /workspace 挂载点异常），才给用户报错。
             if (!workspaceExists(ws)) {
-                _gitOpMessage.value = GitOpMessage.Error(
-                    "工作区目录 `$ws` 不存在。先到工坊页新建该工作区，或把会话的工作区切到一个已存在的目录",
-                )
-                return@launch
+                val mkdirRes = runCatching {
+                    linuxRuntime.execute(
+                        top.wanxiang.app.runtime.shell.ShellCommand(
+                            commandLine = "mkdir -p ${shellQuote(ws)} 2>&1 && test -d ${shellQuote(ws)} && echo ok",
+                            workingDirectory = "/root",
+                            timeoutMs = 15_000L,
+                        ),
+                    )
+                }.getOrNull()
+                val created = mkdirRes?.stdout?.trim()?.endsWith("ok") == true
+                if (!created) {
+                    _gitOpMessage.value = GitOpMessage.Error(
+                        "工作区 `$ws` 不存在且自动创建失败。可能是 /workspace 挂载异常，试试重启 App 或到工坊页检查",
+                    )
+                    return@launch
+                }
+                android.util.Log.i("GitClone", "工作区不存在，已自动 mkdir -p $ws")
             }
             // 目标已存在 → 明确提示，给"清空再试"选项
             if (workspaceExists("$ws/$repoName")) {
