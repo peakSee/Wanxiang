@@ -289,7 +289,17 @@ class MainActivity : AppCompatActivity() {
                                         downloadProgress = 0f
                                         downloadFailed = false
                                         scope.launch {
-                                            val res = appUpdateManager.downloadApk(apkUrl) { dl, tot ->
+                                            // 点下载时才重拉云端 → 若我在 dialog 显示 0.4 后又发了 0.5，
+                                            // 这里拿到的就是 0.5，一步到位不再让用户 0.4→0.5 二级跳。
+                                            val fresh = runCatching {
+                                                appUpdateManager.checkUpdateMerged(currentVersionName).getOrNull()
+                                            }.getOrNull()
+                                            val useInfo = if (fresh != null && fresh.hasUpdate && fresh.versionCode > info.versionCode) {
+                                                updateInfo = fresh
+                                                fresh
+                                            } else info
+                                            val useUrl = useInfo.apkDownloadUrl ?: apkUrl
+                                            val res = appUpdateManager.downloadApk(useUrl, useInfo.apkSizeBytes) { dl, tot ->
                                                 if (tot != null && tot > 0) downloadProgress = dl.toFloat() / tot.toFloat()
                                             }
                                             isDownloading = false

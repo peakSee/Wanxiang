@@ -116,6 +116,7 @@ class ChatViewModel @Inject constructor(
     private val providerClient: top.wanxiang.app.harness.ProviderClient,
     private val debugActionBus: top.wanxiang.app.runtime.debug.DebugActionBus,
     private val textExtractor: top.wanxiang.app.runtime.sandbox.SandboxTextExtractor,
+    private val fullSettingsStore: top.wanxiang.app.core.datastore.SettingsDataStore,
 ) : ViewModel() {
 
     /**
@@ -222,6 +223,12 @@ class ChatViewModel @Inject constructor(
                             }
                             android.util.Log.i("WanxiangDiag", "extract ${action.name} → $msg")
                             _gitOpMessage.value = GitOpMessage.Error("抽取 ${action.name}: $msg")
+                        }
+                    }
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.SetProxy -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            fullSettingsStore.setSandboxHttpProxy(action.value)
+                            android.util.Log.i("WanxiangDiag", "SetProxy = '${action.value}'")
                         }
                     }
                 }

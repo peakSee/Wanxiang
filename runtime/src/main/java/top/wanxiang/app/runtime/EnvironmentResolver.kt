@@ -22,6 +22,12 @@ class EnvironmentResolver @Inject constructor(
 ) {
     /** 无 Context 构造：JVM 单测用（跳过代理注入，其他环境变量正常）。 */
     internal constructor() : this(null)
+
+    /**
+     * 用户在设置里配的**沙箱内置代理**（`http://host:port`）。优先级高于 Android 系统 proxy。
+     * 由 SettingsViewModel 通过 `observeSandboxProxy().collect { resolver.overrideProxy = it }` 持续同步。
+     */
+    @Volatile var overrideProxy: String? = null
     fun runtimePath(): String = listOf(
         "/root/.local/bin",
         "/opt/wanxiang/bin",
@@ -45,9 +51,8 @@ class EnvironmentResolver @Inject constructor(
         // 使用 wanxiang-android-exec 包装器或 wanxiang-host shell 来执行 Android 命令
         put("ANDROID_BIN_PATH", "/system/bin:/system/xbin")
         put("ANDROID_LIB_PATH", "/system/lib64:/system/lib:/vendor/lib64:/vendor/lib")
-        // 沙箱 git/curl 走代理：读 Android Settings.Global.http_proxy 转成 libcurl 标准变量
-        androidProxyHostPort()?.let { hostPort ->
-            val proxyUrl = "http://$hostPort"
+        // 沙箱 git/curl 走代理：优先用户 in-app 设置 → 回落 Android 全局 http_proxy
+        resolveProxyUrl()?.let { proxyUrl ->
             put("http_proxy", proxyUrl)
             put("https_proxy", proxyUrl)
             put("HTTP_PROXY", proxyUrl)
@@ -62,6 +67,19 @@ class EnvironmentResolver @Inject constructor(
             put("CI", "true")
             put("NONINTERACTIVE", "1")
         }
+    }
+
+    /**
+     * 沙箱代理解析优先级：
+     * 1. **用户设置里的 [overrideProxy]**（形如 `http://host:port`）— 万象内置的"沙箱代理"入口。
+     * 2. Android 全局 `Settings.Global.http_proxy`（形如 `host:port`）— 用户手机网络设置层的。
+     * 3. 都没有 → null（不注入）。
+     */
+    private fun resolveProxyUrl(): String? {
+        overrideProxy?.trim()?.takeIf { it.isNotEmpty() && (it.startsWith("http://") || it.startsWith("socks5://")) }
+            ?.let { return it }
+        val hostPort = androidProxyHostPort() ?: return null
+        return "http://$hostPort"
     }
 
     /** 读 Android 全局 http_proxy（形如 `host:port` 或 `:0` 表示关），null 表示未配置或无 Context。 */

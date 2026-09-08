@@ -750,6 +750,8 @@ fun ChatScreen(
             repoListState = gitRepoList,
             onFetchRepos = viewModel::fetchUserRepos,
             onClearRepoList = viewModel::clearRepoList,
+            progress = gitProgress,
+            onCancelProgress = viewModel::cancelGitOp,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onRevertAll = viewModel::gitRevertAllUnstaged,

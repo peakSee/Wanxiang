@@ -37,6 +37,7 @@ class WanXiangApplication : Application() {
     @Inject lateinit var browserMcpBootstrap: BrowserMcpBootstrap
     @Inject lateinit var wanxiangCloudClient: WanxiangCloudClient
     @Inject lateinit var gitCredentialIpcBootstrap: top.wanxiang.app.runtime.credentials.GitCredentialIpcBootstrap
+    @Inject lateinit var sandboxProxySync: top.wanxiang.app.runtime.sandbox.SandboxProxySync
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -57,6 +58,8 @@ class WanXiangApplication : Application() {
                 // Git 凭证 IPC 桥：从 assets 装 helper、注册 git config、启动 FileObserver + 兜底轮询、
                 // 镜像已存凭据到 git-credentials 文件（UI/AI Bash/终端三端 git 缺凭据都走同一弹窗）
                 launch { runCatching { gitCredentialIpcBootstrap.start() } }
+                // 沙箱内置代理同步：把用户在设置里填的 sandbox_http_proxy 持续注入到 EnvironmentResolver
+                launch { runCatching { sandboxProxySync.start() } }
                 launch {
                     runCatching {
                         val skillRepository = agentSkillRepositoryLazy.get()

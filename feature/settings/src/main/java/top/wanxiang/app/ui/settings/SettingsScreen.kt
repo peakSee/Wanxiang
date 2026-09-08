@@ -1203,6 +1203,47 @@ fun AboutCommunityScreen(
                         change = viewModel::setAutoCheckUpdates,
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    // 沙箱内置代理：解决 PRot 沙箱里 git/curl 拿不到 Android 系统 proxy 的痛点
+                    val sandboxProxy by viewModel.sandboxHttpProxy.collectAsStateWithLifecycle()
+                    var showProxyDialog by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = RuntimeIconName.Globe,
+                        title = "沙箱 HTTP 代理",
+                        subtitle = "让沙箱里 git/curl/apt 走指定代理（形如 http://192.168.1.5:10808）；未填则回落手机系统代理",
+                        value = sandboxProxy.ifBlank { "未设置" },
+                        onClick = { showProxyDialog = true },
+                    )
+                    if (showProxyDialog) {
+                        var tmpProxy by remember { mutableStateOf(sandboxProxy) }
+                        RuntimeAlertDialog(
+                            onDismissRequest = { showProxyDialog = false },
+                            title = { Text("沙箱 HTTP 代理") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "填 http://host:port 或 socks5://host:port。清空 = 关。改完下一次 git/curl 命令立即生效（不用重启）",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    OutlinedTextField(
+                                        value = tmpProxy,
+                                        onValueChange = { tmpProxy = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text("http://192.168.31.93:10808") },
+                                        singleLine = true,
+                                    )
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    viewModel.setSandboxHttpProxy(tmpProxy.trim())
+                                    showProxyDialog = false
+                                }) { Text("保存") }
+                            },
+                            dismissButton = { TextButton(onClick = { showProxyDialog = false }) { Text("取消") } },
+                        )
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     SettingsRow(
                         icon = RuntimeIconName.Sparkles,
                         title = "重看功能引导",

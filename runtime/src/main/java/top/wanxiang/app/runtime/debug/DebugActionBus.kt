@@ -42,6 +42,8 @@ class DebugActionBus @Inject constructor() {
         data class GitCheckout(val branch: String) : Action
         /** 让 SandboxTextExtractor 抽指定附件（guestPath + 文件名），结果进 logcat。 */
         data class ExtractText(val guestPath: String, val name: String) : Action
+        /** 直接设 in-app sandbox proxy（`http://host:port`），空串关闭。绕开 UI 用 adb 配。 */
+        data class SetProxy(val value: String) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

@@ -112,6 +112,8 @@ fun GitPanel(
     repoListState: top.wanxiang.app.ui.chat.GitRepoListState = top.wanxiang.app.ui.chat.GitRepoListState.Idle,
     onFetchRepos: (String) -> Unit = {},
     onClearRepoList: () -> Unit = {},
+    progress: top.wanxiang.app.ui.chat.GitProgress? = null,
+    onCancelProgress: () -> Unit = {},
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -160,6 +162,10 @@ fun GitPanel(
             Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("分支") })
             Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("历史") })
             Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("凭证") })
+        }
+        // Git 流式进度内嵌在面板顶部（用户在 panel 里点 clone/pull/push，不用回 chat 主页面看）
+        progress?.let { p ->
+            GitProgressBanner(progress = p, onCancel = onCancelProgress)
         }
 
         // 横向 Pager：左右滑切换 4 页；TabRow 与 Pager 双向同步。

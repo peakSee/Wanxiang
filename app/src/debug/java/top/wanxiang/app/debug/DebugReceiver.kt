@@ -73,6 +73,7 @@ class DebugReceiver : BroadcastReceiver() {
                     val n = intent.getStringExtra("name").orEmpty()
                     if (p.isNotBlank()) bus.emit(DebugActionBus.Action.ExtractText(p, n.ifBlank { p.substringAfterLast('/') }))
                 }
+                "set_proxy" -> bus.emit(DebugActionBus.Action.SetProxy(intent.getStringExtra("value").orEmpty()))
                 "diag" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.Diagnostic(it)) }
             }
         }

@@ -398,6 +398,19 @@ class SettingsDataStore @Inject constructor(
         }
     }
 
+    /**
+     * **沙箱内置代理**：用户在设置里填 `http://host:port` → EnvironmentResolver 注入沙箱环境变量
+     * （`http_proxy` / `https_proxy` / `HTTP_PROXY` / `HTTPS_PROXY`），让沙箱里的 `git` / `curl` / `apt-get`
+     * 全部走这个代理。**优先于 Android 系统级 `Settings.Global.http_proxy`**（后者只对 Android WebView/
+     * OkHttp 生效，对 PRoot 里的 libcurl 完全没用，就是用户提的"内置代理"的痛点）。
+     * 空字符串 = 不启用内置代理 → 回落到 Android 全局 → 都没有则不注入。
+     */
+    private val sandboxHttpProxyKey = stringPreferencesKey("sandbox_http_proxy")
+    val sandboxHttpProxy: Flow<String> = context.settingsDataStore.data.map { it[sandboxHttpProxyKey].orEmpty() }
+    suspend fun setSandboxHttpProxy(value: String) {
+        context.settingsDataStore.edit { it[sandboxHttpProxyKey] = value.trim() }
+    }
+
     // ===== 更新检查冷却 / 去重（P0-1）=====
 
     private val lastUpdateCheckTimeKey = androidx.datastore.preferences.core.longPreferencesKey("last_update_check_time_ms")

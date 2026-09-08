@@ -217,6 +217,14 @@ class SettingsViewModel @Inject constructor(
     val autoCheckUpdates: StateFlow<Boolean> = settingsDataStore.autoCheckUpdates
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** 沙箱内置 HTTP 代理（用户在设置里填 `http://host:port` 让 git/curl/apt 全走），空 = 不启用回落 Android 全局。 */
+    val sandboxHttpProxy: StateFlow<String> = settingsDataStore.sandboxHttpProxy
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    fun setSandboxHttpProxy(value: String) {
+        viewModelScope.launch { settingsDataStore.setSandboxHttpProxy(value) }
+    }
+
     val webChatStatus: StateFlow<top.wanxiang.app.runtime.webchat.WebChatServerStatus> =
         webChatBridgeServer?.status ?: MutableStateFlow(top.wanxiang.app.runtime.webchat.WebChatServerStatus()).asStateFlow()
 
