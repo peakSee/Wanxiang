@@ -58,6 +58,11 @@ class DebugReceiver : BroadcastReceiver() {
                 ))
                 "delete_remote" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteRemote(it)) }
                 "checkout" -> intent.getStringExtra("branch")?.let { bus.emit(DebugActionBus.Action.GitCheckout(it)) }
+                "extract" -> {
+                    val p = intent.getStringExtra("path").orEmpty()
+                    val n = intent.getStringExtra("name").orEmpty()
+                    if (p.isNotBlank()) bus.emit(DebugActionBus.Action.ExtractText(p, n.ifBlank { p.substringAfterLast('/') }))
+                }
                 "diag" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.Diagnostic(it)) }
             }
         }

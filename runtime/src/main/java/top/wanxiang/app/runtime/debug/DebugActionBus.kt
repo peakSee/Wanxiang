@@ -40,6 +40,8 @@ class DebugActionBus @Inject constructor() {
         data class GitRenameBranch(val old: String, val new: String) : Action
         data class GitDeleteRemote(val name: String) : Action
         data class GitCheckout(val branch: String) : Action
+        /** 让 SandboxTextExtractor 抽指定附件（guestPath + 文件名），结果进 logcat。 */
+        data class ExtractText(val guestPath: String, val name: String) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

@@ -115,6 +115,7 @@ class ChatViewModel @Inject constructor(
     private val pathManager: top.wanxiang.app.runtime.RuntimePathManager,
     private val providerClient: top.wanxiang.app.harness.ProviderClient,
     private val debugActionBus: top.wanxiang.app.runtime.debug.DebugActionBus,
+    private val textExtractor: top.wanxiang.app.runtime.sandbox.SandboxTextExtractor,
 ) : ViewModel() {
 
     /**
@@ -172,7 +173,7 @@ class ChatViewModel @Inject constructor(
                                     top.wanxiang.app.runtime.shell.ShellCommand(
                                         commandLine = action.command + " 2>&1",
                                         workingDirectory = "/root",
-                                        timeoutMs = 30_000L,
+                                        timeoutMs = 300_000L,
                                     ),
                                 )
                             }.getOrNull()
@@ -209,6 +210,20 @@ class ChatViewModel @Inject constructor(
                         gitDeleteRemoteBranch(action.name)
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitCheckout ->
                         gitCheckout(action.branch)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.ExtractText -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val r = runCatching { textExtractor.extract(action.guestPath, action.name) }
+                            val msg = when (val res = r.getOrNull()) {
+                                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Ok ->
+                                    "OK len=${res.text.length} truncated=${res.truncated} 前 200: ${res.text.take(200)}"
+                                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Skipped -> "SKIP ${res.reason}"
+                                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Failed -> "FAIL ${res.error}"
+                                null -> "EXC ${r.exceptionOrNull()?.message}"
+                            }
+                            android.util.Log.i("WanxiangDiag", "extract ${action.name} → $msg")
+                            _gitOpMessage.value = GitOpMessage.Error("抽取 ${action.name}: $msg")
+                        }
+                    }
                 }
             }
         }
@@ -1493,11 +1508,48 @@ class ChatViewModel @Inject constructor(
             }
             _pendingAttachments.update { it + items }
             _attachmentsProcessing.value = false
+            // 文档类附件 → 沙箱抽文本（PDF 走 pdftotext，DOCX/PPTX/EPUB 走 unzip+sed，md/txt/html 走 cat）
+            items.filter { !it.isImage }.forEach { att ->
+                extractTextForAttachment(att)
+            }
         }
     }
 
+    /** 附件 id → 抽取到的纯文本；null 值表示"已尝试但抽不出"，key 不在则"未开始或进行中"。 */
+    private val _extractedTexts = MutableStateFlow<Map<String, String?>>(emptyMap())
+    val extractedTexts: StateFlow<Map<String, String?>> = _extractedTexts.asStateFlow()
+
+    private fun extractTextForAttachment(attachment: ChatAttachment) {
+        val guest = attachment.guestFilePath ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            _attachmentExtracting.value = _attachmentExtracting.value + (attachment.id to true)
+            val result = runCatching { textExtractor.extract(guest, attachment.name) }.getOrNull()
+            val text = when (result) {
+                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Ok -> {
+                    val truncated = if (result.truncated) "\n\n[文档过长，前 40KB 已展示]" else ""
+                    result.text + truncated
+                }
+                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Skipped -> {
+                    android.util.Log.i("AttachmentExtract", "跳过 ${attachment.name}: ${result.reason}")
+                    null
+                }
+                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Failed -> {
+                    _notice.value = "解析 ${attachment.name} 失败：${result.error}"
+                    null
+                }
+                null -> null
+            }
+            _extractedTexts.value = _extractedTexts.value + (attachment.id to text)
+            _attachmentExtracting.value = _attachmentExtracting.value - attachment.id
+        }
+    }
+
+    private val _attachmentExtracting = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val attachmentExtracting: StateFlow<Map<String, Boolean>> = _attachmentExtracting.asStateFlow()
+
     fun removeAttachment(attachment: ChatAttachment) {
         _pendingAttachments.update { list -> list.filter { it.id != attachment.id } }
+        _extractedTexts.value = _extractedTexts.value - attachment.id
     }
 
     /** 组装附件挂载说明并委托 send() 发送；View 只需在输入框非空或有附件时触发 */
@@ -1517,15 +1569,25 @@ class ChatViewModel @Inject constructor(
             }
             if (attachments.isNotEmpty()) {
                 append(context.getString(R.string.chat_attachment_mount_header))
+                val extractedMap = _extractedTexts.value
                 attachments.forEachIndexed { i, att ->
                     val guestPath = att.guestFilePath ?: "/attachments/${att.name}"
                     val kind = context.getString(if (att.isImage) R.string.chat_attachment_image else R.string.chat_attachment_file)
                     append(context.getString(R.string.chat_attachment_line, i + 1, kind, att.name, AttachmentHelper.formatFileSize(att.sizeBytes), guestPath))
+                    // 附件文本抽取结果（PDF/DOCX/PPTX/EPUB/MD/HTML/TXT 会自动抽）：直接贴给 AI，比让 AI 再读文件快
+                    val text = extractedMap[att.id]
+                    if (!text.isNullOrBlank()) {
+                        append("\n   📄 **$guestPath 内容**（沙箱已抽取 ${text.length} 字符）：\n")
+                        append("```\n")
+                        append(text.take(20_000))
+                        append("\n```\n")
+                    }
                 }
                 append(context.getString(R.string.chat_attachment_access_hint))
             }
         }
         _pendingAttachments.value = emptyList()
+        _extractedTexts.value = emptyMap()
         send(fullMessage, imageUrls)
     }
 
