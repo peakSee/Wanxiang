@@ -171,6 +171,8 @@ fun ChatScreen(
     val gitAiCommit by viewModel.aiCommit.collectAsStateWithLifecycle()
     val gitCredHealth by viewModel.credHealth.collectAsStateWithLifecycle()
     val gitRepoList by viewModel.repoList.collectAsStateWithLifecycle()
+    val gitProgress by viewModel.gitProgress.collectAsStateWithLifecycle()
+    val gitOpMsg by viewModel.gitOpMessage.collectAsStateWithLifecycle()
 
     // 弹窗开关与编辑目标：用 rememberSaveable 保存，旋转 / 进程重建后不丢失
     var showSessions by rememberSaveable { mutableStateOf(false) }
@@ -298,11 +300,48 @@ fun ChatScreen(
         val snapshot = gitOp
         when (snapshot) {
             is top.wanxiang.app.ui.chat.GitOpMessage.Ok -> {
-                snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                val actionLabel = when (snapshot.action) {
+                    is top.wanxiang.app.ui.chat.GitOpAction.SwitchWorkspaceTo -> "切过去"
+                    is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean -> "清空再试"
+                    is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> "重试"
+                    null -> null
+                }
+                val result = if (actionLabel != null) {
+                    snackbarHostState.showSnackbar(snapshot.message, actionLabel = actionLabel, duration = SnackbarDuration.Long)
+                } else {
+                    snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                }
+                if (result == SnackbarResult.ActionPerformed) {
+                    when (snapshot.action) {
+                        is top.wanxiang.app.ui.chat.GitOpAction.SwitchWorkspaceTo ->
+                            viewModel.switchWorkspace(snapshot.action.path)
+                        is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean ->
+                            viewModel.retryCloneAfterClean(snapshot.action.url, snapshot.action.targetDir)
+                        is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> { /* 未来扩展 */ }
+                        null -> {}
+                    }
+                }
                 viewModel.consumeGitOpMessage()
             }
             is top.wanxiang.app.ui.chat.GitOpMessage.Error -> {
-                snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                val actionLabel = when (snapshot.action) {
+                    is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean -> "清空再试"
+                    is top.wanxiang.app.ui.chat.GitOpAction.SwitchWorkspaceTo -> "切过去"
+                    is top.wanxiang.app.ui.chat.GitOpAction.RetrySame -> null
+                    null -> null
+                }
+                val result = if (actionLabel != null) {
+                    snackbarHostState.showSnackbar(snapshot.message, actionLabel = actionLabel, duration = SnackbarDuration.Long)
+                } else {
+                    snackbarHostState.showSnackbar(snapshot.message, duration = SnackbarDuration.Long)
+                }
+                if (result == SnackbarResult.ActionPerformed) {
+                    when (snapshot.action) {
+                        is top.wanxiang.app.ui.chat.GitOpAction.RetryWithClean ->
+                            viewModel.retryCloneAfterClean(snapshot.action.url, snapshot.action.targetDir)
+                        else -> {}
+                    }
+                }
                 viewModel.consumeGitOpMessage()
             }
             else -> {}
@@ -352,25 +391,31 @@ fun ChatScreen(
     // onOpenBrowser 非空时工具条末尾追加"浏览器"入口（agent 有新动态时高亮）。
     val chatTopBar: @Composable (onOpenBrowser: (() -> Unit)?, browserHighlight: Boolean) -> Unit =
         { onOpenBrowser, browserHighlight ->
-            ChatTopBar(
-                workspace = workspace,
-                distroDisplayName = distroDisplayName,
-                activeModel = activeModel,
-                approvalMode = currentApprovalMode,
-                currentBranch = currentBranch,
-                runtimeEvents = runtimeEvents,
-                running = running,
-                onShowFloatingPermissionDialog = { showFloatingPermissionDialog = true },
-                onOpenSessions = { showSessions = true },
-                onOpenModels = { showModels = true },
-                onOpenApprovalModes = { showApprovalModes = true },
-                onOpenBranches = { showBranches = true },
-                onOpenRuntime = { showRuntimeTimeline = true },
-                onOpenBrowser = onOpenBrowser,
-                browserHighlight = browserHighlight,
-                onOpenGit = { viewModel.refreshGitStatus(); showGitPanel = true },
-                gitUncommittedCount = gitUncommittedCount,
-            )
+            Column(Modifier.fillMaxWidth()) {
+                ChatTopBar(
+                    workspace = workspace,
+                    distroDisplayName = distroDisplayName,
+                    activeModel = activeModel,
+                    approvalMode = currentApprovalMode,
+                    currentBranch = currentBranch,
+                    runtimeEvents = runtimeEvents,
+                    running = running,
+                    onShowFloatingPermissionDialog = { showFloatingPermissionDialog = true },
+                    onOpenSessions = { showSessions = true },
+                    onOpenModels = { showModels = true },
+                    onOpenApprovalModes = { showApprovalModes = true },
+                    onOpenBranches = { showBranches = true },
+                    onOpenRuntime = { showRuntimeTimeline = true },
+                    onOpenBrowser = onOpenBrowser,
+                    browserHighlight = browserHighlight,
+                    onOpenGit = { viewModel.refreshGitStatus(); showGitPanel = true },
+                    gitUncommittedCount = gitUncommittedCount,
+                )
+                // Git 流式进度横幅（clone/pull/push 时可见）
+                gitProgress?.let { p ->
+                    GitProgressBanner(progress = p, onCancel = { viewModel.cancelGitOp() })
+                }
+            }
         }
 
     // 模型回复里的 /workspace、/attachments 等沙箱路径在此翻译为宿主真实文件，

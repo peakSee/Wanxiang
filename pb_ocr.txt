@@ -1,0 +1,37 @@
+9:57人上 9 口…                B cil Good: 4
+
+MF  智枢                     Vy    Z    三
+
+默认工作区 - Ubuntu
+
+GAREY CHR KER BORK Oi
+
+当前仅 Linux 沙箱可用。 Mik Agent 操作手机应用与系统设
+置? 到设置页完成 Shizuku 或 Root 授权。
+
+万象智枢可以为你编写代码 、读写 Linux 工作区文件、执行
+Shell 命令或排查系统故障。
+快捷开始:
+
+运行代码
+执行当前工作区的入口代码(如 python main.py / np...
+
+四  安装依赖
+在 Linux 沙箱中安装系统或语言依赖 (apt / pip / npm)
+
+初始化项目
+创建新的项目骨架模板 (Python, Node.js, C/C++, HT...
+
+© Git 状态
+查看状态、提交或拉取版本控制仓库
+y 运行测试
+
+执行单元测试与代码验证
+环境与帮助
+输入指令… 支持 @ 挂载专精能力与多模态附件
+
++ | # BE
+
+ ]  ©  a  ©
+
+BR                        智枢                        工坊                        乾坤

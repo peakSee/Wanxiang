@@ -66,6 +66,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 import top.wanxiang.app.runtime.terminal.TerminalSessionManager
@@ -376,13 +377,24 @@ class ChatViewModel @Inject constructor(
 
     fun gitPullNow() {
         _gitPanelState.value = _gitPanelState.value.copy(pullDirtyConfirm = false)
-        runGitNetworkOp(cmd = "git pull", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+        runStreamingGitOp(label = "拉取", cmd = "git pull --progress", resolveHostFromOrigin = true, timeoutMs = 300_000L)
     }
 
     fun dismissPullDirtyConfirm() {
         _gitPanelState.value = _gitPanelState.value.copy(pullDirtyConfirm = false)
     }
-    fun gitPush() = runGitNetworkOp(cmd = "git push", resolveHostFromOrigin = true, timeoutMs = 180_000L)
+    fun gitPush() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ws = currentGitWs()
+            // 检查有无 upstream；若没 → 首次 push 用 `git push -u origin <branch>` 自动建立
+            val branch = _gitPanelState.value.branch ?: runGitRead(ws, "git rev-parse --abbrev-ref HEAD")?.trim()
+            val upstreamSet = runGitRead(ws, "git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+            val hasUpstream = upstreamSet != null && !upstreamSet.contains("unknown") && !upstreamSet.contains("no upstream")
+            val cmd = if (hasUpstream) "git push --progress"
+                else "git push --progress -u origin ${shellQuote(branch ?: "HEAD")}"
+            runStreamingGitOp(label = "推送", cmd = cmd, resolveHostFromOrigin = true, timeoutMs = 300_000L)
+        }
+    }
     /** 一键 stash 当前所有改动（含未跟踪），message 可选。 */
     fun gitStash(message: String = "") = runGitWrite(
         "git stash push -u${if (message.isNotBlank()) " -m " + shellQuote(message) else ""}",
@@ -396,10 +408,9 @@ class ChatViewModel @Inject constructor(
     fun gitDeleteBranch(branch: String) = runGitWrite("git branch -d ${shellQuote(branch)}")
     fun gitInit() = runGitWrite("git init")
     /**
-     * 克隆到当前工作区下的一个以仓库名命名的子目录（避免 `git clone URL .` 因工作区
-     * 里已有的 `.wanxiang-health` 等非空文件报 "destination not empty"）。
-     * 完成后自动把工作区切到该子目录，让 Git 面板立刻显示新仓库；失败通过 [gitOpMessage]
-     * 弹出 stdout+stderr 摘要，不再静默。
+     * 克隆到当前工作区下的一个以仓库名命名的子目录。**流式进度**通过 [gitProgress] StateFlow 上抛，
+     * 顶栏横幅实时显示；成功后 [gitOpMessage] 带 [GitOpAction.SwitchWorkspaceTo] 一键切工作区。
+     * 失败按错误种类映射人话文案（同名目录 / 网络 / 认证 / URL 无效等），网络类自动重试 2 次。
      */
     fun gitClone(url: String) {
         val trimmed = url.trim()
@@ -409,32 +420,169 @@ class ChatViewModel @Inject constructor(
         }
         val repoName = trimmed.trimEnd('/').substringAfterLast('/').removeSuffix(".git").ifBlank { "repo" }
         val ws = currentGitWs()
-        _gitOpMessage.value = GitOpMessage.Busy("正在克隆 $repoName…")
         viewModelScope.launch(Dispatchers.IO) {
-            val host = GitAuth.hostOf(trimmed)
-            val creds = gitPreferences.credentials.first()
-            val cred = GitAuth.findCredential(creds, host)
-            val raw = "git clone --depth 1 ${shellQuote(trimmed)} ${shellQuote(repoName)}"
-            val effective = if (cred != null) GitAuth.wrap(raw, cred) else raw
-            val result = runCatching {
+            // 工作区不存在 → 明确告知用户（不再让 PRoot 静默回退到 / 导致 clone 到根目录）
+            if (!workspaceExists(ws)) {
+                _gitOpMessage.value = GitOpMessage.Error(
+                    "工作区目录 `$ws` 不存在。先到工坊页新建该工作区，或把会话的工作区切到一个已存在的目录",
+                )
+                return@launch
+            }
+            // 目标已存在 → 明确提示，给"清空再试"选项
+            if (workspaceExists("$ws/$repoName")) {
+                _gitOpMessage.value = GitOpMessage.Error(
+                    "`$repoName/` 已存在。要不要清空再重新克隆？（会删除现有内容）",
+                    action = GitOpAction.RetryWithClean(trimmed, "$ws/$repoName"),
+                )
+                return@launch
+            }
+            // 网络类自动重试：2 次退避（1s → 3s）
+            var attempt = 0
+            var lastError = ""
+            while (attempt < 3 && !cancelRequested.get()) {
+                if (attempt > 0) {
+                    _gitProgress.value = GitProgress(label = "重试第 $attempt 次…")
+                    delay(1_000L * attempt)
+                }
+                cancelRequested.set(false)
+                _gitProgress.value = GitProgress(label = "开始克隆 $repoName（第 ${attempt + 1} 次）…")
+                val outcome = doCloneOnce(trimmed, repoName, ws)
+                when (outcome) {
+                    is CloneOutcome.Success -> {
+                        _gitProgress.value = null
+                        _gitOpMessage.value = GitOpMessage.Ok(
+                            message = "✓ 已克隆到 $repoName/",
+                            action = GitOpAction.SwitchWorkspaceTo("$ws/$repoName"),
+                        )
+                        refreshGitStatus()
+                        return@launch
+                    }
+                    is CloneOutcome.Cancelled -> {
+                        _gitProgress.value = null
+                        _gitOpMessage.value = GitOpMessage.Error("已取消")
+                        return@launch
+                    }
+                    is CloneOutcome.Failure -> {
+                        lastError = outcome.rawOutput
+                        // 网络/临时错误才重试；其它直接失败
+                        if (!isRetryable(outcome.rawOutput)) {
+                            _gitProgress.value = null
+                            val friendly = translateGitError(outcome.rawOutput, repoName)
+                            _gitOpMessage.value = GitOpMessage.Error(friendly, action = actionForError(friendly, trimmed, "$ws/$repoName"))
+                            return@launch
+                        }
+                        attempt++
+                    }
+                }
+            }
+            _gitProgress.value = null
+            _gitOpMessage.value = GitOpMessage.Error(
+                "克隆失败（重试 3 次仍不通）：\n" + translateGitError(lastError, repoName),
+                action = GitOpAction.RetrySame("clone:$trimmed"),
+            )
+        }
+    }
+
+    private sealed interface CloneOutcome {
+        data object Success : CloneOutcome
+        data class Failure(val rawOutput: String) : CloneOutcome
+        data object Cancelled : CloneOutcome
+    }
+
+    private suspend fun doCloneOnce(url: String, repoName: String, ws: String): CloneOutcome {
+        val host = GitAuth.hostOf(url)
+        val creds = gitPreferences.credentials.first()
+        val cred = GitAuth.findCredential(creds, host)
+        val raw = "git clone --progress --depth 1 ${shellQuote(url)} ${shellQuote(repoName)}"
+        val effective = if (cred != null) GitAuth.wrap(raw, cred) else raw
+        // 用 forcePty 让 git 走 tty，能吐 `% Receiving objects: NN%` 进度
+        val result = runCatching {
+            linuxRuntime.execute(
+                top.wanxiang.app.runtime.shell.ShellCommand(
+                    commandLine = "$effective 2>&1",
+                    workingDirectory = ws,
+                    timeoutMs = 600_000L,
+                    onOutput = { chunk -> applyGitProgress(chunk, "克隆 $repoName…") },
+                    forcePty = true,
+                ),
+            )
+        }
+        val r = result.getOrNull()
+        val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
+        return when {
+            cancelRequested.get() -> CloneOutcome.Cancelled
+            r != null && r.isSuccess -> CloneOutcome.Success
+            else -> CloneOutcome.Failure(out.ifBlank { "git 无输出（可能网络不通或 URL 错误）" })
+        }
+    }
+
+    private suspend fun workspaceExists(path: String): Boolean {
+        val r = runCatching {
+            linuxRuntime.execute(
+                top.wanxiang.app.runtime.shell.ShellCommand(
+                    commandLine = "test -d ${shellQuote(path)} && echo yes || echo no",
+                    workingDirectory = "/root",
+                    timeoutMs = 10_000L,
+                ),
+            )
+        }.getOrNull()
+        return r?.stdout?.trim() == "yes"
+    }
+
+    private fun isRetryable(out: String): Boolean {
+        val l = out.lowercase()
+        return "failed to connect" in l || "could not resolve host" in l ||
+            "connection reset" in l || "timed out" in l || "rpc failed" in l ||
+            "early eof" in l || "the requested url returned error: 5" in l
+    }
+
+    /** 把 git stderr 翻成人话（保留原摘要供调试）。 */
+    private fun translateGitError(out: String, repoName: String = ""): String {
+        val l = out.lowercase()
+        val core = when {
+            "already exists and is not an empty directory" in l ->
+                "`$repoName` 目录已存在且非空。可清空再试或改目录名。"
+            "authentication failed" in l || "invalid credentials" in l || "password authentication" in l ->
+                "认证失败：用户名或 PAT 不对/过期。到「凭证」页更新。"
+            "could not read username" in l || "terminal prompts disabled" in l ->
+                "私有仓库需要凭证。请先到「凭证」页添加该主机的 PAT。"
+            "permission denied" in l ->
+                "权限不足：账号没这个仓库的读写权，或 PAT 缺 scope。"
+            "repository not found" in l || "not found" in l && "http" in l ->
+                "仓库不存在（404）：URL 拼错了，或它是私有的但你无权访问。"
+            "unable to access" in l || "failed to connect" in l || "could not resolve host" in l ->
+                "网络不通：手机没连上代理，或 GitHub/Gitee 不可达。"
+            "connection reset" in l || "timed out" in l ->
+                "网络被重置：可能中途断流。稍后再试。"
+            "no space left on device" in l ->
+                "手机存储不够。清理工作区或卸载一些项目再试。"
+            "empty reply" in l || "rpc failed" in l ->
+                "服务端断开：可能仓库太大或对方限流。可以试浅克隆。"
+            else -> out.take(400)
+        }
+        return core
+    }
+
+    private fun actionForError(friendly: String, url: String, targetDir: String): GitOpAction? = when {
+        "已存在" in friendly -> GitOpAction.RetryWithClean(url, targetDir)
+        "网络不通" in friendly || "网络被重置" in friendly || "服务端断开" in friendly ->
+            GitOpAction.RetrySame("clone:$url")
+        else -> null
+    }
+
+    /** 「同名目录已存在，清空重试」的用户动作。 */
+    fun retryCloneAfterClean(url: String, targetDir: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
                 linuxRuntime.execute(
                     top.wanxiang.app.runtime.shell.ShellCommand(
-                        commandLine = "$effective 2>&1",
-                        workingDirectory = ws,
-                        timeoutMs = 600_000L,
+                        commandLine = "rm -rf ${shellQuote(targetDir)}",
+                        workingDirectory = "/root",
+                        timeoutMs = 15_000L,
                     ),
                 )
             }
-            val r = result.getOrNull()
-            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
-            if (r != null && r.isSuccess) {
-                _gitOpMessage.value = GitOpMessage.Ok("✓ 已克隆到 $repoName/。用顶部工作区选择器切到 $repoName 就能改代码")
-                refreshGitStatus()
-            } else {
-                _gitOpMessage.value = GitOpMessage.Error(
-                    "克隆失败：\n" + out.take(600).ifBlank { "git 无输出（可能网络不通或 URL 错误）" },
-                )
-            }
+            gitClone(url)
         }
     }
     fun gitConfigIdentity(name: String, email: String) = runGitWrite("git config user.name ${shellQuote(name)} && git config user.email ${shellQuote(email)}")
@@ -461,6 +609,52 @@ class ChatViewModel @Inject constructor(
      * - clone：从入参 URL 解析 host；
      * - pull/push：从当前仓库 `origin` 反查 host。
      */
+    /**
+     * pull/push 通用流式：设 progress → 用 forcePty 让 git 吐进度 → 解析 → 完成清理。
+     * 与 clone 共用 [applyGitProgress] + [translateGitError]。
+     */
+    private fun runStreamingGitOp(
+        label: String,
+        cmd: String,
+        resolveHostFromOrigin: Boolean,
+        timeoutMs: Long,
+    ) {
+        val ws = currentGitWs()
+        viewModelScope.launch(Dispatchers.IO) {
+            cancelRequested.set(false)
+            _gitProgress.value = GitProgress(label = "$label 中…")
+            val host = if (resolveHostFromOrigin) {
+                GitAuth.hostOf(runGitRead(ws, "git remote get-url origin").orEmpty().trim())
+            } else null
+            val creds = gitPreferences.credentials.first()
+            val cred = GitAuth.findCredential(creds, host)
+            val effective = if (cred != null) GitAuth.wrap(cmd, cred) else cmd
+            val result = runCatching {
+                linuxRuntime.execute(
+                    top.wanxiang.app.runtime.shell.ShellCommand(
+                        commandLine = "$effective 2>&1",
+                        workingDirectory = ws,
+                        timeoutMs = timeoutMs,
+                        onOutput = { chunk -> applyGitProgress(chunk, "$label 中…") },
+                        forcePty = true,
+                    ),
+                )
+            }
+            _gitProgress.value = null
+            val r = result.getOrNull()
+            val out = ((r?.stdout ?: "") + "\n" + (r?.stderr ?: "")).trim()
+            if (r != null && r.isSuccess) {
+                _gitOpMessage.value = GitOpMessage.Ok("✓ $label 完成")
+            } else {
+                _gitOpMessage.value = GitOpMessage.Error(
+                    message = "$label 失败：\n" + translateGitError(out, ""),
+                    action = GitOpAction.RetrySame(cmd),
+                )
+            }
+            refreshGitStatus()
+        }
+    }
+
     private fun runGitNetworkOp(
         cmd: String,
         resolveHostFromOrigin: Boolean,
@@ -516,6 +710,51 @@ class ChatViewModel @Inject constructor(
     val gitOpMessage: StateFlow<GitOpMessage> = _gitOpMessage.asStateFlow()
     fun consumeGitOpMessage() { _gitOpMessage.value = GitOpMessage.Idle }
 
+    /** 流式进度：ChatScreen 顶部横幅显示，git 每吐一行进度就更新。null = 无进行中操作。 */
+    private val _gitProgress = MutableStateFlow<GitProgress?>(null)
+    val gitProgress: StateFlow<GitProgress?> = _gitProgress.asStateFlow()
+
+    /** 用户点横幅右侧 ✕ 取消当前 git 操作（把 [cancelRequested] 置 true，异步任务下次轮询时看到就 kill）。 */
+    private val cancelRequested = java.util.concurrent.atomic.AtomicBoolean(false)
+    fun cancelGitOp() {
+        if (_gitProgress.value != null) {
+            cancelRequested.set(true)
+            _gitProgress.value = _gitProgress.value?.copy(label = "正在取消…")
+        }
+    }
+
+    /**
+     * 从 git 的 stderr 输出里抽进度信息（`Receiving objects: 45% (123/270), 3.5 MiB | 1.2 MiB/s`）。
+     * git 用 `\r` 在同一行覆盖写，所以 onOutput 每次的 chunk 可能带 `\r` 分段；只取最后一段。
+     */
+    private fun applyGitProgress(rawChunk: String, defaultLabel: String) {
+        // 取最后一段（覆盖式 progress 输出）
+        val last = rawChunk.split('\r').lastOrNull().orEmpty()
+        if (last.isBlank()) return
+        val phase = when {
+            "Counting objects" in last -> "枚举对象"
+            "Compressing objects" in last -> "压缩对象"
+            "Receiving objects" in last -> "接收对象"
+            "Resolving deltas" in last -> "解析增量"
+            "Checking out files" in last -> "检出文件"
+            "Writing objects" in last -> "写入对象"
+            "Enumerating objects" in last -> "枚举对象"
+            else -> null
+        }
+        val percent = Regex("(\\d+)%").find(last)?.groupValues?.get(1)?.toIntOrNull()
+        val objFrac = Regex("\\((\\d+)/(\\d+)\\)").find(last)
+        val objDone = objFrac?.groupValues?.get(1)?.toIntOrNull()
+        val objTotal = objFrac?.groupValues?.get(2)?.toIntOrNull()
+        val speedOrBytes = Regex("([\\d.]+\\s*[KM]?B)(?:/s)?").find(last)?.groupValues?.get(1)
+        _gitProgress.value = GitProgress(
+            label = phase ?: defaultLabel,
+            percent = percent,
+            objects = if (objDone != null && objTotal != null) "$objDone/$objTotal" else null,
+            transfer = speedOrBytes,
+            raw = last.take(120),
+        )
+    }
+
     fun addGitCredential(name: String, host: String, username: String, token: String) {
         val trimmedHost = host.trim().lowercase().removePrefix("https://").removeSuffix("/")
         if (name.isBlank() || trimmedHost.isBlank() || username.isBlank() || token.isBlank()) return
@@ -539,6 +778,17 @@ class ChatViewModel @Inject constructor(
             gitPreferences.setCredentials(current.filterNot { it.id == id })
         }
     }
+
+    /** 用户从 Snackbar 「切过去」按钮触发：把工作区切到某个绝对路径（clone 完成后）。 */
+    fun switchWorkspace(path: String) {
+        val relative = path.removePrefix("/workspace/").trim('/')
+        harnessLoop.debugSetWorkspace(relative.ifBlank { path })
+        _gitOpMessage.value = GitOpMessage.Ok("✓ 工作区已切到 $relative")
+        refreshGitStatus()
+    }
+
+    /** 从给定 path 切工作区（DebugActionBus 用）。 */
+    fun switchWorkspaceFromDebug(path: String) = switchWorkspace(path)
 
     /** 用给定 URL 探测是否有可用凭证（clone 对话框显示「将自动使用」提示）。 */
     fun probeCredential(url: String) {
@@ -1608,9 +1858,28 @@ sealed interface GitRepoListState {
 sealed interface GitOpMessage {
     data object Idle : GitOpMessage
     data class Busy(val label: String) : GitOpMessage
-    data class Ok(val message: String) : GitOpMessage
-    data class Error(val message: String) : GitOpMessage
+    data class Ok(val message: String, val action: GitOpAction? = null) : GitOpMessage
+    data class Error(val message: String, val action: GitOpAction? = null) : GitOpMessage
 }
+
+/** 反馈消息里可点的动作（Snackbar 的 action 按钮）。 */
+sealed interface GitOpAction {
+    /** 一键把工作区切到某个子目录（clone 完成后）。 */
+    data class SwitchWorkspaceTo(val path: String) : GitOpAction
+    /** 同名目录已存在时的一键清空再试。 */
+    data class RetryWithClean(val url: String, val targetDir: String) : GitOpAction
+    /** 网络错误重试。 */
+    data class RetrySame(val command: String) : GitOpAction
+}
+
+/** 流式进度条数据。git 每次输出进度 chunk 更新一次。 */
+data class GitProgress(
+    val label: String,
+    val percent: Int? = null,
+    val objects: String? = null,
+    val transfer: String? = null,
+    val raw: String? = null,
+)
 
 internal fun mergeHistoricalAndLiveEvents(
     sessionId: String,
