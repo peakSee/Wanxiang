@@ -103,7 +103,14 @@ class TarStreamExtractor @Inject constructor(
                 TYPE_SYMLINK -> {
                     target.parentFile?.mkdirs()
                     if (target.exists()) target.delete()
-                    Os.symlink(linkName, target.absolutePath)
+                    runCatching { Os.symlink(linkName, target.absolutePath) }
+                        .onFailure {
+                            // Android 11+ 部分设备 Os.symlink 抛 UnsatisfiedLinkError；
+                            // 走 java.nio.Files.createSymbolicLink 兜底（内部也调 symlink(2) 但 API 稳定）
+                            runCatching {
+                                java.nio.file.Files.createSymbolicLink(target.toPath(), java.nio.file.Paths.get(linkName))
+                            }.onFailure { logger.w("Failed to symlink $target", it) }
+                        }
                 }
                 TYPE_HARDLINK -> {
                     target.parentFile?.mkdirs()
@@ -145,8 +152,17 @@ class TarStreamExtractor @Inject constructor(
 
     private fun applyMode(file: File, mode: Int) {
         if (mode <= 0) return
-        runCatching { Os.chmod(file.absolutePath, mode) }
-            .onFailure { logger.w("Failed to chmod ${file.absolutePath}", it) }
+        val ok = runCatching { Os.chmod(file.absolutePath, mode) }.isSuccess
+        if (!ok) {
+            // Os.chmod 在部分 Android 版本 / SELinux 上下文里会 EACCES。
+            // 兜底用 java.io.File#setReadable/setWritable/setExecutable（走 syscall chmod 但由
+            // framework 层包装，权限模型对 app 更宽松）。三档对应 owner r/w/x 位。
+            runCatching {
+                if (mode and 0x100 != 0) file.setReadable(true, false)
+                if (mode and 0x080 != 0) file.setWritable(true, false)
+                if (mode and 0x040 != 0) file.setExecutable(true, false)
+            }.onFailure { logger.w("Failed to chmod and Java fallback for ${file.absolutePath}", it) }
+        }
     }
 
     private fun isInside(root: File, candidate: File): Boolean {
