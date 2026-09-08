@@ -1508,9 +1508,13 @@ class ChatViewModel @Inject constructor(
             }
             _pendingAttachments.update { it + items }
             _attachmentsProcessing.value = false
-            // 文档类附件 → 沙箱抽文本（PDF 走 pdftotext，DOCX/PPTX/EPUB 走 unzip+sed，md/txt/html 走 cat）
-            items.filter { !it.isImage }.forEach { att ->
-                extractTextForAttachment(att)
+            // **并发**抽文档文本（P0 附件多文件并发）：coroutineScope + 每个 item 单独 launch；
+            // 5 个 PDF 同时下发到沙箱 → 一起跑，不用排队（沙箱本身多进程能扛，且每个 extract 内部有 90s timeout 兜底）
+            val docItems = items.filter { !it.isImage }
+            if (docItems.isNotEmpty()) {
+                kotlinx.coroutines.coroutineScope {
+                    docItems.forEach { att -> launch { extractTextForAttachment(att) } }
+                }
             }
         }
     }
@@ -1519,29 +1523,27 @@ class ChatViewModel @Inject constructor(
     private val _extractedTexts = MutableStateFlow<Map<String, String?>>(emptyMap())
     val extractedTexts: StateFlow<Map<String, String?>> = _extractedTexts.asStateFlow()
 
-    private fun extractTextForAttachment(attachment: ChatAttachment) {
+    private suspend fun extractTextForAttachment(attachment: ChatAttachment) {
         val guest = attachment.guestFilePath ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            _attachmentExtracting.value = _attachmentExtracting.value + (attachment.id to true)
-            val result = runCatching { textExtractor.extract(guest, attachment.name) }.getOrNull()
-            val text = when (result) {
-                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Ok -> {
-                    val truncated = if (result.truncated) "\n\n[文档过长，前 40KB 已展示]" else ""
-                    result.text + truncated
-                }
-                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Skipped -> {
-                    android.util.Log.i("AttachmentExtract", "跳过 ${attachment.name}: ${result.reason}")
-                    null
-                }
-                is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Failed -> {
-                    _notice.value = "解析 ${attachment.name} 失败：${result.error}"
-                    null
-                }
-                null -> null
+        _attachmentExtracting.value = _attachmentExtracting.value + (attachment.id to true)
+        val result = runCatching { textExtractor.extract(guest, attachment.name) }.getOrNull()
+        val text = when (result) {
+            is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Ok -> {
+                val truncated = if (result.truncated) "\n\n[文档过长，前 40KB 已展示]" else ""
+                result.text + truncated
             }
-            _extractedTexts.value = _extractedTexts.value + (attachment.id to text)
-            _attachmentExtracting.value = _attachmentExtracting.value - attachment.id
+            is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Skipped -> {
+                android.util.Log.i("AttachmentExtract", "跳过 ${attachment.name}: ${result.reason}")
+                null
+            }
+            is top.wanxiang.app.runtime.sandbox.SandboxTextExtractor.Result.Failed -> {
+                _notice.value = "解析 ${attachment.name} 失败：${result.error}"
+                null
+            }
+            null -> null
         }
+        _extractedTexts.value = _extractedTexts.value + (attachment.id to text)
+        _attachmentExtracting.value = _attachmentExtracting.value - attachment.id
     }
 
     private val _attachmentExtracting = MutableStateFlow<Map<String, Boolean>>(emptyMap())

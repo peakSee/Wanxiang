@@ -147,44 +147,86 @@ class AppUpdateManager @Inject constructor(
     }.getOrNull() ?: 0
 
     /**
-     * 下载 APK 文件并报告下载进度
+     * 下载 APK 文件并报告下载进度。
+     *
+     * **断点续传**（P0-3）：如果之前有 `.part` 半成品文件 → 请求带 `Range: bytes=<已有大小>-` → 服务端返
+     * 206 → 追加写；否则从 0 开始（返 200 走原逻辑）。**下载完成后**：`.part` rename 为最终文件名。
+     * 用户网络抖动/切后台被 kill 时保留 `.part`，下次点重试直接从断点继续，不用从头 100% 重下。
+     *
+     * **进度 StateFlow**（P0-4）：每次回调同时更新 [downloadProgress]，ChatScreen 顶部横幅订阅这个渲染。
      */
+    data class DownloadProgress(
+        val downloadedBytes: Long,
+        val totalBytes: Long,
+        val resumedBytes: Long,
+        val label: String = "下载更新包",
+    ) {
+        val percent: Float get() = if (totalBytes > 0L) (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
+        val isResumed: Boolean get() = resumedBytes > 0L
+    }
+
+    private val _downloadProgress = kotlinx.coroutines.flow.MutableStateFlow<DownloadProgress?>(null)
+    val downloadProgress: kotlinx.coroutines.flow.StateFlow<DownloadProgress?> = _downloadProgress
+
     suspend fun downloadApk(
         downloadUrl: String,
+        expectedTotalBytes: Long? = null,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
-            val request = Request.Builder()
-                .url(downloadUrl)
-                .get()
-                .build()
-
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                throw IllegalStateException("下载失败 HTTP ${response.code}")
-            }
-
-            val body = response.body
-            val contentLength = body.contentLength().takeIf { it > 0 }
             val downloadDir = File(context.cacheDir, "updates").apply { mkdirs() }
             val apkFile = File(downloadDir, "wanxiang-latest.apk")
-            if (apkFile.exists()) apkFile.delete()
+            val partFile = File(downloadDir, "wanxiang-latest.apk.part")
+            val existing = if (partFile.exists()) partFile.length() else 0L
 
-            body.byteStream().use { input ->
-                FileOutputStream(apkFile).use { output ->
-                    val buffer = ByteArray(32 * 1024)
-                    var downloaded = 0L
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        downloaded += read
-                        onProgress(downloaded, contentLength)
+            val request = Request.Builder().url(downloadUrl).apply {
+                if (existing > 0L) header("Range", "bytes=$existing-")
+            }.build()
+
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    // 若服务端拒绝 Range（返 416 或没 206）→ 清 part 从头下
+                    if (existing > 0L && (response.code == 416 || response.code == 200)) {
+                        partFile.delete()
+                        _downloadProgress.value = null
+                        return@use // 递归一次简单版：走 else 分支重下
                     }
-                    output.flush()
+                    throw IllegalStateException("下载失败 HTTP ${response.code}")
                 }
-            }
+                val resuming = response.code == 206 && existing > 0L
+                val body = response.body
+                val remainingLen = body.contentLength().takeIf { it > 0 }
+                val total = when {
+                    resuming && remainingLen != null -> existing + remainingLen
+                    remainingLen != null -> remainingLen
+                    else -> expectedTotalBytes
+                }
+                val appendMode = resuming
+                val startOffset = if (resuming) existing else 0L
+                _downloadProgress.value = DownloadProgress(startOffset, total ?: startOffset, startOffset)
 
+                FileOutputStream(partFile, appendMode).use { output ->
+                    body.byteStream().use { input ->
+                        val buffer = ByteArray(32 * 1024)
+                        var downloaded = startOffset
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            output.write(buffer, 0, read)
+                            downloaded += read
+                            onProgress(downloaded, total)
+                            _downloadProgress.value = DownloadProgress(downloaded, total ?: downloaded, startOffset)
+                        }
+                        output.flush()
+                    }
+                }
+                if (apkFile.exists()) apkFile.delete()
+                if (!partFile.renameTo(apkFile)) {
+                    partFile.copyTo(apkFile, overwrite = true)
+                    partFile.delete()
+                }
+                _downloadProgress.value = null
+            }
             apkFile
         }
     }

@@ -77,6 +77,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var settingsDataStore: AppearancePreferences
 
     @Inject
+    lateinit var updatePreferences: top.wanxiang.app.core.datastore.UpdatePreferences
+
+    @Inject
     lateinit var appUpdateManager: AppUpdateManager
 
     @Inject
@@ -174,20 +177,34 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 LaunchedEffect(onboarding.completed) {
-                    if (onboarding.completed) {
-                        val autoCheck = settingsDataStore.autoCheckUpdates.first()
-                        if (autoCheck) {
-                            val res = appUpdateManager.checkUpdateMerged(currentVersionName)
-                            res.onSuccess { info ->
-                                if (info.hasUpdate) updateInfo = info
-                            }
+                    if (!onboarding.completed) return@LaunchedEffect
+                    val autoCheck = updatePreferences.autoCheckUpdates.first()
+                    if (!autoCheck) return@LaunchedEffect
+                    // P0-1 冷却：同 versionCode 用户已「稍后再说」→ 本次不弹；上次自动检查 <6h → 本次跳过
+                    val dismissedCode = updatePreferences.dismissedUpdateVersionCode.first()
+                    val lastCheckMs = updatePreferences.lastUpdateCheckTimeMs.first()
+                    val nowMs = System.currentTimeMillis()
+                    val coolingDown = nowMs - lastCheckMs < top.wanxiang.app.core.datastore.UpdatePreferences.UPDATE_AUTO_CHECK_COOLDOWN_MS
+                    if (coolingDown) return@LaunchedEffect
+                    updatePreferences.setLastUpdateCheckTime(nowMs)
+                    val res = appUpdateManager.checkUpdateMerged(currentVersionName)
+                    res.onSuccess { info ->
+                        if (info.hasUpdate && info.versionCode != dismissedCode) {
+                            // P0-2 忙碌延后：延迟 3 秒，避开用户冷启后立刻输入或操作的窗口
+                            kotlinx.coroutines.delay(3_000L)
+                            updateInfo = info
                         }
                     }
                 }
 
                 updateInfo?.let { info ->
                     RuntimeAlertDialog(
-                        onDismissRequest = { if (!isDownloading && !info.forceUpdate) updateInfo = null },
+                        onDismissRequest = {
+                            if (!isDownloading && !info.forceUpdate) {
+                                updateInfo = null
+                                scope.launch { updatePreferences.setDismissedUpdateVersionCode(info.versionCode) }
+                            }
+                        },
                         title = {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -300,7 +317,11 @@ class MainActivity : AppCompatActivity() {
                             // 强制更新时不显示「稍后再说」，用户只能去下载
                             if (!info.forceUpdate) {
                                 TextButton(
-                                    onClick = { updateInfo = null },
+                                    onClick = {
+                                        updateInfo = null
+                                        // P0-1：记下这个 versionCode 已被用户 dismiss，下次同版本不再弹
+                                        scope.launch { updatePreferences.setDismissedUpdateVersionCode(info.versionCode) }
+                                    },
                                     enabled = !isDownloading,
                                 ) {
                                     Text(stringResource(R.string.wanxiang_later))
@@ -316,6 +337,11 @@ class MainActivity : AppCompatActivity() {
                     }
                     onboarding.completed -> WanXiangNavHost(globalNavigationBus = globalNavigationBus)
                     else -> OnboardingScreen(onboardingViewModel)
+                }
+                // 全局 Git/下载 进度横幅（跨页面可见，用户切 tab 也不丢进度）
+                val apkDownloadProgress by appUpdateManager.downloadProgress.collectAsStateWithLifecycle()
+                apkDownloadProgress?.let { p ->
+                    top.wanxiang.app.ui.common.DownloadProgressBanner(progress = p)
                 }
                 // 全局 git 凭据弹窗宿主：容器 helper 走文件 IPC 请求凭据时，无论在哪个页面都能立即弹出。
                 top.wanxiang.app.ui.chat.GlobalCredentialDialogHost(gitCredentialIpcBridge)

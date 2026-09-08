@@ -398,6 +398,33 @@ class SettingsDataStore @Inject constructor(
         }
     }
 
+    // ===== 更新检查冷却 / 去重（P0-1）=====
+
+    private val lastUpdateCheckTimeKey = androidx.datastore.preferences.core.longPreferencesKey("last_update_check_time_ms")
+    private val dismissedUpdateVersionKey = androidx.datastore.preferences.core.intPreferencesKey("dismissed_update_version_code")
+
+    /** 上次自动检查更新的时间戳（ms），配合 [UPDATE_AUTO_CHECK_COOLDOWN_MS] 决定要不要再自动弹。 */
+    val lastUpdateCheckTimeMs: Flow<Long> = context.settingsDataStore.data.map { it[lastUpdateCheckTimeKey] ?: 0L }
+
+    /** 用户看过并「稍后再说」关掉的那个 versionCode；同一个 versionCode 不再自动弹第二次。 */
+    val dismissedUpdateVersionCode: Flow<Int> = context.settingsDataStore.data.map { it[dismissedUpdateVersionKey] ?: 0 }
+
+    suspend fun setLastUpdateCheckTime(ms: Long) {
+        context.settingsDataStore.edit { it[lastUpdateCheckTimeKey] = ms }
+    }
+
+    suspend fun setDismissedUpdateVersionCode(code: Int) {
+        context.settingsDataStore.edit { it[dismissedUpdateVersionKey] = code }
+    }
+
+    /** 手动检查（设置页点按钮）→ 清除冷却，允许立即弹。 */
+    suspend fun clearUpdateCooldown() {
+        context.settingsDataStore.edit {
+            it.remove(lastUpdateCheckTimeKey)
+            it.remove(dismissedUpdateVersionKey)
+        }
+    }
+
     private val cloudConfigJsonKey = stringPreferencesKey("wanxiang_cloud_config_json")
     private val cloudConfigFetchedAtKey = androidx.datastore.preferences.core.longPreferencesKey("wanxiang_cloud_config_fetched_at")
 
@@ -915,5 +942,7 @@ class SettingsDataStore @Inject constructor(
         const val DEFAULT_BASE_COMMAND_TIMEOUT_SECONDS = 10 * 60
         const val MIN_BASE_COMMAND_TIMEOUT_SECONDS = 60
         const val MAX_BASE_COMMAND_TIMEOUT_SECONDS = 60 * 60
+        /** 更新自动检查冷却：两次冷启检查最少隔多久，避免用户刚升完立刻被下一个升级打扰。 */
+        const val UPDATE_AUTO_CHECK_COOLDOWN_MS = 6L * 60L * 60L * 1000L // 6 小时
     }
 }
