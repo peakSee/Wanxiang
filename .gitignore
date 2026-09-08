@@ -116,3 +116,5 @@ cf*.png
 *_tsv.tsv
 # evidence 目录不入库（本机存证）
 evidence/
+# taixu 上游对比参考（不入库）
+taixu-src/
