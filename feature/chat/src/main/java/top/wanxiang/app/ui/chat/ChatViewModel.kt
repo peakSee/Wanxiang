@@ -255,6 +255,23 @@ class ChatViewModel @Inject constructor(
                         gitDeleteTag(action.name)
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitDeleteTagRemote ->
                         gitDeleteRemoteTag(action.name)
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.CreateProject -> {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val inner = runCatching {
+                                workspaceManager.createProject(
+                                    name = action.name,
+                                    templateId = action.templateId,
+                                    packageName = action.pkg,
+                                )
+                            }
+                            val detail = inner.getOrNull()?.let { appRes ->
+                                appRes.getOrNull()?.let { "OK name=${it.name} linuxPath=${it.linuxPath}" }
+                                    ?: "FAIL " + appRes.errorOrNull()?.message
+                            } ?: ("EX " + inner.exceptionOrNull()?.message)
+                            android.util.Log.i("WanxiangDiag", "CreateProject '${action.name}'(${action.templateId}) → $detail")
+                            _gitOpMessage.value = GitOpMessage.Error("CreateProject: $detail".take(500))
+                        }
+                    }
                     is top.wanxiang.app.runtime.debug.DebugActionBus.Action.GitRaw -> {
                         viewModelScope.launch(Dispatchers.IO) {
                             val out = runGitRead(currentGitWs(), action.cmd + " 2>&1") ?: "<null>"

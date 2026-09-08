@@ -55,6 +55,8 @@ class DebugActionBus @Inject constructor() {
         data class GitDeleteTagRemote(val name: String) : Action
         /** 通用「在 git 工作区里跑任意 shell 命令」（测 pull/ls-remote 等非核心方法时的兜底）。 */
         data class GitRaw(val cmd: String) : Action
+        /** 工坊建项目端到端测（真引擎 + 真资产，验证模板占位符替换链）。 */
+        data class CreateProject(val name: String, val templateId: String, val pkg: String) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

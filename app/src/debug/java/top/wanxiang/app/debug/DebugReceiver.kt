@@ -92,6 +92,12 @@ class DebugReceiver : BroadcastReceiver() {
                 "del_tag_local" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteTagLocal(it)) }
                 "del_tag_remote" -> intent.getStringExtra("name")?.let { bus.emit(DebugActionBus.Action.GitDeleteTagRemote(it)) }
                 "raw" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.GitRaw(it)) }
+                "create_proj" -> {
+                    val n = intent.getStringExtra("name").orEmpty()
+                    val t = intent.getStringExtra("template").orEmpty()
+                    val p = intent.getStringExtra("pkg").orEmpty()
+                    if (n.isNotBlank()) bus.emit(DebugActionBus.Action.CreateProject(n, t.ifBlank { "builtin.android-compose" }, p.ifBlank { "com.example.wetest" }))
+                }
                 "diag" -> intent.getStringExtra("cmd")?.let { bus.emit(DebugActionBus.Action.Diagnostic(it)) }
             }
         }
