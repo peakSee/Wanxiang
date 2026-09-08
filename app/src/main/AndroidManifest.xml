@@ -112,6 +112,19 @@
         <service
             android:name="top.wanxiang.app.ui.chat.floating.FloatingChatService"
             android:exported="false" />
+        <!-- GUI 手势通路：exported=true 否则 Android 12+ system_server 无法绑定无障碍服务 -->
+        <service
+            android:name="top.wanxiang.app.runtime.gui.WanxiangGuiAccessibilityService"
+            android:exported="true"
+            android:label="@string/wanxiang_app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/wanxiang_gui_accessibility_service" />
+        </service>
     </application>
 
 </manifest>

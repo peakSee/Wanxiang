@@ -38,8 +38,10 @@ import top.wanxiang.app.core.database.task.AgentTaskDao
         BuildScriptEntity::class,
         ProjectBuildScriptBindingEntity::class,
         AgentTaskEntity::class,
+        WorkflowEntity::class,
+        WorkflowExecutionLogEntity::class,
     ],
-    version = 46,
+    version = 47,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -63,5 +65,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun androidAppDao(): AndroidAppDao
     abstract fun buildScriptDao(): BuildScriptDao
     abstract fun agentTaskDao(): AgentTaskDao
+    abstract fun workflowDao(): WorkflowDao
 }
 

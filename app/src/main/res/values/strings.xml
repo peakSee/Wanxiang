@@ -23,4 +23,5 @@
     <string name="wanxiang_runtime_notification_channel">Linux Runtime</string>
     <string name="wanxiang_runtime_running">Linux Runtime 正在运行</string>
     <string name="wanxiang_runtime_background_available">后台工具和本地服务保持可用</string>
+    <string name="wanxiang_gui_a11y_description">允许万象执行界面手势与读取屏幕节点，用于工作流 GUI 自动点选。可在系统设置中随时关闭。</string>
 </resources>
