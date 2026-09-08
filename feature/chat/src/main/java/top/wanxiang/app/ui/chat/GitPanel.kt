@@ -114,6 +114,7 @@ fun GitPanel(
     onClearRepoList: () -> Unit = {},
     progress: top.wanxiang.app.ui.chat.GitProgress? = null,
     onCancelProgress: () -> Unit = {},
+    recentCloneUrls: List<String> = emptyList(),
 ) {
     if (state.commitDetailHash != null) {
         GitCommitDetailView(state, onBack = onClearCommitDetail)
@@ -145,7 +146,10 @@ fun GitPanel(
             title = stringResource(R.string.chat_git_panel_title),
             onBack = onDismiss,
             statusText = state.branch?.let { b ->
-                state.aheadBehind?.let { (a, bh) -> "$b  ↑$a ↓$bh" } ?: b
+                val ab = state.aheadBehind?.let { (a, bh) -> "  ↑$a ↓$bh" } ?: ""
+                val n = state.staged.size + state.unstaged.size + state.untracked.size
+                val badge = if (n > 0) "  ● $n" else ""
+                "$b$ab$badge"
             },
             actions = {
                 RuntimeIconButton(onClick = { showCredentialDialog = true }) {
@@ -291,6 +295,32 @@ fun GitPanel(
                         // URL 未填或不含可识别主机：提供浏览快捷入口
                         RuntimeTextButton(onClick = { onFetchRepos(credentials.first().host) }) {
                             Text("📋 从「${credentials.first().name}」拉仓库列表", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    if (recentCloneUrls.isNotEmpty()) {
+                        Text(
+                            "最近克隆过：",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        recentCloneUrls.take(3).forEach { u ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    cloneUrl = u
+                                    onProbeCredential(u)
+                                }.padding(vertical = 4.dp, horizontal = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text("🕘", style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    u,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                     when (val st = repoListState) {

@@ -44,6 +44,8 @@ class DebugActionBus @Inject constructor() {
         data class ExtractText(val guestPath: String, val name: String) : Action
         /** 直接设 in-app sandbox proxy（`http://host:port`），空串关闭。绕开 UI 用 adb 配。 */
         data class SetProxy(val value: String) : Action
+        /** 模拟用户"选择了一个附件"→ 走完整 extract 链路（附件卡上会显示 解析中 → ✓ N 字符）。 */
+        data class SimulateAttachment(val guestPath: String, val name: String, val sizeBytes: Long = 0L) : Action
     }
 
     private val _channel = Channel<Action>(capacity = 64)

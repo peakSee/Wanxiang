@@ -152,12 +152,27 @@ object AttachmentHelper {
 }
 
 /**
+ * 附件解析状态（沙箱抽文本的进度）。key = attachment.id。
+ */
+sealed interface AttachmentStatus {
+    data object Idle : AttachmentStatus
+    data object Extracting : AttachmentStatus
+    /** 抽取成功（chars = 字符数）；truncated 表示超上限被截。 */
+    data class Extracted(val chars: Int, val truncated: Boolean = false) : AttachmentStatus
+    /** 抽不出内容（扫描件 / 二进制 / 未支持格式）。 */
+    data object NoText : AttachmentStatus
+    /** 抽取失败（网络 / 依赖装不上 / 文件损坏）。 */
+    data class Failed(val reason: String) : AttachmentStatus
+}
+
+/**
  * 待发送附件预览栏
  */
 @Composable
 fun AttachmentPreviewRow(
     attachments: List<ChatAttachment>,
     onRemove: (ChatAttachment) -> Unit,
+    statuses: Map<String, AttachmentStatus> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
     if (attachments.isEmpty()) return
@@ -205,11 +220,44 @@ fun AttachmentPreviewRow(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            text = AttachmentHelper.formatFileSize(item.sizeBytes),
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        // 解析状态徽章 or 文件大小
+                        when (val st = statuses[item.id]) {
+                            is AttachmentStatus.Extracting -> Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(9.dp),
+                                    strokeWidth = 1.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    "解析中…",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            is AttachmentStatus.Extracted -> Text(
+                                text = "✓ ${st.chars} 字符已抽取${if (st.truncated) "（截断）" else ""}",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            is AttachmentStatus.NoText -> Text(
+                                "— 无可抽文本",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            is AttachmentStatus.Failed -> Text(
+                                text = "✗ ${st.reason.take(24)}",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            null, AttachmentStatus.Idle -> Text(
+                                text = AttachmentHelper.formatFileSize(item.sizeBytes),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     val removeLabel = stringResource(R.string.chat_remove_attachment)

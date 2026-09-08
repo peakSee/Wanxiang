@@ -231,6 +231,18 @@ class ChatViewModel @Inject constructor(
                             android.util.Log.i("WanxiangDiag", "SetProxy = '${action.value}'")
                         }
                     }
+                    is top.wanxiang.app.runtime.debug.DebugActionBus.Action.SimulateAttachment -> {
+                        // 造一个内存 ChatAttachment 塞进 pendingAttachments → 走 extract 全链路 → 附件卡显示状态
+                        val fakeAtt = ChatAttachment(
+                            name = action.name,
+                            isImage = false,
+                            sizeBytes = action.sizeBytes,
+                            uri = android.net.Uri.parse("file://${action.guestPath}"),
+                            guestFilePath = action.guestPath,
+                        )
+                        _pendingAttachments.update { it + fakeAtt }
+                        viewModelScope.launch(Dispatchers.IO) { extractTextForAttachment(fakeAtt) }
+                    }
                 }
             }
         }
@@ -465,6 +477,7 @@ class ChatViewModel @Inject constructor(
             _gitOpMessage.value = GitOpMessage.Error("仓库 URL 是空的，先粘贴一个再点克隆")
             return
         }
+        viewModelScope.launch(Dispatchers.IO) { fullSettingsStore.pushRecentCloneUrl(trimmed) }
         val repoName = trimmed.trimEnd('/').substringAfterLast('/').removeSuffix(".git").ifBlank { "repo" }
         val ws = currentGitWs()
         viewModelScope.launch(Dispatchers.IO) {
@@ -765,6 +778,10 @@ class ChatViewModel @Inject constructor(
     /** 当前工作区 URL 命中的凭证 id（Git 面板顶部提示用），无匹配则 null。 */
     private val _matchedCredentialId = MutableStateFlow<String?>(null)
     val matchedCredentialId: StateFlow<String?> = _matchedCredentialId.asStateFlow()
+
+    /** 最近 5 条克隆 URL（clone 对话框下拉）。 */
+    val recentCloneUrls: StateFlow<List<String>> = fullSettingsStore.gitRecentCloneUrls
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** 一次性 git 操作反馈（克隆/推送/拉取）：Busy / Ok / Error。UI 用 Snackbar 显示 + 消费后清回 Idle。 */
     private val _gitOpMessage = MutableStateFlow<GitOpMessage>(GitOpMessage.Idle)

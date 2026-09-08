@@ -123,6 +123,26 @@ fun ChatScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val input by viewModel.input.collectAsStateWithLifecycle()
     val pendingAttachments by viewModel.pendingAttachments.collectAsStateWithLifecycle()
+    val attachmentExtracting by viewModel.attachmentExtracting.collectAsStateWithLifecycle()
+    val attachmentExtractedTexts by viewModel.extractedTexts.collectAsStateWithLifecycle()
+    val attachmentStatuses: Map<String, top.wanxiang.app.ui.chat.AttachmentStatus> = buildMap {
+        pendingAttachments.forEach { att ->
+            when {
+                attachmentExtracting[att.id] == true -> put(att.id, top.wanxiang.app.ui.chat.AttachmentStatus.Extracting)
+                attachmentExtractedTexts.containsKey(att.id) -> {
+                    val text = attachmentExtractedTexts[att.id]
+                    put(
+                        att.id,
+                        if (text.isNullOrBlank()) top.wanxiang.app.ui.chat.AttachmentStatus.NoText
+                        else top.wanxiang.app.ui.chat.AttachmentStatus.Extracted(
+                            chars = text.length,
+                            truncated = text.contains("[文档过长"),
+                        ),
+                    )
+                }
+            }
+        }
+    }
     val status by viewModel.status.collectAsStateWithLifecycle()
     val thinkingLive by viewModel.thinkingLive.collectAsStateWithLifecycle()
     val thinkingExpanded by viewModel.thinkingExpanded.collectAsStateWithLifecycle()
@@ -173,6 +193,7 @@ fun ChatScreen(
     val gitRepoList by viewModel.repoList.collectAsStateWithLifecycle()
     val gitProgress by viewModel.gitProgress.collectAsStateWithLifecycle()
     val gitOpMsg by viewModel.gitOpMessage.collectAsStateWithLifecycle()
+    val recentCloneUrls by viewModel.recentCloneUrls.collectAsStateWithLifecycle()
 
     // 弹窗开关与编辑目标：用 rememberSaveable 保存，旋转 / 进程重建后不丢失
     var showSessions by rememberSaveable { mutableStateOf(false) }
@@ -474,6 +495,7 @@ fun ChatScreen(
                     onApplyMention = viewModel::applyMention,
                     onRemoveMention = viewModel::removeMention,
                     attachments = pendingAttachments,
+                    attachmentStatuses = attachmentStatuses,
                     attachmentsProcessing = attachmentsProcessing,
                     onAttachmentsPicked = viewModel::onAttachmentsPicked,
                     onRemoveAttachment = viewModel::removeAttachment,
@@ -752,6 +774,7 @@ fun ChatScreen(
             onClearRepoList = viewModel::clearRepoList,
             progress = gitProgress,
             onCancelProgress = viewModel::cancelGitOp,
+            recentCloneUrls = recentCloneUrls,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onRevertAll = viewModel::gitRevertAllUnstaged,
@@ -946,6 +969,7 @@ private fun ChatPaneContent(
     toolResults: Map<String, ToolResult>,
     workspace: String,
     workspaceProject: WorkspaceProject? = null,
+    attachmentStatuses: Map<String, top.wanxiang.app.ui.chat.AttachmentStatus> = emptyMap(),
     onOpenFile: ((projectName: String, relativePath: String) -> Unit)?,
     onEditMessage: (UserMessage) -> Unit,
     onDeleteMessage: (String) -> Unit,

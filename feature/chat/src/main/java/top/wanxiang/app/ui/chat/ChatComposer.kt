@@ -96,6 +96,7 @@ internal fun ChatComposer(
     matchingMentions: List<MentionItem>,
     onApplyMention: (MentionItem) -> Unit,
     attachments: List<ChatAttachment>,
+    attachmentStatuses: Map<String, AttachmentStatus> = emptyMap(),
     attachmentsProcessing: Boolean,
     onAttachmentsPicked: (List<Uri>, Boolean) -> Unit,
     onRemoveAttachment: (ChatAttachment) -> Unit,
@@ -216,6 +217,7 @@ internal fun ChatComposer(
     AttachmentPreviewRow(
         attachments = attachments,
         onRemove = onRemoveAttachment,
+        statuses = attachmentStatuses,
     )
 
     // 附件处理中（复制/压缩/编码）加载指示

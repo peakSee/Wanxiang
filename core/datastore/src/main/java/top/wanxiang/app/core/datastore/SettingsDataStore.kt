@@ -141,6 +141,21 @@ class SettingsDataStore @Inject constructor(
         }
     }
 
+    /** 最近 5 条克隆过的仓库 URL（新→旧），clone dialog 下拉快速选。明文（URL 不敏感）。 */
+    private val gitRecentCloneUrlsKey = stringPreferencesKey("git_recent_clone_urls")
+    val gitRecentCloneUrls: Flow<List<String>> = context.settingsDataStore.data.map { p ->
+        p[gitRecentCloneUrlsKey]?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+    suspend fun pushRecentCloneUrl(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank()) return
+        context.settingsDataStore.edit { p ->
+            val cur = p[gitRecentCloneUrlsKey]?.split("\n")?.filter { it.isNotBlank() }.orEmpty()
+            val updated = (listOf(trimmed) + cur.filter { it != trimmed }).take(5)
+            p[gitRecentCloneUrlsKey] = updated.joinToString("\n")
+        }
+    }
+
     suspend fun resetWorkshopEnvironment() {
         context.settingsDataStore.edit {
             it.remove(workshopAndroidSdkPathKey)
