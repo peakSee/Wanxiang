@@ -455,11 +455,31 @@ private fun CredentialsTab(
         }
         if (credentials.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    "还没有凭证。添加一个 GitHub/Gitee/GitLab 的 Personal Access Token，就能克隆或推送私有仓库。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    RuntimeIcon(
+                        RuntimeIconName.Key,
+                        Modifier.size(48.dp),
+                        MaterialTheme.colorScheme.outline,
+                    )
+                    Text(
+                        "还没有 HTTPS 凭证",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "添加一个 GitHub / Gitee / GitLab 的 Personal Access Token，就能克隆或推送私有仓库",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                    )
+                    RuntimeButton(onClick = onAdd, modifier = Modifier.padding(top = 8.dp)) {
+                        Text("添加第一条凭证", fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
         } else {
             credentials.forEach { cred ->
@@ -504,13 +524,26 @@ private fun CredentialsTab(
 }
 
 @Composable
-private fun CenterHint(text: String, isError: Boolean = false) {
+private fun CenterHint(text: String, isError: Boolean = false, icon: RuntimeIconName? = null) {
     Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text,
-            style = MaterialTheme.typography.bodySmall,
-            color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (icon != null) {
+                RuntimeIcon(
+                    icon,
+                    Modifier.size(48.dp),
+                    if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline,
+                )
+            }
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -901,7 +934,7 @@ private fun BranchesTab(
         }
 
         if (state.localBranches.isEmpty() && state.remoteBranches.isEmpty() && state.tags.isEmpty()) {
-            CenterHint("无分支信息")
+            CenterHint("还没有分支。克隆或初始化仓库后这里会显示本地/远程分支", icon = RuntimeIconName.GitBranch)
         } else {
             LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                 if (state.localBranches.isNotEmpty()) {
@@ -1086,7 +1119,7 @@ private fun BranchesTab(
 @Composable
 private fun LogTab(state: GitPanelState, onCommitDetail: (String) -> Unit) {
     if (state.commits.isEmpty()) {
-        CenterHint("无提交历史")
+        CenterHint("还没有提交历史", icon = RuntimeIconName.GitBranch)
         return
     }
     LazyColumn(Modifier.fillMaxSize()) {
