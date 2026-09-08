@@ -49,6 +49,7 @@ import kotlin.math.roundToInt
 fun ContextUsageRing(
     usage: ContextUsage,
     modifier: Modifier = Modifier,
+    onOpenDetail: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val rawRatio = (usage.usedTokens.toFloat() / usage.limitTokens.coerceAtLeast(1)).coerceIn(0f, 1f)
@@ -70,7 +71,7 @@ fun ContextUsageRing(
 
     Box(modifier = modifier) {
         Surface(
-            onClick = { expanded = true },
+            onClick = { val cb = onOpenDetail; if (cb != null) cb() else { expanded = true } },
             shape = androidx.compose.foundation.shape.CircleShape,
             color = ringColor.copy(alpha = 0.08f),
             modifier = Modifier.size(30.dp),

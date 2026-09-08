@@ -1,8 +1,8 @@
-package top.wanxiang.app.harness
+package top.wkbin.taixu.harness
 
-import top.wanxiang.app.core.database.AiModelRepository
-import top.wanxiang.app.core.datastore.AgentPreferences
-import top.wanxiang.app.core.tools.ProviderRepository
+import top.wkbin.taixu.core.database.AiModelRepository
+import top.wkbin.taixu.core.datastore.AgentPreferences
+import top.wkbin.taixu.core.tools.ProviderRepository
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.time.ZonedDateTime
@@ -30,7 +30,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import top.wanxiang.app.harness.mcp.McpToolApiName
+import top.wkbin.taixu.harness.mcp.McpToolApiName
 
 /** HTTP 429 的结构化错误，供 Harness 区分临时限流与账户额度耗尽。 */
 class LlmRateLimitException(
@@ -39,36 +39,22 @@ class LlmRateLimitException(
     val quotaExhausted: Boolean = false,
 ) : IOException(message)
 
-/** HTTP 5xx / 408 服务端临时故障（如 503 网关不可用），可安全重试。 */
-class LlmServerErrorException(
-    message: String,
-    val code: Int,
-) : IOException(message)
-
 /** 可独立测试的 HTTP 层：OpenAI 兼容 chat/completions 请求与响应解析。 */
 internal class ChatApi(
     private val okHttpClient: OkHttpClient,
     private val json: Json,
 ) {
-    private val requestCache = LlmRequestCache()
-
-    /**
-     * 重试观察回调（对齐 DeepSeek Harness 的 durable retry 事件）：
-     * 每次重试等待前触发，供上层把重试事件记录进会话日志 / 更新 UI，而非静默重试。
-     */
-    var retryObserver: ((attempt: Int, waitMillis: Long, error: Throwable) -> Unit)? = null
-
     suspend fun chat(model: ModelConfig, messages: List<ApiMessage>): ChatResult =
         withContext(Dispatchers.IO) {
-            val cacheKey = requestCacheKey(model, messages)
-            requestCache.get(cacheKey)?.let { cached -> return@withContext cached }
-            val result = withRetry {
-                okHttpClient.newCall(buildRequest(model, messages, stream = false)).execute().use { response ->
-                    val body = response.body.string()
-                    if (!response.isSuccessful) {
-                        throwHttpStatusError(response.code, body, response.header("Retry-After"))
+            okHttpClient.newCall(buildRequest(model, messages, stream = false)).execute().use { response ->
+                val body = response.body.string()
+                if (!response.isSuccessful) {
+                    if (response.code == 429) {
+                        throw ProviderClient.rateLimitException(response.code, body, response.header("Retry-After"))
                     }
-                    if (!ProviderClient.looksLikeJsonResponse(body)) {
+                    throw IllegalStateException(ProviderClient.formatHttpErrorMessage(response.code, body))
+                }
+                if (!ProviderClient.looksLikeJsonResponse(body)) {
                     throw IllegalStateException(
                         ProviderClient.formatHttpErrorMessage(response.code, body),
                     )
@@ -77,7 +63,11 @@ internal class ChatApi(
                 val message = parsed.choices.firstOrNull()?.message ?: ChatResponseMessage()
                 val calls = message.tool_calls.orEmpty().mapNotNull { call ->
                     call.function.let { fn ->
-                        if (fn.name.isBlank()) null else ApiToolCallSpec(ToolCallIdNormalizer.normalize(call.id), fn.name, fn.arguments.ifBlank { "{}" })
+                        if (fn.name.isBlank()) null else ApiToolCallSpec(
+                            call.id.ifBlank { ToolCallIdNormalizer.normalize(null) },
+                            fn.name,
+                            fn.arguments.ifBlank { "{}" },
+                        )
                     }
                 }
                 val (extractedContent, extractedReasoning) = ProviderClient.extractThinkTags(message.content, message.reasoning_content)
@@ -88,54 +78,7 @@ internal class ChatApi(
                     usage = parsed.usage?.toChatUsage() ?: ChatUsage(),
                 )
             }
-            }
-            requestCache.put(cacheKey, result)
-            result
         }
-
-    /**
-     * 临时故障重试：指数退避 + 对称抖动（对齐 DeepSeek Harness 的 provider retry-policy）。
-     * 仅重试可恢复的传输/限流/服务端错误；额度耗尽(429 quota)与 4xx 等确定性错误直接抛出。
-     * [withRetryStatus] 只重试 HTTP 状态码（429/5xx/408），供流式调用使用——
-     * 流式内容一旦开始就不重试，避免把已输出的增量重复推给 UI。
-     */
-    private suspend fun <T> withRetry(block: suspend () -> T): T = retryLoop(includeTransport = true, block)
-
-    private suspend fun <T> withRetryStatus(block: suspend () -> T): T = retryLoop(includeTransport = false, block)
-
-    private suspend fun <T> retryLoop(includeTransport: Boolean, block: suspend () -> T): T {
-        var attempt = 0
-        var delayMs = ProviderClient.RETRY_INITIAL_DELAY_MS
-        while (true) {
-            try {
-                return block()
-            } catch (t: Throwable) {
-                if (attempt >= ProviderClient.RETRY_MAX_ATTEMPTS || !isRetryable(t, includeTransport)) throw t
-                attempt++
-                val jitter = (delayMs * ProviderClient.RETRY_JITTER_RATIO * (Math.random() * 2.0 - 1.0)).toLong()
-                val waitMillis = delayMs + jitter
-                retryObserver?.invoke(attempt, waitMillis, t)
-                delay(waitMillis)
-                delayMs = (delayMs * 2).coerceAtMost(ProviderClient.RETRY_MAX_DELAY_MS)
-            }
-        }
-    }
-
-    private fun isRetryable(t: Throwable, includeTransport: Boolean): Boolean = when (t) {
-        is LlmRateLimitException -> !t.quotaExhausted
-        is LlmServerErrorException -> true
-        is IOException -> includeTransport
-        else -> false
-    }
-
-    private fun throwHttpStatusError(code: Int, body: String, retryAfter: String?): Nothing = when {
-        code == 429 -> throw ProviderClient.rateLimitException(code, body, retryAfter)
-        code == 408 || code >= 500 -> throw ProviderClient.serverErrorException(code, body)
-        else -> throw IllegalStateException(ProviderClient.formatHttpErrorMessage(code, body))
-    }
-
-    private fun requestCacheKey(model: ModelConfig, messages: List<ApiMessage>): String =
-        "${model.hashCode()}|${messages.hashCode()}"
 
     /**
      * 流式调用：逐行读取 SSE（data: ...），每个内容增量立即通过 [onDelta] 回调
@@ -152,15 +95,13 @@ internal class ChatApi(
         onReasoning: (String) -> Unit = {},
         onToolProgress: (ToolCallStreamProgress) -> Unit = {},
         onDelta: (String) -> Unit,
-    ): ChatResult = withRetryStatus {
-        try {
-            executeStream(model, messages, onReasoning, onToolProgress, onDelta, includeUsage = true)
-        } catch (rejected: IllegalStateException) {
-            if (rejected.message?.contains("stream_options", ignoreCase = true) == true) {
-                executeStream(model, messages, onReasoning, onToolProgress, onDelta, includeUsage = false)
-            } else {
-                throw rejected
-            }
+    ): ChatResult = try {
+        executeStream(model, messages, onReasoning, onToolProgress, onDelta, includeUsage = true)
+    } catch (rejected: IllegalStateException) {
+        if (rejected.message?.contains("stream_options", ignoreCase = true) == true) {
+            executeStream(model, messages, onReasoning, onToolProgress, onDelta, includeUsage = false)
+        } else {
+            throw rejected
         }
     }
 
@@ -175,14 +116,17 @@ internal class ChatApi(
     ): ChatResult = withContext(Dispatchers.IO) {
         val call = okHttpClient.newCall(buildRequest(model, messages, stream = true, includeUsage = includeUsage))
         // 关键：阻塞式 readUtf8Line() 不感知协程取消。用户点"停止"时必须主动 call.cancel()
-        // 关闭底层 socket，阻塞读才会立刻抛出 IOException 退出——否则要等读超时（最长 3 分钟），
+        // 关闭底层 socket，阻塞读才会立刻抛出 IOException 退出——否则要等读超时，
         // 表现为"停止按钮没反应"。
         val cancelHandle = coroutineContext[Job]?.invokeOnCompletion(onCancelling = true) { call.cancel() }
         // source.timeout() 只有收到 HTTP 响应头后才生效。看门狗覆盖 DNS、连接、请求体上传、
         // 等待响应头以及首个 SSE 事件的完整阶段，避免大请求仍静默等满 callTimeout。
+        val firstEventTimeoutMs = ProviderClient.resolveFirstEventTimeoutMs(
+            ProviderClient.estimateApiMessageTokens(messages),
+        )
         val firstEventState = AtomicInteger(ProviderClient.FIRST_EVENT_WAITING)
         val firstEventWatchdog = launch {
-            delay(ProviderClient.FIRST_STREAM_EVENT_TIMEOUT_MS)
+            delay(firstEventTimeoutMs)
             if (firstEventState.compareAndSet(ProviderClient.FIRST_EVENT_WAITING, ProviderClient.FIRST_EVENT_TIMED_OUT)) {
                 call.cancel()
             }
@@ -191,7 +135,10 @@ internal class ChatApi(
             call.execute().use { response ->
                 if (!response.isSuccessful) {
                     val rawBody = response.body.string().take(512)
-                    throwHttpStatusError(response.code, rawBody, response.header("Retry-After"))
+                    if (response.code == 429) {
+                        throw ProviderClient.rateLimitException(response.code, rawBody, response.header("Retry-After"))
+                    }
+                    throw IllegalStateException(ProviderClient.formatHttpErrorMessage(response.code, rawBody))
                 }
                 val source = response.body.source()
                 val demuxer = ThinkTagStreamDemuxer(onReasoning, onDelta)
@@ -250,7 +197,11 @@ internal class ChatApi(
                 toolCalls.values.forEach { it.publishProgress(onToolProgress, force = true) }
                 // 部分 OpenAI 兼容端对无参数函数不下发 arguments 分片，空串须兜底为 "{}"
                 val calls = toolCalls.values.map {
-                    ApiToolCallSpec(it.id, it.name, it.arguments.toString().ifBlank { "{}" })
+                    ApiToolCallSpec(
+                        it.id.ifBlank { ToolCallIdNormalizer.normalize(null) },
+                        it.name,
+                        it.arguments.toString().ifBlank { "{}" },
+                    )
                 }
                 ChatResult(
                     content = demuxer.fullText.toString().ifEmpty { null },
@@ -262,7 +213,7 @@ internal class ChatApi(
         } catch (io: IOException) {
             if (firstEventState.get() == ProviderClient.FIRST_EVENT_TIMED_OUT) {
                 throw SocketTimeoutException(
-                    "等待模型首个响应超过 ${ProviderClient.FIRST_STREAM_EVENT_TIMEOUT_MS / 1000}s",
+                    "等待模型首个响应超过 ${firstEventTimeoutMs / 1000}s",
                 ).apply { initCause(io) }
             }
             throw io
@@ -492,7 +443,7 @@ data class ModelConfig(
      * DISABLED = 禁用工具（纯聊天）。
      */
     val toolCallMode: ToolCallMode = ToolCallMode.NATIVE,
-    val dynamicMcpTools: List<top.wanxiang.app.core.model.McpToolInfo> = emptyList(),
+    val dynamicMcpTools: List<top.wkbin.taixu.core.model.McpToolInfo> = emptyList(),
     /** 上下文 Token 容量上限（如 128000，超出时滑动窗口压缩）。 */
     val contextTokens: Int? = null,
     /** 自定义请求头（多行 Key: Value 格式）。 */
@@ -511,7 +462,7 @@ internal data class RequestedModelTarget(
 )
 
 internal fun selectRequestedModelTarget(
-    profiles: List<top.wanxiang.app.core.database.AiModelEntity>,
+    profiles: List<top.wkbin.taixu.core.database.AiModelEntity>,
     selection: String,
 ): RequestedModelTarget? {
     val requested = selection.trim()
@@ -719,7 +670,7 @@ data class ChatResponseMessage(
 /**
  * 调用 LLM（OpenAI 兼容 chat/completions，支持 tools/tool_calls）。
  *
- * 模型配置优先取 [AiModelRepository] 中激活的 [top.wanxiang.app.core.database.AiModelEntity]，
+ * 模型配置优先取 [AiModelRepository] 中激活的 [top.wkbin.taixu.core.database.AiModelEntity]，
  * 未配置时回退到 [ProviderRepository]；API Key 始终从加密存储读取，绝不落库/落日志。
  */
 @Singleton
@@ -727,7 +678,7 @@ class ProviderClient @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val providerRepository: ProviderRepository,
     private val modelDao: AiModelRepository,
-    private val mcpManager: top.wanxiang.app.harness.mcp.McpManager,
+    private val mcpManager: top.wkbin.taixu.harness.mcp.McpManager,
     private val settingsDataStore: AgentPreferences,
     private val json: Json,
 ) {
@@ -908,13 +859,31 @@ class ProviderClient @Inject constructor(
     companion object {
         const val DEFAULT_BASE_URL = "https://api.openai.com/v1"
         const val DEFAULT_MODEL = "gpt-4o-mini"
-        private const val CALL_TIMEOUT_MS = 3 * 60 * 1000L
+        // 须覆盖最大首字看门狗（240s），否则超大上下文 Prefill 会先被 callTimeout 掐断。
+        private const val CALL_TIMEOUT_MS = 5 * 60 * 1000L
 
-        /** 大请求若迟迟没有任何合法 SSE 事件，应尽早失败并向 UI 暴露重试，而不是静默等满 3 分钟。 */
+        /** 大请求若迟迟没有任何合法 SSE 事件，应尽早失败并向 UI 暴露重试，而不是静默等满 callTimeout。 */
         internal const val FIRST_STREAM_EVENT_TIMEOUT_MS = 90_000L
         internal const val FIRST_EVENT_WAITING = 0
         internal const val FIRST_EVENT_RECEIVED = 1
         internal const val FIRST_EVENT_TIMED_OUT = 2
+
+        /** 按预估输入规模放宽首字看门狗：超大上下文 Prefill 常超过默认 90s。 */
+        internal fun resolveFirstEventTimeoutMs(estimatedTokens: Int): Long = when {
+            estimatedTokens > 80_000 -> 240_000L
+            estimatedTokens > 40_000 -> 150_000L
+            else -> FIRST_STREAM_EVENT_TIMEOUT_MS
+        }
+
+        internal fun estimateApiMessageTokens(messages: List<ApiMessage>): Int =
+            messages.sumOf { message ->
+                ContextWindowPolicy.estimateTokens(message.content.orEmpty()) +
+                    ContextWindowPolicy.estimateTokens(message.reasoning_content.orEmpty()) +
+                    (message.tool_calls?.sumOf { call ->
+                        ContextWindowPolicy.estimateTokens(call.function.name) +
+                            ContextWindowPolicy.estimateTokens(call.function.arguments)
+                    } ?: 0)
+            }
 
         /**
          * 单回合推理内容的累积上限（字符）。推理是执行过程草稿，不是长期上下文；
@@ -926,8 +895,8 @@ class ProviderClient @Inject constructor(
         const val STREAM_PUBLISH_INTERVAL_MS = 100L
 
         /** Room 实体 → 运行配置：推理参数原样透传，协议按 Base URL / 厂商名自动推断。 */
-        private suspend fun top.wanxiang.app.core.database.AiModelEntity.toModelConfig(
-            providerRepository: top.wanxiang.app.core.tools.ProviderRepository,
+        private suspend fun top.wkbin.taixu.core.database.AiModelEntity.toModelConfig(
+            providerRepository: top.wkbin.taixu.core.tools.ProviderRepository,
         ): ModelConfig {
             val baseUrl = this.baseUrl.ifBlank { DEFAULT_BASE_URL }
             val modelKeys = providerRepository.readModelApiKeys(secretRef)
@@ -1037,7 +1006,7 @@ class ProviderClient @Inject constructor(
             val lowerMsg = errorMsg.lowercase()
             return when {
                 code == 403 && (lowerMsg.contains("free quota") || lowerMsg.contains("quota exhausted") || lowerMsg.contains("free tier")) ->
-                    "API 免费额度已耗尽 (HTTP 403)：请前往模型服务商控制台充值、关闭免费层限制，或在万象中切换其他可用模型。"
+                    "API 免费额度已耗尽 (HTTP 403)：请前往模型服务商控制台充值、关闭免费层限制，或在太墟中切换其他可用模型。"
                 code == 401 || lowerMsg.contains("invalid api key") || lowerMsg.contains("unauthorized") ->
                     "API Key 无效或未授权 (HTTP 401)：请在模型设置中检查并更新该服务商的 API Key。"
                 code == 429 || lowerMsg.contains("rate limit") || lowerMsg.contains("insufficient_quota") || lowerMsg.contains("quota") ->
@@ -1071,18 +1040,8 @@ class ProviderClient @Inject constructor(
             return LlmRateLimitException(message, retrySeconds, quotaExhausted)
         }
 
-        internal fun serverErrorException(code: Int, rawBody: String): LlmServerErrorException =
-            LlmServerErrorException(formatHttpErrorMessage(code, rawBody), code)
-
-        internal const val READ_TIMEOUT_MS = 3 * 60 * 1000L
+        internal const val READ_TIMEOUT_MS = 5 * 60 * 1000L
         internal val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-
-        // 临时故障重试（对齐 DeepSeek Harness 的 provider retry-policy）：
-        // 指数退避 + 对称抖动，仅重试可恢复的传输/限流/服务端错误。
-        internal const val RETRY_MAX_ATTEMPTS = 5
-        internal const val RETRY_INITIAL_DELAY_MS = 500L
-        internal const val RETRY_MAX_DELAY_MS = 10_000L
-        internal const val RETRY_JITTER_RATIO = 0.1
 
         /** 工具 JSON Schema，与 ToolExecutor 的参数契约一一对应。 */
         val TOOLS: List<ApiToolDefinition> = listOf(
@@ -1152,7 +1111,7 @@ class ProviderClient @Inject constructor(
             ApiToolDefinition(
                 function = ApiFunctionDefinition(
                     name = "process",
-                    description = "管理需要跨工具调用持续运行的 PRoot 后台进程。start 的命令必须以前台模式运行，由 WanXiang 托管生命周期；不要使用 nohup、& 或自行 daemonize。使用 status/logs/list/stop 查询和停止。",
+                    description = "管理需要跨工具调用持续运行的 PRoot 后台进程。start 的命令必须以前台模式运行，由 TaiXu 托管生命周期；不要使用 nohup、& 或自行 daemonize。使用 status/logs/list/stop 查询和停止。",
                     parameters = Json.parseToJsonElement(
                         """{"type":"object","properties":{"action":{"type":"string","enum":["start","status","logs","list","stop"]},"id":{"type":"string","pattern":"^[a-z0-9][a-z0-9._-]{0,63}$","description":"稳定的进程标识；list 不需要"},"command":{"type":"string","description":"start 时必需，需以前台模式持续运行"},"cwd":{"type":"string","description":"start 的工作目录"},"tail_lines":{"type":"integer","minimum":1,"maximum":500,"description":"logs 返回的末尾行数，默认 120"}},"required":["action"]}""",
                     ).jsonObject,
@@ -1161,9 +1120,9 @@ class ProviderClient @Inject constructor(
             ApiToolDefinition(
                 function = ApiFunctionDefinition(
                     name = "host",
-                    description = "在 Android 宿主侧执行系统设置、应用管理、Logcat 或屏幕 GUI 自动化。抓取日志（logcat）首选内置无线 ADB（无需 Shizuku/Root 授权，支持可选指定 port），其余特权操作需 Shizuku 或 Root。支持 screen_observe 查看当前前台应用与屏幕节点树，screen_click 点击坐标，screen_swipe 滑动屏幕，screen_input_text 输入文本，screen_key 按键导航，app_launch 启动应用。",
+                    description = "在 Android 宿主侧执行系统设置、应用管理、Logcat 或屏幕 GUI 自动化。抓取日志（logcat）首选内置无线 ADB（无需 Shizuku/Root 授权，支持可选指定 port），其余特权操作需 Shizuku 或 Root。GUI 原语（screen_click/double_click/long_press/swipe/scroll/input_text/key）走 HostGuiToolkit：无障碍全局手势 → cmd input → bin input 自动降级；中文输入走剪贴板粘贴。",
                     parameters = Json.parseToJsonElement(
-                        """{"type":"object","properties":{"action":{"type":"string","enum":["status","exec","settings_get","settings_put","package_list","package_disable","package_enable","package_uninstall_user","app_list","app_freeze","app_unfreeze","app_grant_permission","logcat","device_status","screen_observe","screen_click","screen_swipe","screen_input_text","screen_key","app_launch","screen_capture"]},"command":{"type":"string","description":"仅 exec 使用的原始宿主命令"},"namespace":{"type":"string","enum":["system","secure","global"],"description":"settings_get/settings_put 的设置命名空间"},"key":{"type":"string","description":"系统设置键名，或 screen_key 的按键名(back/home/recents/enter/delete/power)"},"value":{"type":"string","description":"settings_put 的值"},"text":{"type":"string","description":"screen_input_text 要输入的文本"},"x":{"type":"integer","description":"screen_click 的点击 X 坐标"},"y":{"type":"integer","description":"screen_click 的点击 Y 坐标"},"x1":{"type":"integer","description":"screen_swipe 起点 X 坐标"},"y1":{"type":"integer","description":"screen_swipe 起点 Y 坐标"},"x2":{"type":"integer","description":"screen_swipe 终点 X 坐标"},"y2":{"type":"integer","description":"screen_swipe 终点 Y 坐标"},"duration_ms":{"type":"integer","description":"screen_swipe 滑动持续时间毫秒数，默认 300"},"package":{"type":"string","description":"应用操作或 logcat PID 过滤的 Android 包名（如 com.tencent.mm）"},"path":{"type":"string","description":"screen_capture 保存截图的目标绝对路径"},"permission":{"type":"string","description":"app_grant_permission 的 Android 权限名"},"query":{"type":"string","description":"app_list 的包名或应用名搜索词"},"include_system":{"type":"boolean","description":"app_list 是否显示系统应用，默认 false"},"limit":{"type":"integer","minimum":1,"maximum":200,"description":"app_list 返回数量，默认 50"},"user":{"type":"integer","minimum":0,"maximum":999,"description":"Android 用户 ID，默认 0"},"filter":{"type":"string","description":"package_list 的可选字面量过滤词"},"tail_lines":{"type":"integer","minimum":1,"maximum":2000,"description":"logcat 返回行数，默认 200"},"tag":{"type":"string","description":"logcat 的可选 tag"},"priority":{"type":"string","enum":["V","D","I","W","E","F"],"description":"logcat 最低优先级，默认 V"},"keyword":{"type":"string","description":"logcat 可选关键词（忽略大小写）"},"port":{"type":"integer","minimum":1,"maximum":65535,"description":"无线 ADB 端口（如 12345），logcat 时可选显式指定"}},"required":["action"]}""",
+                        """{"type":"object","properties":{"action":{"type":"string","enum":["status","exec","settings_get","settings_put","package_list","package_disable","package_enable","package_uninstall_user","app_list","app_freeze","app_unfreeze","app_grant_permission","logcat","device_status","screen_observe","screen_click","screen_double_click","screen_long_press","screen_swipe","screen_scroll","screen_input_text","paste_text","screen_key","app_launch","screen_capture"]},"command":{"type":"string","description":"仅 exec 使用的原始宿主命令"},"namespace":{"type":"string","enum":["system","secure","global"],"description":"settings_get/settings_put 的设置命名空间"},"key":{"type":"string","description":"系统设置键名，或 screen_key 的按键名(back/home/recents/enter/delete/paste/power)"},"value":{"type":"string","description":"settings_put 的值"},"text":{"type":"string","description":"screen_input_text/paste_text 要粘贴的文本"},"x":{"type":"integer","description":"screen_click/double_click/long_press 的点击 X 坐标"},"y":{"type":"integer","description":"screen_click/double_click/long_press 的点击 Y 坐标"},"x1":{"type":"integer","description":"screen_swipe 起点 X 坐标"},"y1":{"type":"integer","description":"screen_swipe 起点 Y 坐标"},"x2":{"type":"integer","description":"screen_swipe 终点 X 坐标"},"y2":{"type":"integer","description":"screen_swipe 终点 Y 坐标"},"duration_ms":{"type":"integer","description":"swipe/long_press/scroll 持续时间毫秒"},"direction":{"type":"string","enum":["up","down","left","right"],"description":"screen_scroll 方向"},"distance_ratio":{"type":"number","description":"screen_scroll 幅度 0.15-0.8"},"package":{"type":"string","description":"应用操作或 logcat PID 过滤的 Android 包名（如 com.tencent.mm）"},"path":{"type":"string","description":"screen_capture 保存截图的目标绝对路径"},"permission":{"type":"string","description":"app_grant_permission 的 Android 权限名"},"query":{"type":"string","description":"app_list 的包名或应用名搜索词"},"include_system":{"type":"boolean","description":"app_list 是否显示系统应用，默认 false"},"limit":{"type":"integer","minimum":1,"maximum":200,"description":"app_list 返回数量，默认 50"},"user":{"type":"integer","minimum":0,"maximum":999,"description":"Android 用户 ID，默认 0"},"filter":{"type":"string","description":"package_list 的可选字面量过滤词"},"tail_lines":{"type":"integer","minimum":1,"maximum":2000,"description":"logcat 返回行数，默认 200"},"tag":{"type":"string","description":"logcat 的可选 tag"},"priority":{"type":"string","enum":["V","D","I","W","E","F"],"description":"logcat 最低优先级，默认 V"},"keyword":{"type":"string","description":"logcat 可选关键词（忽略大小写）"},"port":{"type":"integer","minimum":1,"maximum":65535,"description":"无线 ADB 端口（如 12345），logcat 时可选显式指定"}},"required":["action"]}""",
                     ).jsonObject,
                 ),
             ),
@@ -1190,7 +1149,7 @@ class ProviderClient @Inject constructor(
                     name = "plan",
                     description = "结构化多步骤任务规划管理：拆解长任务子步骤并持续跟踪推进进度。当任务预计需要 3 次以上工具调用、存在多个相互依赖的执行阶段、失败后需要分支排查，或会修改多个文件/系统状态时，第一轮工具调用先 replace_active 建立规划，每步完成后 advance；简单单步或双步任务不要建 plan。详细规则见 workflow 规则块（未注入时可用 load_rule 获取）。支持 action: replace_active, get_active, advance, clear_active。",
                     parameters = Json.parseToJsonElement(
-                        """{"type":"object","properties":{"action":{"type":"string","enum":["replace_active","get_active","advance","clear_active"],"description":"规划操作动作"},"goal":{"type":"string","description":"任务总体目标"},"steps":{"type":"array","description":"规划步骤列表（每个步骤包含 id, title, status: pending|in_progress|completed|failed）","items":{"type":"object","properties":{"id":{"type":"string"},"title":{"type":"string"},"status":{"type":"string"}},"required":["id","title","status"]}},"status":{"type":"string","description":"任务整体状态"}},"required":["action"]}""",
+                        """{"type":"object","properties":{"action":{"type":"string","enum":["replace_active","get_active","advance","clear_active"],"description":"规划操作动作"},"goal":{"type":"string","description":"任务总体目标"},"steps":{"type":"array","description":"规划步骤列表（每个步骤包含 id, title, status: pending|in_progress|completed|failed）","items":{"type":"object","properties":{"id":{"type":"string"},"title":{"type":"string"},"status":{"type":"string"}},"required":["id","title","status"]}},"status":{"type":"string","enum":["active","completed","cancelled"],"description":"可选：计划整体生命周期状态（仅限 active/completed/cancelled，步骤进度请写在 steps[].status）"}},"required":["action"]}""",
                     ).jsonObject,
                 ),
             ),
@@ -1234,7 +1193,7 @@ class ProviderClient @Inject constructor(
         )
 
         /** 组装静态基础工具 + 动态 MCP 插件工具 */
-        fun buildDynamicTools(mcpTools: List<top.wanxiang.app.core.model.McpToolInfo> = emptyList()): List<ApiToolDefinition> {
+        fun buildDynamicTools(mcpTools: List<top.wkbin.taixu.core.model.McpToolInfo> = emptyList()): List<ApiToolDefinition> {
             val list = TOOLS.toMutableList()
             mcpTools.forEach { mcp ->
                 val fullToolName = McpToolApiName.encode(mcp)
@@ -1416,7 +1375,7 @@ internal class ThinkTagStreamDemuxer(
 
         if (detectRepetitionLoop(fullReasoning, str)) {
             reasoningMutedDueToLoop = true
-            val notice = "\n[万象提示：检测到思维链重复自旋死循环，已自动截断冗余思考内容并继续执行]\n"
+            val notice = "\n[太墟提示：检测到思维链重复自旋死循环，已自动截断冗余思考内容并继续执行]\n"
             if (fullReasoning.length + notice.length <= maxReasoningChars) {
                 fullReasoning.append(notice)
             }

@@ -601,7 +601,7 @@ internal fun ChatComposer(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ContextUsageRing(contextUsage)
+                        ContextUsageRingWithDialog(contextUsage)
                         if (canSend) {
                             val sendTint = when (sendMode) {
                                 ComposerSendMode.STEER -> Color(0xFF7C4DFF)
@@ -651,7 +651,7 @@ internal fun ChatComposer(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ContextUsageRing(contextUsage)
+                        ContextUsageRingWithDialog(contextUsage)
                         val sendDesc = stringResource(R.string.chat_send)
                         Surface(
                             onClick = { if (canSend) doSend() },
@@ -680,3 +680,16 @@ internal fun ChatComposer(
     }
 }
 
+
+/** 环形 + 详细用量 Dialog（点击环打开）。抄 taixu v0.13 ContextUsageDialog 集成方式。 */
+@Composable
+private fun ContextUsageRingWithDialog(usage: top.wanxiang.app.ui.chat.ContextUsage) {
+    var showDetail by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    top.wanxiang.app.ui.chat.ContextUsageRing(
+        usage = usage,
+        onOpenDetail = { showDetail = true },
+    )
+    if (showDetail) {
+        top.wanxiang.app.ui.chat.ContextUsageDialog(usage = usage, onDismiss = { showDetail = false })
+    }
+}
