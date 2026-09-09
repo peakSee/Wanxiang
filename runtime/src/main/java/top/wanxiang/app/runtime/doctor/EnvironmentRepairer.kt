@@ -129,14 +129,32 @@ class EnvironmentRepairer @Inject constructor(
                 done
                 if [ -f /etc/os-release ]; then
                     . /etc/os-release
+                    PICK=""
+                    probe() { curl -fsS -m 8 -o /dev/null "${'$'}1/dists/${'$'}2/InRelease" 2>/dev/null; }
                     if [ "${'$'}ID" = "ubuntu" ]; then
-                        CN="${'$'}{VERSION_CODENAME:-noble}"
-                        printf "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports %s main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports %s-updates main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports %s-security main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports %s-backports main restricted universe multiverse\n" "${'$'}CN" "${'$'}CN" "${'$'}CN" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
-                    elif [ "${'$'}ID" = "debian" ] || [ "${'$'}ID_LIKE" = "debian" ]; then
-                        CN="${'$'}{VERSION_CODENAME:-bookworm}"
-                        printf "deb https://mirrors.tuna.tsinghua.edu.cn/debian %s main contrib non-free non-free-firmware\ndeb https://mirrors.tuna.tsinghua.edu.cn/debian %s-updates main contrib non-free non-free-firmware\ndeb https://mirrors.tuna.tsinghua.edu.cn/debian-security %s-security main contrib non-free non-free-firmware\n" "${'$'}CN" "${'$'}CN" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
+                        CN="${'{'}VERSION_CODENAME:-noble}"
+                        for m in https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.aliyun.com/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
+                            if probe "${'$'}m" "${'$'}CN"; then PICK="${'$'}m"; break; fi
+                        done
+                        [ -z "${'$'}PICK" ] && PICK="https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports"
+                        printf "deb %s %s main restricted universe multiverse\ndeb %s %s-updates main restricted universe multiverse\ndeb %s %s-security main restricted universe multiverse\ndeb %s %s-backports main restricted universe multiverse\n" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
+                        echo "apt 镜像选定: ${'$'}PICK"
+                    elif [ "${'$'}ID" = "debian" ] || [ "${'{'}ID_LIKE:-}" = "debian" ]; then
+                        CN="${'{'}VERSION_CODENAME:-bookworm}"
+                        for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
+                            M=${'{'}pair%% *}; S=${'{'}pair##* }
+                            if probe "${'$'}M" "${'$'}CN"; then PICKM="${'$'}M"; PICKS="${'$'}S"; break; fi
+                        done
+                        [ -z "${'{'}PICKM:-}" ] && PICKM="https://mirrors.tuna.tsinghua.edu.cn/debian" && PICKS="https://mirrors.tuna.tsinghua.edu.cn/debian-security"
+                        printf "deb %s %s main contrib non-free non-free-firmware\ndeb %s %s-updates main contrib non-free non-free-firmware\ndeb %s %s-security main contrib non-free non-free-firmware\n" "${'$'}PICKM" "${'$'}CN" "${'$'}PICKM" "${'$'}CN" "${'$'}PICKS" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
+                        echo "apt 镜像选定: ${'$'}PICKM"
                     elif [ "${'$'}ID" = "kali" ]; then
-                        printf "deb https://mirrors.tuna.tsinghua.edu.cn/kali kali-rolling main contrib non-free\n" > /etc/apt/sources.list.d/wanxiang-mirrors.list
+                        for m in https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.aliyun.com/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
+                            if probe "${'$'}m" "kali-rolling"; then PICK="${'$'}m"; break; fi
+                        done
+                        [ -z "${'$'}PICK" ] && PICK="https://mirrors.tuna.tsinghua.edu.cn/kali"
+                        printf "deb %s kali-rolling main contrib non-free\n" "${'$'}PICK" > /etc/apt/sources.list.d/wanxiang-mirrors.list
+                        echo "apt 镜像选定: ${'$'}PICK"
                     fi
                 fi
                 # 清理旧的 apt lists 缓存，确保重新从镜像拉取完整的 index

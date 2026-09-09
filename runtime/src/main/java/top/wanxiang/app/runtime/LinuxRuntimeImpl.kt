@@ -833,8 +833,12 @@ class LinuxRuntimeImpl @Inject constructor(
     }
 
     /**
-     * 将沙箱内软件源切换到清华大学 TUNA 镜像站，加速国内 apt / pip 安装。
-     * 仅对 apt 系发行版（debian / ubuntu / kali）生效；其余发行版保持官方源。
+     * 将沙箱内 apt 源切到国内镜像（TUNA → 阿里云 → 中科大 → 上交 依次探测，第一个 InRelease
+     * 可 200 拉取的入选；全挂时保留 TUNA 默认）。仅对 apt 系发行版（debian / ubuntu / kali）生效。
+     *
+     * 背景：TUNA 会对运营商 NAT 池 IP 返回 403（实测 101.6.x 移动出口），403 的 HTML 被 apt 当
+     * InRelease 验签 → "repository is not signed"，自愈/预装的 apt 全链失败。启动时若现源探测
+     * 仍 200 则直接跳过（零开销）；被拉黑/抽风时自动换源重写。
      */
     private fun configureChinaMirrors(distroId: String = "ubuntu") {
         val osRelease = readOsRelease(distroId)
@@ -844,22 +848,97 @@ class LinuxRuntimeImpl @Inject constructor(
         }
         val id = osRelease["ID"] ?: osRelease["ID_LIKE"]
         val codename = osRelease["VERSION_CODENAME"]
+        val sourcesListDir = File(pathManager.rootfsDir(distroId), "etc/apt/sources.list.d")
+        val mirrorsFile = File(sourcesListDir, "wanxiang-mirrors.list")
+
+        // 快速路径：已有源文件且第一个 deb 基址的 InRelease 仍可拉 → 不动。
+        val existingBase = mirrorsFile.takeIf { it.isFile }?.readLines()
+            ?.firstOrNull { it.startsWith("deb ") }
+            ?.removePrefix("deb ")?.trim()?.split(" ")?.firstOrNull()
+        val existingDist = mirrorsFile.takeIf { it.isFile }?.readLines()
+            ?.firstOrNull { it.startsWith("deb ") }?.trim()?.split(" ")?.getOrNull(1)
+        if (existingBase != null && existingDist != null && probeInRelease(existingBase, existingDist)) {
+            return
+        }
+
         val sources = when (id) {
-            "debian" -> codename?.let(::tunaDebianSources)
-            "ubuntu" -> codename?.let(::tunaUbuntuSources)
-            "kali" -> tunaKaliSources()
+            "debian" -> codename?.let { cn ->
+                debianMirrorPairs().firstOrNull { (main, _) -> probeInRelease(main, cn) }
+                    ?.let { (main, security) -> debianSources(main, security, cn) }
+            }
+            "ubuntu" -> codename?.let { cn ->
+                ubuntuPortsCandidates().firstOrNull { probeInRelease(it, cn) }
+                    ?.let { ubuntuPortsSources(it, cn) }
+            }
+            "kali" -> kaliCandidates().firstOrNull { probeInRelease(it, "kali-rolling") }
+                ?.let { kaliSources(it) }
             else -> null
         }
         if (sources == null) {
-            logger.i("China mirrors skipped for distro id=$id codename=$codename")
+            logger.i("China mirrors skipped for distro id=$id codename=$codename (all candidates unreachable)")
             return
         }
-        val sourcesListDir = File(pathManager.rootfsDir(distroId), "etc/apt/sources.list.d")
         sourcesListDir.mkdirs()
         disableStockAptSources(sourcesListDir, distroId)
-        File(sourcesListDir, "wanxiang-mirrors.list").writeText(sources + "\n")
-        logger.i("China mirrors applied: TUNA apt sources for $id ($codename) in $distroId")
+        mirrorsFile.writeText(sources + "\n")
+        logger.i("China mirrors applied for $id ($codename) in $distroId")
     }
+
+    /** HEAD 不了就用 GET：200 才算可用镜像。 */
+    private fun probeInRelease(base: String, dist: String): Boolean = runCatching {
+        (java.net.URL("$base/dists/$dist/InRelease").openConnection() as java.net.HttpURLConnection).run {
+            connectTimeout = 6000
+            readTimeout = 6000
+            requestMethod = "GET"
+            instanceFollowRedirects = true
+            setRequestProperty("User-Agent", "WanXiang-apt-mirror-probe")
+            val code = responseCode
+            disconnect()
+            code == 200
+        }
+    }.getOrDefault(false)
+
+    private fun ubuntuPortsCandidates(): List<String> = listOf(
+        "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports",
+        "https://mirrors.aliyun.com/ubuntu-ports",
+        "https://mirrors.ustc.edu.cn/ubuntu-ports",
+        "https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports",
+        "https://ports.ubuntu.com/ubuntu-ports",
+    )
+
+    private fun debianMirrorPairs(): List<Pair<String, String>> = listOf(
+        "https://mirrors.tuna.tsinghua.edu.cn/debian" to "https://mirrors.tuna.tsinghua.edu.cn/debian-security",
+        "https://mirrors.aliyun.com/debian" to "https://mirrors.aliyun.com/debian-security",
+        "https://mirrors.ustc.edu.cn/debian" to "https://mirrors.ustc.edu.cn/debian-security",
+        "https://deb.debian.org/debian" to "https://security.debian.org/debian-security",
+    )
+
+    private fun kaliCandidates(): List<String> = listOf(
+        "https://mirrors.tuna.tsinghua.edu.cn/kali",
+        "https://mirrors.aliyun.com/kali",
+        "https://mirrors.ustc.edu.cn/kali",
+        "https://mirrors.sjtug.sjtu.edu.cn/kali",
+    )
+
+    private fun debianSources(main: String, security: String, codename: String): String = """
+        # WanXiang: 国内镜像（启动探测自动选择，$main）
+        deb $main $codename main contrib non-free non-free-firmware
+        deb $main $codename-updates main contrib non-free non-free-firmware
+        deb $security $codename-security main contrib non-free non-free-firmware
+    """.trimIndent()
+
+    private fun ubuntuPortsSources(base: String, codename: String): String = """
+        # WanXiang: 国内镜像（启动探测自动选择，$base）
+        deb $base $codename main restricted universe multiverse
+        deb $base $codename-updates main restricted universe multiverse
+        deb $base $codename-security main restricted universe multiverse
+        deb $base $codename-backports main restricted universe multiverse
+    """.trimIndent()
+
+    private fun kaliSources(base: String): String = """
+        # WanXiang: 国内镜像（启动探测自动选择，$base）
+        deb $base kali-rolling main contrib non-free
+    """.trimIndent()
 
     private fun disableStockAptSources(sourcesListDir: File, distroId: String = "ubuntu") {
         File(pathManager.rootfsDir(distroId), "etc/apt/sources.list").takeIf { it.isFile }
@@ -880,26 +959,6 @@ class LinuxRuntimeImpl @Inject constructor(
             logger.w("Failed to disable stock apt source: ${file.path}")
         }
     }
-
-    private fun tunaDebianSources(codename: String): String = """
-        # WanXiang: 清华大学 TUNA 镜像站（由官方源自动切换）
-        deb https://mirrors.tuna.tsinghua.edu.cn/debian $codename main contrib non-free non-free-firmware
-        deb https://mirrors.tuna.tsinghua.edu.cn/debian $codename-updates main contrib non-free non-free-firmware
-        deb https://mirrors.tuna.tsinghua.edu.cn/debian-security $codename-security main contrib non-free non-free-firmware
-    """.trimIndent()
-
-    private fun tunaUbuntuSources(codename: String): String = """
-        # WanXiang: 清华大学 TUNA 镜像站（由官方源自动切换）
-        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports $codename main restricted universe multiverse
-        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports $codename-updates main restricted universe multiverse
-        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports $codename-security main restricted universe multiverse
-        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports $codename-backports main restricted universe multiverse
-    """.trimIndent()
-
-    private fun tunaKaliSources(): String = """
-        # WanXiang: 清华大学 TUNA 镜像站（由官方源自动切换）
-        deb https://mirrors.tuna.tsinghua.edu.cn/kali kali-rolling main contrib non-free
-    """.trimIndent()
 
     private fun configurePipMirror(distroId: String = "ubuntu") {
         val config = File(pathManager.rootfsDir(distroId), "etc/pip.conf")
