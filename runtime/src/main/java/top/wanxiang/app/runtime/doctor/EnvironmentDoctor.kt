@@ -58,6 +58,9 @@ class EnvironmentDoctor @Inject constructor(
         // 2. DNS 与网络连通性检查
         items.add(checkDnsAndNetwork())
 
+        // 2.5 沙箱代理健康：配置了 in-app/系统代理但代理本身不可达 → 全链 apt/curl 都会被拖死
+        items.add(checkSandboxProxy())
+
         // 3. CA 根证书检查
         items.add(checkCaCertificates())
 
@@ -227,8 +230,62 @@ class EnvironmentDoctor @Inject constructor(
         }
     }
 
-    private suspend fun checkAptMirrors(): DoctorItem {
-        val sourcesCheck = runCatching {
+    /**
+     * 沙箱代理健康检查：万象内置代理（或 Android 全局代理）注入沙箱后，若代理进程已关闭/
+     * 电脑离线，curl/apt 会静默等待到超时——表现为"探测全部不可达"。直连可达而代理路径不通
+     * 即判死，提示清理。未配置代理时直接健康。
+     */
+    private suspend fun checkSandboxProxy(): DoctorItem {
+        val probe = runCatching {
+            linuxRuntime.execute(
+                ShellCommand(
+                    commandLine = """
+                        P="${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}"
+                        if [ -z "${'$'}P" ]; then echo NOPROXY; exit 0; fi
+                        env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && D=OK || D=FAIL
+                        curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && X=OK || X=FAIL
+                        echo "PROXY=${'$'}P DIRECT=${'$'}D VIA=${'$'}X"
+                    """.trimIndent(),
+                    timeoutMs = 14_000L,
+                ),
+            )
+        }.getOrNull()
+        val out = probe?.stdout.orEmpty().lines().firstOrNull { it.startsWith("PROXY=") }.orEmpty()
+        return when {
+            out.isBlank() || probe == null || !probe.isSuccess -> DoctorItem(
+                id = "sandbox_proxy",
+                category = DoctorCategory.NETWORK_SSL,
+                title = "沙箱代理",
+                status = DoctorStatus.HEALTHY,
+                summary = "未检测到代理配置或探测超时（不影响直连场景）",
+            )
+            out.startsWith("NOPROXY") -> DoctorItem(
+                id = "sandbox_proxy",
+                category = DoctorCategory.NETWORK_SSL,
+                title = "沙箱代理",
+                status = DoctorStatus.HEALTHY,
+                summary = "未配置代理，直连模式",
+            )
+            "DIRECT=OK" in out && "VIA=FAIL" in out -> DoctorItem(
+                id = "sandbox_proxy",
+                category = DoctorCategory.NETWORK_SSL,
+                title = "沙箱代理",
+                status = DoctorStatus.WARNING,
+                summary = "代理不可达但直连正常（代理可能已关闭）",
+                detail = "当前代理 $out —— 沙箱内 curl/apt 会先走代理导致超时变慢。一键修复将自动清除死代理设置；如仍需代理请在 设置→沙箱 HTTP 代理 重新填写可用地址。",
+                fixable = true,
+            )
+            else -> DoctorItem(
+                id = "sandbox_proxy",
+                category = DoctorCategory.NETWORK_SSL,
+                title = "沙箱代理",
+                status = DoctorStatus.HEALTHY,
+                summary = "代理链路正常",
+            )
+        }
+    }
+
+    private suspend fun checkAptMirrors(): DoctorItem {        val sourcesCheck = runCatching {
             linuxRuntime.execute(
                 ShellCommand(
                     commandLine = "cat /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true",

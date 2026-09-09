@@ -27,6 +27,7 @@ class EnvironmentRepairer @Inject constructor(
     private val linuxRuntime: LinuxRuntime,
     private val environmentDoctor: EnvironmentDoctor,
     private val logger: top.wanxiang.app.core.common.logging.AppLogger,
+    private val settingsDataStore: top.wanxiang.app.core.datastore.SettingsDataStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _progress = MutableStateFlow<RepairProgress?>(null)
@@ -101,6 +102,18 @@ class EnvironmentRepairer @Inject constructor(
                     logs = logs.toList(),
                 ),
             )
+            // Step 1.0 死代理清理：内置代理已配置但不可达而直连正常 → 清除设置，
+            // 否则后续 curl/apt 全部先撞死代理干等超时（"探测全部不可达"的头号根因）。
+            val proxyProbe = executeCommand(
+                "P=\"${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}\"; if [ -z \"${'$'}P\" ]; then echo NOPROXY; exit 0; fi; " +
+                    "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && D=OK || D=FAIL; " +
+                    "curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && X=OK || X=FAIL; echo \"PROXY=${'$'}P DIRECT=${'$'}D VIA=${'$'}X\"",
+                logs, timeoutMs = 16_000L,
+            )
+            if (proxyProbe.stdout.contains("DIRECT=OK") && proxyProbe.stdout.contains("VIA=FAIL")) {
+                addLog("检测到死代理（代理不可达但直连正常），已自动清除内置代理设置")
+                runCatching { settingsDataStore.setSandboxHttpProxy("") }
+            }
             addLog("[Step 1/5] 写入公共 DNS (114.114.114.114, 223.5.5.5, 8.8.8.8)")
             val dnsCmd = "mkdir -p /etc && printf 'nameserver 114.114.114.114\\nnameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf"
             val dnsRes = executeCommand(dnsCmd, logs)
@@ -113,7 +126,7 @@ class EnvironmentRepairer @Inject constructor(
             // ==========================================
             emit(
                 RepairProgress(
-                    stepTitle = "正在配置清华大学国内镜像加速源...",
+                    stepTitle = "正在逐个实测国内镜像源（串行选优，直连优先）...",
                     stepIndex = 2,
                     totalSteps = totalSteps,
                     progress = 0.35f,
@@ -163,7 +176,7 @@ class EnvironmentRepairer @Inject constructor(
                     if [ "${'$'}ID" = "ubuntu" ]; then
                         CN="${'$'}{VERSION_CODENAME:-noble}"
                         for m in https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}m"
                                 write_ubuntu "${'$'}m" "${'$'}CN"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
@@ -178,7 +191,7 @@ class EnvironmentRepairer @Inject constructor(
                         CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
                             M=${'$'}{pair%% *}; S=${'$'}{pair##* }
-                            if curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}M"
                                 write_debian "${'$'}M" "${'$'}CN" "${'$'}S"
                                 if try_apt; then APT_OK="${'$'}M"; break; fi
@@ -188,7 +201,7 @@ class EnvironmentRepairer @Inject constructor(
                         echo "最终 apt 源: ${'$'}APT_OK"
                     elif [ "${'$'}ID" = "kali" ]; then
                         for m in https://mirrors.aliyun.com/kali https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
-                            if curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
                                 write_kali "${'$'}m"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
                             fi
@@ -223,7 +236,7 @@ class EnvironmentRepairer @Inject constructor(
                 CommandResult(0, "", "", 0)
             } else {
                 addLog("Step 2 未验证成功，补跑 apt-get update")
-                executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive apt-get update -y", logs, timeoutMs = 120_000L)
+                executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get update -y || DEBIAN_FRONTEND=noninteractive apt-get update -y", logs, timeoutMs = 150_000L)
             }
             if (!updateRes.isSuccess) {
                 addLog("提示: apt-get update 产生部分非致命提示")
@@ -242,7 +255,7 @@ class EnvironmentRepairer @Inject constructor(
                 ),
             )
             addLog("[Step 4/5] 安装 ca-certificates, curl, git, tar, xz-utils, procps")
-            val installToolsCmd = "DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps"
+            val installToolsCmd = "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps || DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps"
             val installToolsRes = executeCommand(installToolsCmd, logs, timeoutMs = 180_000L)
             if (!installToolsRes.isSuccess) {
                 addLog("警告: 基础工具链安装异常: ${installToolsRes.stderr.ifBlank { installToolsRes.stdout }}")
@@ -266,14 +279,17 @@ class EnvironmentRepairer @Inject constructor(
                 if [ -z "${'$'}NODE_VER" ] || [ "${'$'}NODE_VER" -lt 20 ]; then
                     echo "检测到 Node.js 缺失或版本较低 (当前: ${'$'}{NODE_VER:-未安装})，正在下载安装 Node.js v22 (LTS ARM64)..."
                     mkdir -p /tmp/node_setup
-                    curl -fsSL --connect-timeout 10 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
-                    curl -fsSL --connect-timeout 10 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || true
+                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
+                    curl -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
+                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
+                    curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || true
                     if [ -f /tmp/node_setup/node.tar.xz ]; then
                         tar -xJf /tmp/node_setup/node.tar.xz -C /usr/local --strip-components=1
                         rm -rf /tmp/node_setup
                         echo "Node.js v22 升级完成: ${'$'}(node -v 2>/dev/null)"
                     else
                         echo "预编译包拉取受限，尝试通过系统包管理器就绪基础 Node..."
+                        env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm || \
                         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm || true
                     fi
                 fi

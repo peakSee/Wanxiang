@@ -6,8 +6,8 @@ import java.util.Properties
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-val appVersionName = "0.13.22"
-val appVersionCode = 41
+val appVersionName = "0.13.23"
+val appVersionCode = 42
 
 // WanXiangDev 双包构建开关：CI（.github/workflows/wanxiangdev-build.yml）设 WANXIANG_DEV_BUILD=1 时，
 // 产出独立预览包 top.wanxiang.app.dev / 应用名 WanXiangDev / 版本后缀 -dev，
