@@ -114,7 +114,7 @@ class EnvironmentRepairer @Inject constructor(
                 addLog("检测到死代理（代理不可达但直连正常），已自动清除内置代理设置")
                 runCatching { settingsDataStore.setSandboxHttpProxy("") }
             }
-            addLog("[Step 1/5] 写入公共 DNS (114.114.114.114, 223.5.5.5, 8.8.8.8)")
+            addLog("[Step 1/5] 写入公共 DNS (223.5.5.5, 114.114.114.114, 8.8.8.8)")
             val dnsCmd = "mkdir -p /etc && printf 'nameserver 223.5.5.5\\nnameserver 114.114.114.114\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf"
             val dnsRes = executeCommand(dnsCmd, logs)
             if (!dnsRes.isSuccess) {
@@ -159,6 +159,9 @@ class EnvironmentRepairer @Inject constructor(
                 }
                 # apt 全程 ForceIPv4（手机 IPv6 半残导致 apt 静默等待是慢的头号元凶）+ 收包超时 15s
                 APTOPT="-o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 -o Acquire::Languages=en"
+                STICKY=$(cat /opt/wanxiang/state/apt_mirror.txt 2>/dev/null || true)
+                T0=$(date +%s)
+                el() { echo "+${'$'}(( $(date +%s) - T0 ))s"; }
                 try_apt() {
                     # 不清 /var/lib/apt/lists：换源后 apt 只增量拉当前源的索引，
                     # 全删会把 36MB 元数据重下一遍（334s 慢案根因之一）
@@ -178,18 +181,28 @@ class EnvironmentRepairer @Inject constructor(
                     . /etc/os-release
                     if [ "${'$'}ID" = "ubuntu" ]; then
                         CN="${'$'}{VERSION_CODENAME:-noble}"
-                        for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; }; then
-                                echo "探测可达: ${'$'}m"
-                                write_ubuntu "${'$'}m" "${'$'}CN"
-                                if try_apt; then APT_OK="${'$'}m"; break; fi
-                                echo "镜像可达但 apt 失败，换下一个: ${'$'}m"
-                            else
-                                echo "探测不可达: ${'$'}m"
+                        # 老用户快速通道：粘性源未变 + 48h 内有成功索引 → 只探测可达性，
+                        # 跳过整轮 apt update 实测（163s 慢案：验证过的源没必要每次重验）
+                        if [ -n "${'$'}STICKY" ] && grep -q "${'$'}STICKY" "${'$'}MIRRORS_FILE" 2>/dev/null && find /var/lib/apt/lists -name '*Packages*' -mmin -2880 2>/dev/null | grep -q .; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}STICKY/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                                APT_OK="${'$'}STICKY"
+                                echo "粘性源快速通道: ${'$'}STICKY (源未变+索引新鲜，跳过全量验证) (${'$'}(el))"
                             fi
-                        done
+                        fi
+                        if [ -z "${'$'}APT_OK" ]; then
+                            for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
+                                if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; }; then
+                                    echo "探测可达: ${'$'}m (${'$'}(el))"
+                                    write_ubuntu "${'$'}m" "${'$'}CN"
+                                    if try_apt; then APT_OK="${'$'}m"; break; fi
+                                    echo "镜像可达但 apt 失败，换下一个: ${'$'}m (${'$'}(el))"
+                                else
+                                    echo "探测不可达: ${'$'}m"
+                                fi
+                            done
+                        fi
                         [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败，已保留最后尝试的源"
-                        echo "最终 apt 源: ${'$'}APT_OK"
+                        echo "最终 apt 源: ${'$'}APT_OK (Step2 总耗时 ${'$'}(el))"
                     elif [ "${'$'}ID" = "debian" ] || [ "${'$'}ID_LIKE" = "debian" ]; then
                         CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
