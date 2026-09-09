@@ -374,6 +374,7 @@ class ChatViewModel @Inject constructor(
             val hasIdentity = runGitRead(ws, "git config user.name")?.isNotBlank() == true &&
                 runGitRead(ws, "git config user.email")?.isNotBlank() == true
             val hasRemote = runGitRead(ws, "git remote")?.isNotBlank() == true
+            val isShallow = runGitRead(ws, "git rev-parse --is-shallow-repository")?.trim() == "true"
             val stashCount = runGitRead(ws, "git stash list")
                 ?.lines()?.count { it.isNotBlank() } ?: 0
             _gitPanelState.value = _gitPanelState.value.copy(
@@ -391,6 +392,7 @@ class ChatViewModel @Inject constructor(
                 commitFiles = emptyMap(),
                 hasIdentity = hasIdentity,
                 hasRemote = hasRemote,
+                isShallow = isShallow,
                 // 与原"新建 GitPanelState"语义一致：刷新清一次性视图态
                 diffPath = null,
                 diffText = null,
@@ -437,6 +439,17 @@ class ChatViewModel @Inject constructor(
     }
 
     /** 重拉第一页（30 条）并组装拓扑图；分页游标重置。 */
+    /** 反浅克隆：拉取完整历史后重建提交图（仅浅克隆仓库在图页露出该入口）。 */
+    fun unshallowRepo() {
+        if (_gitProgress.value != null) return
+        runStreamingGitOp(
+            label = "加载完整历史",
+            cmd = "git fetch --unshallow origin --progress",
+            resolveHostFromOrigin = true,
+            timeoutMs = 900_000L,
+        )
+    }
+
     private suspend fun buildFreshGraph(ws: String): top.wanxiang.app.ui.chat.git.GitGraph {
         val logRaw = runGitRead(ws, "git log --pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%P%x1f%b%x1f%s%x1e -30") ?: ""
         loadedGraphCommits = top.wanxiang.app.ui.chat.git.GitGraphBuilder.parseGraphCommits(logRaw)
@@ -544,7 +557,7 @@ class ChatViewModel @Inject constructor(
             val hasUpstream = upstreamSet != null && !upstreamSet.contains("unknown") && !upstreamSet.contains("no upstream")
             val cmd = if (hasUpstream) "git push --progress"
                 else "git push --progress -u origin ${shellQuote(branch ?: "HEAD")}"
-            runStreamingGitOp(label = "推送", cmd = cmd, resolveHostFromOrigin = true, timeoutMs = 300_000L)
+            runStreamingGitOp(label = "推送", cmd = cmd, resolveHostFromOrigin = true, timeoutMs = 300_000L, syncTrackingRef = true)
         }
     }
     /** 一键 stash 当前所有改动（含未跟踪），完成后 Snackbar 带 [还原 stash] 一键 pop。 */
@@ -828,6 +841,7 @@ class ChatViewModel @Inject constructor(
         cmd: String,
         resolveHostFromOrigin: Boolean,
         timeoutMs: Long,
+        syncTrackingRef: Boolean = false,
     ) {
         val ws = currentGitWs()
         viewModelScope.launch(Dispatchers.IO) {
@@ -863,6 +877,24 @@ class ChatViewModel @Inject constructor(
                 lastExit = result?.exitCode
                 if (result != null && result.isSuccess) {
                     _gitProgress.value = null
+                    // 推送成功且走的是临时凭据 URL/助手时，origin 的远程跟踪引用不会自动前进，
+                    // 面板会长期误显示「领先 N」。补一次带同凭据的 fetch 同步跟踪引用。
+                    if (syncTrackingRef) {
+                        val br = _gitPanelState.value.branch
+                            ?: runGitRead(ws, "git rev-parse --abbrev-ref HEAD")?.trim()
+                        if (!br.isNullOrBlank() && br != "HEAD") {
+                            val fetchCmd = "git fetch --quiet origin +refs/heads/${shellQuote(br)}:refs/remotes/origin/${shellQuote(br)}"
+                            runCatching {
+                                linuxRuntime.execute(
+                                    ShellCommand(
+                                        commandLine = "${if (cred != null) GitAuth.wrap(fetchCmd, cred) else fetchCmd} 2>&1",
+                                        workingDirectory = ws,
+                                        timeoutMs = 120_000L,
+                                    ),
+                                )
+                            }
+                        }
+                    }
                     _gitOpMessage.value = GitOpMessage.Ok("✓ $label 完成")
                     refreshGitStatus()
                     return@launch
@@ -2434,6 +2466,8 @@ data class GitPanelState(
     val hasRemote: Boolean = false,
     /** 当前 `git stash list` 条数（>0 时可 pop）。 */
     val stashCount: Int = 0,
+    /** 浅克隆仓库（--depth 1 等）：提交图只有少数几条，图页提供「加载完整历史」反浅克隆。 */
+    val isShallow: Boolean = false,
     val notARepo: Boolean = false,
     val diffPath: String? = null,
     val diffText: String? = null,

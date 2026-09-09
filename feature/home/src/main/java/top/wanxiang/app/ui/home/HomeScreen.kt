@@ -707,6 +707,7 @@ private fun DoctorItemRow(
         DoctorStatus.WARNING -> warningStatusColor()
         DoctorStatus.ERROR -> MaterialTheme.colorScheme.error
         DoctorStatus.CHECKING -> MaterialTheme.colorScheme.tertiary
+        DoctorStatus.UNKNOWN -> MaterialTheme.colorScheme.outline
     }
 
     val statusIcon = when (item.status) {
@@ -714,6 +715,7 @@ private fun DoctorItemRow(
         DoctorStatus.WARNING -> RuntimeIconName.Alert
         DoctorStatus.ERROR -> RuntimeIconName.Alert
         DoctorStatus.CHECKING -> RuntimeIconName.Refresh
+        DoctorStatus.UNKNOWN -> RuntimeIconName.Info
     }
 
     Row(

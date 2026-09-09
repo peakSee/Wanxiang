@@ -158,6 +158,8 @@ class MainActivity : AppCompatActivity() {
                 var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
                 var downloadProgress by remember { mutableStateOf<Float?>(null) }
                 var downloadBytesPair by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+                // 下载协程句柄：更新对话框下载中提供「取消下载」，用户不再被锁死在弹窗里
+                var downloadJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
                 var isDownloading by remember { mutableStateOf(false) }
                 var downloadFailed by remember { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
@@ -296,8 +298,7 @@ class MainActivity : AppCompatActivity() {
                                         downloadProgress = 0f
                                         downloadBytesPair = null
                                         downloadFailed = false
-                                        scope.launch {
-                                            // 点下载时才重拉云端 → 若我在 dialog 显示 0.4 后又发了 0.5，
+                                        downloadJob = scope.launch {
                                             // 这里拿到的就是 0.5，一步到位不再让用户 0.4→0.5 二级跳。
                                             val fresh = runCatching {
                                                 appUpdateManager.checkUpdateMerged(currentVersionName).getOrNull()
@@ -341,15 +342,25 @@ class MainActivity : AppCompatActivity() {
                             }
                         },
                         dismissButton = {
-                            // 强制更新时不显示「稍后再说」，用户只能去下载
-                            if (!info.forceUpdate) {
+                            if (isDownloading) {
+                                // 下载中给出口：取消回到可重试状态，不再锁死对话框
+                                TextButton(
+                                    onClick = {
+                                        downloadJob?.cancel()
+                                        downloadJob = null
+                                        isDownloading = false
+                                        downloadProgress = null
+                                        downloadBytesPair = null
+                                    },
+                                ) { Text("取消下载") }
+                            } else if (!info.forceUpdate) {
+                                // 强制更新时不显示「稍后再说」，用户只能去下载
                                 TextButton(
                                     onClick = {
                                         updateInfo = null
                                         // P0-1：记下这个 versionCode 已被用户 dismiss，下次同版本不再弹
                                         scope.launch { updatePreferences.setDismissedUpdateVersionCode(info.versionCode) }
                                     },
-                                    enabled = !isDownloading,
                                 ) {
                                     Text(stringResource(R.string.wanxiang_later))
                                 }

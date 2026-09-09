@@ -7,6 +7,9 @@ enum class DoctorStatus {
     WARNING,
     ERROR,
     CHECKING,
+
+    /** 探测拿不到结果（沙箱繁忙/超时）：如实标注，绝不按"异常"误报吓用户。 */
+    UNKNOWN,
 }
 
 enum class DoctorCategory(val displayName: String) {

@@ -30,6 +30,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -132,6 +133,7 @@ fun GitPanel(
     onCancelProgress: () -> Unit = {},
     recentCloneUrls: List<String> = emptyList(),
     onLoadMoreCommits: () -> Unit = {},
+    onUnshallow: () -> Unit = {},
     onCommitFileDiff: (String, String) -> Unit = { _, _ -> },
     gitOp: GitOpMessage = GitOpMessage.Idle,
     onSwitchWorkspace: (String) -> Unit = {},
@@ -275,7 +277,7 @@ fun GitPanel(
                         state.error != null -> CenterHint(state.error, isError = true)
                         page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate, onStash, onStashPop)
                         page == 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
-                        page == 2 -> LogTab(state, onCommitDetail = onCommitDetail, onCloseCommit = onClearCommitDetail, onCommitFileDiff = onCommitFileDiff, onLoadMore = onLoadMoreCommits)
+                        page == 2 -> LogTab(state, onCommitDetail = onCommitDetail, onCloseCommit = onClearCommitDetail, onCommitFileDiff = onCommitFileDiff, onLoadMore = onLoadMoreCommits, onUnshallow = onUnshallow)
                     }
                 }
                 if (!state.loading && !state.notARepo && state.branch != null) {
@@ -1200,6 +1202,7 @@ private fun LogTab(
     onCloseCommit: () -> Unit,
     onCommitFileDiff: (String, String) -> Unit,
     onLoadMore: () -> Unit,
+    onUnshallow: () -> Unit,
 ) {
     val graph = state.graph
     val commits = graph.commits
@@ -1285,6 +1288,11 @@ private fun LogTab(
                                 CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                             } else {
                                 Text("上拉加载更早提交", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        } else if (state.isShallow) {
+                            // 浅克隆仓库（clone --depth 1）历史被截断：给出反浅克隆入口
+                            TextButton(onClick = onUnshallow) {
+                                Text("加载完整历史（取消浅克隆）", style = MaterialTheme.typography.labelMedium)
                             }
                         } else {
                             Text("没有更多了", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
