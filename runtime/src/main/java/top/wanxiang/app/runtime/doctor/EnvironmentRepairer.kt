@@ -131,7 +131,7 @@ class EnvironmentRepairer @Inject constructor(
                         mv "${'$'}f" "${'$'}f.wanxiang-disabled" 2>/dev/null || true
                     fi
                 done
-                # ============ 自验证换源：探测→写入→apt update 实测→失败换下一个→官方兜底 ============
+                # ============ 自验证换源（严格串行：一次只探测一个镜像，可用即用即停，绝不并发） ============
                 # 任何一张网卡/代理/限流组合下都保证收尾时 apt 处于可用状态，而不是"写完源就信任"。
                 MIRRORS_FILE=/etc/apt/sources.list.d/wanxiang-mirrors.list
                 APT_OK=""
