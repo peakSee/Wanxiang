@@ -391,7 +391,7 @@ private fun WorkflowNodeType.defaultTitle(): String = when (this) {
     WorkflowNodeType.PROCESS_SERVICE -> "启动服务"
     WorkflowNodeType.AGENT_INFERENCE -> "智能体推理"
     WorkflowNodeType.SUBAGENT_DELEGATE -> "委派子智能体"
-    WorkflowNodeType.TAIXU_BUILD -> "太墟构建"
+    WorkflowNodeType.TAIXU_BUILD -> "万象构建"
     WorkflowNodeType.CONDITION_BRANCH -> "条件分支"
     WorkflowNodeType.HUMAN_APPROVAL -> "人工审批"
     WorkflowNodeType.HOST_ACTION -> "宿主动作"

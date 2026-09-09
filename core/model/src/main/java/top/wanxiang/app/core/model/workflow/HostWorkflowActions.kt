@@ -375,7 +375,7 @@ object HostWorkflowActions {
             label = "发送通知",
             category = "交互",
             privilege = HostWorkflowPrivilege.NONE,
-            description = "在通知栏发布一条太墟工作流通知",
+            description = "在通知栏发布一条万象工作流通知",
             fields = listOf(
                 HostWorkflowField("title", "标题", required = true),
                 HostWorkflowField("text", "正文", required = true),

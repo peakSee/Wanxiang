@@ -90,7 +90,7 @@ fun WorkflowScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             RuntimeTopBar(
-                title = activeState?.definition?.name ?: editorState?.definition?.name ?: "太墟工作流",
+                title = activeState?.definition?.name ?: editorState?.definition?.name ?: "万象工作流",
                 statusText = projectName.takeIf(String::isNotBlank)?.let { "工作区 · $it" },
                 onBack = {
                     when {

@@ -314,7 +314,7 @@ object BuiltinWorkflows {
                 "通知：自动化成功",
                 config = mapOf(
                     "action" to "notification",
-                    "title" to "太墟工作流",
+                    "title" to "万象工作流",
                     "text" to "宿主自动化实验室已完成屏幕感知",
                 ),
                 canvasX = 1360f,
@@ -438,12 +438,12 @@ object BuiltinWorkflows {
     val hostAgentGuiPilot = WorkflowDefinition(
         id = "host_agent_gui_pilot",
         name = "智能体 GUI 试飞",
-        description = "Shizuku/Root 下本地循环「感知屏幕 → 模型决策一步 → 点击/输入」完成 GUI 目标。默认：打开 QQ → 太墟群 → 发送试飞文案。请盯屏审批后再跑。",
+        description = "Shizuku/Root 下本地循环「感知屏幕 → 模型决策一步 → 点击/输入」完成 GUI 目标。默认：打开 QQ → 万象群(905971993) → 发送试飞文案。请盯屏审批后再跑。",
         category = "宿主",
         isBuiltin = true,
         trigger = WorkflowTrigger.Manual("/wf host_agent_gui_pilot"),
         defaultVariables = mapOf(
-            "GUI_GOAL" to "打开 QQ，进入「太墟」相关 QQ 群聊，在输入框发送一句：「太墟牛逼（来自工作流）」。不要发红包、不要转账、不要改群设置。若找不到群名含「太墟」的群，停止并说明当前看到的会话列表。",
+            "GUI_GOAL" to "打开 QQ，优先在搜索框输入群号 905971993 进入「万象」群；搜不到再找群名含「万象」的群。在输入框发送一句：「万象牛逼（来自工作流）」。不要发红包、不要转账、不要改群设置。若找不到群，停止并说明当前看到的会话列表。",
             "TARGET_PACKAGE" to "com.tencent.mobileqq",
         ),
         nodes = listOf(
@@ -480,7 +480,7 @@ object BuiltinWorkflows {
                 WorkflowNodeType.HUMAN_APPROVAL,
                 "确认让智能体操控屏幕",
                 description = "智能体将使用 host(screen_observe/click/swipe/input_text/key/app_launch) 自动操作手机界面以完成 GUI_GOAL。\n\n" +
-                    "默认目标会打开 QQ、进入太墟群并发送「太墟牛逼（来自工作流）」。请本人盯屏；若界面跳到支付/红包，应拒绝或立刻打断。\n\n" +
+                    "默认目标会打开 QQ、进入万象群(905971993)并发送「万象牛逼（来自工作流）」。请本人盯屏；若界面跳到支付/红包，应拒绝或立刻打断。\n\n" +
                     "拒绝则结束，不会启动操控。",
                 failurePolicy = FailurePolicy.CONTINUE,
             ),
