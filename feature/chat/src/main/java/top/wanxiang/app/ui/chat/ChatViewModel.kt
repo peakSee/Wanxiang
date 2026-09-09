@@ -1228,6 +1228,7 @@ class ChatViewModel @Inject constructor(
      * `git show --name-status` 拉该提交改动文件清单。
      */
     fun loadCommitDetail(hash: String) {
+        val safe = safeHash(hash) ?: return
         val ws = currentGitWs()
         _gitPanelState.value = _gitPanelState.value.copy(commitDetailHash = hash, loadingCommit = hash)
         if (_gitPanelState.value.commitFiles.containsKey(hash)) {
@@ -1235,7 +1236,7 @@ class ChatViewModel @Inject constructor(
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val raw = runGitRead(ws, "git show --name-status --format= $hash") ?: ""
+            val raw = runGitRead(ws, "git show --name-status --format= $safe") ?: ""
             val files = raw.lines().mapNotNull { line ->
                 val parts = line.trimEnd().split('\t')
                 if (parts.size < 2) return@mapNotNull null
@@ -1250,15 +1251,23 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /** 提交 hash 白名单：仅 7-64 位十六进制。被污染的 hash（换行/空格）拼进命令会被 sh 拆行执行，绝不允许。 */
+    private fun safeHash(hash: String): String? = hash.takeIf { it.matches(Regex("[0-9a-fA-F]{7,64}")) }
+
     /** 详情弹层里点文件：进全屏 diff（`git diff <hash>^ <hash> -- path`；根提交回退 git show）。 */
     fun loadCommitFileDiff(hash: String, path: String) {
+        val safe = safeHash(hash)
+        if (safe == null) {
+            _gitPanelState.value = _gitPanelState.value.copy(diffPath = "无效提交号", diffText = "提交 hash 格式非法：$hash", diffLoading = false)
+            return
+        }
         val ws = currentGitWs()
         _gitPanelState.value = _gitPanelState.value.copy(diffPath = "$hash · $path", diffText = null, diffLoading = true)
         viewModelScope.launch(Dispatchers.IO) {
-            var diff = runGitRead(ws, "git diff $hash^ $hash -- ${shellQuote(path)}")
+            var diff = runGitRead(ws, "git diff ${safe}^ $safe -- ${shellQuote(path)}")
             if (diff == null || diff.startsWith("fatal:")) {
                 // 根提交没有 hash^，回退 git show
-                diff = runGitRead(ws, "git show $hash --format= -- ${shellQuote(path)}")
+                diff = runGitRead(ws, "git show $safe --format= -- ${shellQuote(path)}")
             }
             _gitPanelState.value = _gitPanelState.value.copy(
                 diffText = diff?.takeIf { it.isNotBlank() } ?: "（无差异输出或为二进制文件）",

@@ -16,7 +16,11 @@ internal object GitGraphBuilder {
      */
     fun parseGraphCommits(raw: String): List<GraphCommit> =
         raw.split('\u001e').mapNotNull { record ->
-            val parts = record.removeSuffix("\r").split('\u001f')
+            // git log --pretty=format: 会在每条提交间自动插 \n（只有最后一条没有尾换行）——
+            // 按 \x1e 拆记录后每条开头会残留这个换行，必须 trim 掉：否则 hash 带 \n，
+            // 下游 `git diff $hash^ $hash` 会把换行后的半截 hash 当命令执行（真机实锤：
+            // /bin/sh: not found 乱码 diff）。
+            val parts = record.trim('\r', '\n').removeSuffix("\r").split('\u001f')
             if (parts.size < 7) null
             else {
                 val parents = parts[4].split(' ').filter { it.isNotBlank() }

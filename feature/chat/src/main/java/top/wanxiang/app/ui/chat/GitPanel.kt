@@ -676,12 +676,16 @@ private fun GitDiffView(state: GitPanelState, onBack: () -> Unit) {
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         RuntimeTopBar(title = state.diffPath ?: "", onBack = onBack)
+        // weight(1f)：同 LogTab——Column 未加权子项可能拿到无限 maxHeight，
+        // 内层 LazyColumn(DiffText) 会崩
         if (state.diffLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
             }
         } else {
-            DiffText(state.diffText ?: "")
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                DiffText(state.diffText ?: "")
+            }
         }
     }
 }
@@ -1240,7 +1244,11 @@ private fun LogTab(
         )
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                // weight 而非 fillMaxSize：Column 对未加权子项可能给出无限高度约束，
+                // LazyColumn 收到 Infinity maxHeight 直接抛 IllegalStateException（88 提交
+                // 大列表实测崩溃）。weight(1f) 保证拿到"剩余有界空间"，从根上消灭这类崩溃。
+                .weight(1f)
+                .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             state = listState,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 70.dp),

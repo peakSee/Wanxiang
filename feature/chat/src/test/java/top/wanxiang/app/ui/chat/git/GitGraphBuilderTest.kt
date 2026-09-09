@@ -67,6 +67,21 @@ class GitGraphBuilderTest {
     }
 
     @Test
+    fun gitInsertsNewlinesBetweenRecords_hashStaysClean() {
+        // git log --pretty=format: 会在提交之间自动插 \n（真机字节级实锤：036 后跟 \n）。
+        // 若 parse 不清理，第二条起的 hash 带前导换行 → git diff 命令被拆行执行 →
+        // "/bin/sh: <hex>: not found" 乱码 diff。
+        val raw = "aaa1\u001faaa1\u001fAlice\u001fd1\u001fbbb1\u001f\u001fc2\u001e\n" +
+            "bbb1\u001fbbb1\u001fBob\u001fd2\u001fccc1\u001f\u001fc1\u001e\n" +
+            "ccc1\u001fccc1\u001fCarl\u001fd3\u001f\u001f\u001fc0\u001e"
+        val commits = GitGraphBuilder.parseGraphCommits(raw)
+        assertEquals(3, commits.size)
+        assertEquals("bbb1", commits[1].hash)
+        assertEquals("ccc1", commits[2].hash)
+        assertTrue(commits.all { !it.hash.contains('\n') && !it.hash.contains('\r') })
+    }
+
+    @Test
     fun shortRecordBeforeGoodRecord_droppedWithoutPoisoning() {
         // 第一条字段不足（如输出被截断）→ 丢弃；第二条完整记录不受影响
         val raw = "broken\u001e" +
