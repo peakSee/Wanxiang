@@ -220,7 +220,7 @@ class ToolExecutor @Inject constructor(
             } else {
                 subagentOrchestrator?.executeSubagents(args, sessionId) ?: (false to "未初始化子智能体编排器")
             }
-            HarnessTool.MCP -> mcpManager?.executeTool(rawToolName ?: "mcp", args) ?: (false to "未初始化 MCP 管理器")
+            HarnessTool.MCP -> mcpManager?.executeTool(rawToolName ?: "mcp", args, workspace) ?: (false to "未初始化 MCP 管理器")
             HarnessTool.LOAD_RULE -> {
                 val rule = requireString(args, "rule")
                 val content = promptRouter?.loadRule(rule)
