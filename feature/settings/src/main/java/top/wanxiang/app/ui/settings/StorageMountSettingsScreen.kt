@@ -74,6 +74,16 @@ fun StorageMountSettingsScreen(
     var pendingDeleteBindingId by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
     val pendingDeleteBinding = pendingDeleteBindingId?.let { id -> customBindings.firstOrNull { it.id == id } }
 
+    // 挂载保存反馈（如宿主目录无法即时创建）：Toast 一次即消费
+    val mountContext = androidx.compose.ui.platform.LocalContext.current
+    val mountFeedback by viewModel.mountFeedback.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(mountFeedback) {
+        mountFeedback?.let {
+            android.widget.Toast.makeText(mountContext, it, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.consumeMountFeedback()
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {

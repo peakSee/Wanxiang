@@ -1331,6 +1331,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsDataStore.setMountSharedStorageEnabled(enabled) }
     }
 
+    /** 挂载保存的一次性反馈（宿主目录不可创建等），UI 弹 Toast 后消费清空。 */
+    private val _mountFeedback = MutableStateFlow<String?>(null)
+    val mountFeedback: kotlinx.coroutines.flow.StateFlow<String?> = _mountFeedback.asStateFlow()
+    fun consumeMountFeedback() { _mountFeedback.value = null }
+
     fun addCustomMountBinding(name: String, hostPath: String, guestPath: String) {
         val binding = top.wanxiang.app.core.model.StorageMountBinding(
             id = java.util.UUID.randomUUID().toString(),
@@ -1340,7 +1345,16 @@ class SettingsViewModel @Inject constructor(
             enabled = true,
             isSystemDefault = false,
         )
-        viewModelScope.launch { storageMountBindingRepository.add(binding) }
+        viewModelScope.launch {
+            // 保存即预建宿主目录：填了尚未创建的路径是正常用法，当场建好并反馈结果。
+            // 建不成也照常保存——运行时构建器会跳过无效绑定并记日志，绝不再让
+            // require() 抛异常把 App 打进启动闪退循环（历史 bug）。
+            val dir = java.io.File(binding.hostPath)
+            if (!dir.isDirectory && !dir.mkdirs()) {
+                _mountFeedback.value = "宿主目录暂不可创建，绑定已保存并在路径就绪后自动生效：${binding.hostPath}"
+            }
+            storageMountBindingRepository.add(binding)
+        }
     }
 
     fun removeCustomMountBinding(bindingId: String) {

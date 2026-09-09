@@ -249,9 +249,14 @@ class ProotCommandBuilder private constructor(
     private fun MutableList<String>.addStorageMountBindings(
         mounts: List<top.wanxiang.app.core.model.StorageMountBinding>,
     ) {
-        if (mounts.isNotEmpty()) {
-            mounts.filter { it.enabled }.forEach { binding ->
-                val argument = validateStorageMount(binding)
+        // 单个绑定非法（路径不存在/越界/含非法字符）绝不抛异常：require() 抛出会沿
+        // build() 冒到运行时初始化，导致 App 启动即闪退且无法进设置删绑定（崩溃循环，
+        // 用户实测）。逐条校验，失败的记日志并跳过，其余绑定照常生效。
+        mounts.filter { it.enabled }.forEach { binding ->
+            val argument = runCatching { validateStorageMount(binding) }
+                .onFailure { logWarning("StorageMountBinding skipped: ${binding.hostPath} → ${binding.guestPath} (${it.message})") }
+                .getOrNull()
+            if (argument != null) {
                 add("-b")
                 add(argument)
             }
@@ -271,8 +276,11 @@ class ProotCommandBuilder private constructor(
 
         val sharedRoot = File(SHARED_STORAGE_ROOT).canonicalFile
         val host = File(binding.hostPath).canonicalFile
-        require(host.isDirectory && host.canRead()) { "宿主挂载目录不可访问：${binding.hostPath}" }
+        // 安全边界先行：越界路径直接拒绝，绝不 mkdir
         require(isInside(sharedRoot, host)) { "宿主挂载仅允许位于 $SHARED_STORAGE_ROOT 内" }
+        // 用户填了尚未创建的目录是正常用法：装配期自动补建（此前 require 直接抛 → 启动闪退）
+        if (!host.isDirectory) host.mkdirs()
+        require(host.isDirectory && host.canRead()) { "宿主挂载目录不可访问且无法自动创建：${binding.hostPath}" }
         return "${host.absolutePath}:$guest"
     }
 
