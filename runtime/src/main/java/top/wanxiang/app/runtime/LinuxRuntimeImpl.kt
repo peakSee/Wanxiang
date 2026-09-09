@@ -33,6 +33,11 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
@@ -59,6 +64,10 @@ class LinuxRuntimeImpl @Inject constructor(
 
     private val _state = MutableStateFlow<RuntimeState>(RuntimeState.NotInitialized)
     override val state: StateFlow<RuntimeState> = _state.asStateFlow()
+
+    /** 镜像后台验证（三层策略第 2 层）：独立 scope，失败不影响运行时状态机。 */
+    private val mirrorVerifyScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var mirrorVerifyJob: Job? = null
 
     private val _activeDistroId = MutableStateFlow("ubuntu")
     override val activeDistroId: StateFlow<String> = _activeDistroId.asStateFlow()
@@ -833,12 +842,17 @@ class LinuxRuntimeImpl @Inject constructor(
     }
 
     /**
-     * 将沙箱内 apt 源切到国内镜像（TUNA → 阿里云 → 中科大 → 上交 依次探测，第一个 InRelease
-     * 可 200 拉取的入选；全挂时保留 TUNA 默认）。仅对 apt 系发行版（debian / ubuntu / kali）生效。
+     * 三层镜像策略之第 1 层「乐观默认直写」+ 第 2 层「后台验证」：
      *
-     * 背景：TUNA 会对运营商 NAT 池 IP 返回 403（实测 101.6.x 移动出口），403 的 HTML 被 apt 当
-     * InRelease 验签 → "repository is not signed"，自愈/预装的 apt 全链失败。启动时若现源探测
-     * 仍 200 则直接跳过（零开销）；被拉黑/抽风时自动换源重写。
+     * 1. 预装/启动时**不探测**：源文件缺失或没有 deb 行 → 直写默认镜像（国内用户实测最稳的
+     *    阿里云/清华 debian/阿里 kali），fresh 用户 0 秒就绪；已有源文件（可能被自愈换过）
+     *    一律保留不动。
+     * 2. 随后调度后台验证协程：单个 InRelease GET（6s）校验当前源，不通则按序探测备用源
+     *    静默换源——用户在第一次 apt 操作前就被悄悄修好，全程无感。
+     * 3. 被动修复（体检黄牌 + 一键修复逐个实测）在 EnvironmentDoctor/Repairer，兜底怪网络。
+     *
+     * 历史：旧版启动同步探测（TUNA 被运营商 NAT 拉黑返回 403 → "not signed" 全链失败），
+     * 探测本身又给启动加 6-36s，故改为乐观直写 + 后台自愈。
      */
     private fun configureChinaMirrors(distroId: String = "ubuntu") {
         val osRelease = readOsRelease(distroId)
@@ -851,43 +865,77 @@ class LinuxRuntimeImpl @Inject constructor(
         val sourcesListDir = File(pathManager.rootfsDir(distroId), "etc/apt/sources.list.d")
         val mirrorsFile = File(sourcesListDir, "wanxiang-mirrors.list")
 
-        // 快速路径：已有源文件且第一个 deb 基址的 InRelease 仍可拉 → 不动。
-        val existingBase = mirrorsFile.takeIf { it.isFile }?.readLines()
-            ?.firstOrNull { it.startsWith("deb ") }
-            ?.removePrefix("deb ")?.trim()?.split(" ")?.firstOrNull()
-        val existingDist = mirrorsFile.takeIf { it.isFile }?.readLines()
-            ?.firstOrNull { it.startsWith("deb ") }?.trim()?.split(" ")?.getOrNull(1)
-        if (existingBase != null && existingDist != null && probeInRelease(existingBase, existingDist)) {
-            return
+        val hasUsableSources = mirrorsFile.isFile &&
+            mirrorsFile.readLines().any { it.startsWith("deb ") }
+        if (!hasUsableSources) {
+            // 第 1 层：零探测直写默认源（顺序=后台验证的备用顺序，保持一致）
+            val defaultSources = when (id) {
+                "debian" -> codename?.let { cn ->
+                    debianMirrorPairs().first().let { (main, security) -> debianSources(main, security, cn) }
+                }
+                "ubuntu" -> codename?.let { cn ->
+                    ubuntuPortsSources(ubuntuPortsCandidates().first(), cn)
+                }
+                "kali" -> kaliSources(kaliCandidates().first())
+                else -> null
+            }
+            if (defaultSources != null) {
+                sourcesListDir.mkdirs()
+                disableStockAptSources(sourcesListDir, distroId)
+                runCatching {
+                    mirrorsFile.writeText(defaultSources + "\n")
+                    logger.i("China mirrors: 乐观直写默认源 for $id ($codename) in $distroId（零探测零等待）")
+                }
+            } else {
+                logger.i("China mirrors skipped for distro id=$id codename=$codename (unsupported)")
+                return
+            }
         }
+        // 第 2 层：后台验证（不阻塞启动/就绪），失败自动换备用源
+        scheduleMirrorBackgroundVerify(distroId)
+    }
 
-        val sources = when (id) {
-            "debian" -> codename?.let { cn ->
-                debianMirrorPairs().firstOrNull { (main, _) -> probeInRelease(main, cn) }
-                    ?.let { (main, security) -> debianSources(main, security, cn) }
+    /** 后台镜像验证协程：现源不通 → 按序探测备用源静默重写。全挂则保留现源交给第 3 层（体检/自愈）。 */
+    private fun scheduleMirrorBackgroundVerify(distroId: String) {
+        mirrorVerifyJob?.cancel()
+        mirrorVerifyJob = mirrorVerifyScope.launch {
+            delay(3_000) // 等网络栈/代理环境稳定
+            val osRelease = readOsRelease(distroId)
+            val id = osRelease["ID"] ?: osRelease["ID_LIKE"]
+            val codename = osRelease["VERSION_CODENAME"]
+            val mirrorsFile = File(File(pathManager.rootfsDir(distroId), "etc/apt/sources.list.d"), "wanxiang-mirrors.list")
+            val firstDeb = mirrorsFile.takeIf { it.isFile }?.readLines()?.firstOrNull { it.startsWith("deb ") }?.trim()?.split(" ")
+            val currentBase = firstDeb?.getOrNull(1).orEmpty()
+            val dist = firstDeb?.getOrNull(2).orEmpty()
+            if (currentBase.isNullOrBlank() || dist.isBlank()) return@launch
+            if (probeInRelease(currentBase, dist)) {
+                logger.i("镜像后台验证通过: $currentBase")
+                return@launch
             }
-            "ubuntu" -> codename?.let { cn ->
-                // 粘性镜像优先：上次自愈/探测成功的第一个试（老用户秒中，新候选顺序兜底）
-                val sticky = stickyMirror(distroId)
-                (listOfNotNull(sticky) + ubuntuPortsCandidates()).distinct()
-                    .firstOrNull { probeInRelease(it, cn) }
-                    ?.let { chosen ->
-                        saveStickyMirror(distroId, chosen)
-                        ubuntuPortsSources(chosen, cn)
-                    }
+            logger.w("镜像后台验证不通: $currentBase → 按序探测备用源")
+            val candidates: List<String> = when (id) {
+                "ubuntu" -> ubuntuPortsCandidates()
+                "debian" -> debianMirrorPairs().map { it.first }
+                "kali" -> kaliCandidates()
+                else -> return@launch
             }
-            "kali" -> kaliCandidates().firstOrNull { probeInRelease(it, "kali-rolling") }
-                ?.let { kaliSources(it) }
-            else -> null
+            for (alt in candidates.filterNot { it == currentBase }) {
+                if (!probeInRelease(alt, dist)) continue
+                val newSources = when (id) {
+                    "debian" -> debianMirrorPairs().firstOrNull { it.first == alt }
+                        ?.let { (main, security) -> debianSources(main, security, codename.orEmpty()) }
+                    "kali" -> kaliSources(alt)
+                    else -> ubuntuPortsSources(alt, codename.orEmpty())
+                } ?: continue
+                runCatching {
+                    mirrorsFile.writeText(newSources + "\n")
+                    saveStickyMirror(distroId, alt)
+                    logger.i("镜像后台自动切换完成: $currentBase → $alt（用户无感）")
+                }
+                return@launch
+            }
+            logger.w("镜像后台验证：全部备用源不可达（可能离线），保留 $currentBase —— 体检/一键修复仍可纠正")
         }
-        if (sources == null) {
-            logger.i("China mirrors skipped for distro id=$id codename=$codename (all candidates unreachable)")
-            return
-        }
-        sourcesListDir.mkdirs()
-        disableStockAptSources(sourcesListDir, distroId)
-        mirrorsFile.writeText(sources + "\n")
-        logger.i("China mirrors applied for $id ($codename) in $distroId")
     }
 
     /** HEAD 不了就用 GET：200 才算可用镜像。 */
@@ -904,12 +952,7 @@ class LinuxRuntimeImpl @Inject constructor(
         }
     }.getOrDefault(false)
 
-    /** 上次验证成功的镜像（自愈与启动共用，rootfs 内状态文件）；无效返回 null。 */
-    private fun stickyMirror(distroId: String): String? = runCatching {
-        File(pathManager.rootfsDir(distroId), "opt/wanxiang/state/apt_mirror.txt")
-            .takeIf { it.isFile }?.readText()?.trim()?.takeIf { it.startsWith("http") }
-    }.getOrNull()
-
+    /** 记录验证成功的镜像（自愈与后台验证共用，rootfs 内状态文件），供自愈候选优先。 */
     private fun saveStickyMirror(distroId: String, base: String) {
         runCatching {
             val f = File(pathManager.rootfsDir(distroId), "opt/wanxiang/state/apt_mirror.txt")
