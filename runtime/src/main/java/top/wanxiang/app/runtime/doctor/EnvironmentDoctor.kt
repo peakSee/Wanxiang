@@ -316,13 +316,42 @@ class EnvironmentDoctor @Inject constructor(
             content.contains("163.com", ignoreCase = true)
 
         return if (hasDomesticMirror) {
-            DoctorItem(
-                id = "apt_mirrors",
-                category = DoctorCategory.PACKAGE_MANAGER,
-                title = "APT 软件包源",
-                status = DoctorStatus.HEALTHY,
-                summary = "已配置国内镜像源加速 (清华/阿里/中科大)",
-            )
+            // 有国内源 ≠ 源可用：对当前第一个 deb 基址实测 InRelease（--ipv4 防手机 v6 半残误判），
+            // 不可达则黄牌 fixable，一键修复会重新逐个实测选优。
+            val first = content.lines().firstOrNull { it.startsWith("deb ") }?.trim()?.removePrefix("deb ")?.split(" ")
+            val base = first?.getOrNull(0).orEmpty()
+            val dist = first?.getOrNull(1).orEmpty()
+            val reachable = if (base.startsWith("http") && dist.isNotBlank()) {
+                runCatching {
+                    linuxRuntime.execute(
+                        ShellCommand(
+                            commandLine = "curl --ipv4 -fsS -m 5 -o /dev/null \"${base}/dists/${dist}/InRelease\" >/dev/null 2>&1 || exit 7",
+                            timeoutMs = 9_000L,
+                        ),
+                    ).isSuccess
+                }.getOrDefault(true)
+            } else {
+                true
+            }
+            if (!reachable) {
+                DoctorItem(
+                    id = "apt_mirrors",
+                    category = DoctorCategory.PACKAGE_MANAGER,
+                    title = "APT 软件包源",
+                    status = DoctorStatus.WARNING,
+                    summary = "已配置的镜像当前不可达 ($base)",
+                    detail = "该镜像可能对当前网络限流或资源缺失。一键修复将逐个实测国内镜像并自动切换到可用源。",
+                    fixable = true,
+                )
+            } else {
+                DoctorItem(
+                    id = "apt_mirrors",
+                    category = DoctorCategory.PACKAGE_MANAGER,
+                    title = "APT 软件包源",
+                    status = DoctorStatus.HEALTHY,
+                    summary = "已配置国内镜像源加速且实测可达 (阿里/清华/中科大)",
+                )
+            }
         } else {
             DoctorItem(
                 id = "apt_mirrors",

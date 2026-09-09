@@ -106,8 +106,8 @@ class EnvironmentRepairer @Inject constructor(
             // 否则后续 curl/apt 全部先撞死代理干等超时（"探测全部不可达"的头号根因）。
             val proxyProbe = executeCommand(
                 "P=\"${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}\"; if [ -z \"${'$'}P\" ]; then echo NOPROXY; exit 0; fi; " +
-                    "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && D=OK || D=FAIL; " +
-                    "curl -s -m 5 -o /dev/null https://mirrors.aliyun.com && X=OK || X=FAIL; echo \"PROXY=${'$'}P DIRECT=${'$'}D VIA=${'$'}X\"",
+                    "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -s -m 5 -o /dev/null https://mirrors.aliyun.com && D=OK || D=FAIL; " +
+                    "curl --ipv4 -s -m 5 -o /dev/null https://mirrors.aliyun.com && X=OK || X=FAIL; echo \"PROXY=${'$'}P DIRECT=${'$'}D VIA=${'$'}X\"",
                 logs, timeoutMs = 16_000L,
             )
             if (proxyProbe.stdout.contains("DIRECT=OK") && proxyProbe.stdout.contains("VIA=FAIL")) {
@@ -115,7 +115,7 @@ class EnvironmentRepairer @Inject constructor(
                 runCatching { settingsDataStore.setSandboxHttpProxy("") }
             }
             addLog("[Step 1/5] 写入公共 DNS (114.114.114.114, 223.5.5.5, 8.8.8.8)")
-            val dnsCmd = "mkdir -p /etc && printf 'nameserver 114.114.114.114\\nnameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf"
+            val dnsCmd = "mkdir -p /etc && printf 'nameserver 223.5.5.5\\nnameserver 114.114.114.114\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf"
             val dnsRes = executeCommand(dnsCmd, logs)
             if (!dnsRes.isSuccess) {
                 addLog("警告: 写入 /etc/resolv.conf 失败: ${dnsRes.stderr}")
@@ -175,8 +175,8 @@ class EnvironmentRepairer @Inject constructor(
                     . /etc/os-release
                     if [ "${'$'}ID" = "ubuntu" ]; then
                         CN="${'$'}{VERSION_CODENAME:-noble}"
-                        for m in https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                        for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}m"
                                 write_ubuntu "${'$'}m" "${'$'}CN"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
@@ -191,7 +191,7 @@ class EnvironmentRepairer @Inject constructor(
                         CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
                             M=${'$'}{pair%% *}; S=${'$'}{pair##* }
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}M"
                                 write_debian "${'$'}M" "${'$'}CN" "${'$'}S"
                                 if try_apt; then APT_OK="${'$'}M"; break; fi
@@ -200,8 +200,8 @@ class EnvironmentRepairer @Inject constructor(
                         [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败"
                         echo "最终 apt 源: ${'$'}APT_OK"
                     elif [ "${'$'}ID" = "kali" ]; then
-                        for m in https://mirrors.aliyun.com/kali https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null || curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
+                        for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/kali https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
                                 write_kali "${'$'}m"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
                             fi
@@ -211,7 +211,7 @@ class EnvironmentRepairer @Inject constructor(
                     fi
                 fi
                 # 验证结果落盘：Step 3 据此跳过重复的 apt update（省 20-40s）
-                if [ -n "${'$'}APT_OK" ]; then echo "${'$'}APT_OK" > /tmp/.wanxiang_apt_ok; fi
+                if [ -n "${'$'}APT_OK" ]; then echo "${'$'}APT_OK" > /tmp/.wanxiang_apt_ok; mkdir -p /opt/wanxiang/state 2>/dev/null || true; echo "${'$'}APT_OK" > /opt/wanxiang/state/apt_mirror.txt 2>/dev/null || true; fi
             """.trimIndent()
             // 探测+逐镜像 apt 实测+官方兜底：最坏情况多个镜像各跑一次 update，给足 12 分钟
             executeCommand(mirrorScript, logs, timeoutMs = 720_000L)
@@ -283,10 +283,18 @@ class EnvironmentRepairer @Inject constructor(
                     curl -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
                     env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
                     curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || true
+                    if [ ! -f /tmp/node_setup/node.tar.xz ]; then
+                        env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.gz -o /tmp/node_setup/node.tar.gz || \
+                        curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.gz -o /tmp/node_setup/node.tar.gz || true
+                    fi
                     if [ -f /tmp/node_setup/node.tar.xz ]; then
                         tar -xJf /tmp/node_setup/node.tar.xz -C /usr/local --strip-components=1
                         rm -rf /tmp/node_setup
                         echo "Node.js v22 升级完成: ${'$'}(node -v 2>/dev/null)"
+                    elif [ -f /tmp/node_setup/node.tar.gz ]; then
+                        tar -xzf /tmp/node_setup/node.tar.gz -C /usr/local --strip-components=1
+                        rm -rf /tmp/node_setup
+                        echo "Node.js v22 升级完成 (gz 兜底，未依赖 xz): ${'$'}(node -v 2>/dev/null)"
                     else
                         echo "预编译包拉取受限，尝试通过系统包管理器就绪基础 Node..."
                         env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm || \
@@ -294,8 +302,9 @@ class EnvironmentRepairer @Inject constructor(
                     fi
                 fi
                 which npm >/dev/null 2>&1 && npm config set registry https://registry.npmmirror.com || true
-                mkdir -p ${'$'}HOME/.pip
+                mkdir -p ${'$'}HOME/.pip ${'$'}HOME/.config/pip 2>/dev/null || true
                 printf '[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple\n' > ${'$'}HOME/.pip/pip.conf 2>/dev/null || true
+                printf '[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple\n' > ${'$'}HOME/.config/pip/pip.conf 2>/dev/null || true
                 echo "运行时就绪状态: Node ${'$'}(node -v 2>/dev/null || echo '未就绪'), NPM ${'$'}(npm -v 2>/dev/null || echo '未就绪')"
                 if [ -d /opt/android-sdk ] || [ -d /opt/wanxiang/toolchains/android ]; then
                     if [ ! -f /etc/profile.d/wanxiang-android.sh ]; then

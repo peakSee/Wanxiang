@@ -867,8 +867,14 @@ class LinuxRuntimeImpl @Inject constructor(
                     ?.let { (main, security) -> debianSources(main, security, cn) }
             }
             "ubuntu" -> codename?.let { cn ->
-                ubuntuPortsCandidates().firstOrNull { probeInRelease(it, cn) }
-                    ?.let { ubuntuPortsSources(it, cn) }
+                // 粘性镜像优先：上次自愈/探测成功的第一个试（老用户秒中，新候选顺序兜底）
+                val sticky = stickyMirror(distroId)
+                (listOfNotNull(sticky) + ubuntuPortsCandidates()).distinct()
+                    .firstOrNull { probeInRelease(it, cn) }
+                    ?.let { chosen ->
+                        saveStickyMirror(distroId, chosen)
+                        ubuntuPortsSources(chosen, cn)
+                    }
             }
             "kali" -> kaliCandidates().firstOrNull { probeInRelease(it, "kali-rolling") }
                 ?.let { kaliSources(it) }
@@ -898,9 +904,23 @@ class LinuxRuntimeImpl @Inject constructor(
         }
     }.getOrDefault(false)
 
+    /** 上次验证成功的镜像（自愈与启动共用，rootfs 内状态文件）；无效返回 null。 */
+    private fun stickyMirror(distroId: String): String? = runCatching {
+        File(pathManager.rootfsDir(distroId), "opt/wanxiang/state/apt_mirror.txt")
+            .takeIf { it.isFile }?.readText()?.trim()?.takeIf { it.startsWith("http") }
+    }.getOrNull()
+
+    private fun saveStickyMirror(distroId: String, base: String) {
+        runCatching {
+            val f = File(pathManager.rootfsDir(distroId), "opt/wanxiang/state/apt_mirror.txt")
+            f.parentFile?.mkdirs()
+            f.writeText(base)
+        }
+    }
+
     private fun ubuntuPortsCandidates(): List<String> = listOf(
-        "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports",
         "https://mirrors.aliyun.com/ubuntu-ports",
+        "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports",
         "https://mirrors.ustc.edu.cn/ubuntu-ports",
         "https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports",
         "https://ports.ubuntu.com/ubuntu-ports",
