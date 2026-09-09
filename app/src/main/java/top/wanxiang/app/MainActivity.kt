@@ -34,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import top.wanxiang.app.ui.components.RuntimeTextButton as TextButton
 import androidx.compose.runtime.LaunchedEffect
+import kotlin.math.roundToInt
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -156,6 +157,7 @@ class MainActivity : AppCompatActivity() {
                 // 启动时静默检查更新
                 var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
                 var downloadProgress by remember { mutableStateOf<Float?>(null) }
+                var downloadBytesPair by remember { mutableStateOf<Pair<Long, Long>?>(null) }
                 var isDownloading by remember { mutableStateOf(false) }
                 var downloadFailed by remember { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
@@ -258,16 +260,21 @@ class MainActivity : AppCompatActivity() {
                                 if (isDownloading) {
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text(stringResource(R.string.wanxiang_update_downloading_package), style = MaterialTheme.typography.labelMedium)
-                                        if (downloadProgress != null) {
-                                            LinearProgressIndicator(
-                                                progress = { downloadProgress ?: 0f },
-                                                modifier = Modifier.fillMaxWidth(),
-                                            )
-                                        } else {
-                                            LinearProgressIndicator(
-                                                modifier = Modifier.fillMaxWidth(),
-                                            )
-                                        }
+                                        LinearProgressIndicator(
+                                            progress = { (downloadProgress ?: 0f).coerceIn(0f, 1f) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                        val pct = ((downloadProgress ?: 0f) * 100).roundToInt()
+                                        val mb = downloadBytesPair
+                                        Text(
+                                            text = if (mb != null && mb.second > 0) {
+                                                "$pct% · ${"%.1f".format(mb.first / 1048576.0)} / ${"%.1f".format(mb.second / 1048576.0)} MB"
+                                            } else {
+                                                if (downloadProgress != null) "$pct%" else "准备下载…"
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
                                     }
                                 }
                                 if (downloadFailed) {
@@ -287,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                                     onClick = {
                                         isDownloading = true
                                         downloadProgress = 0f
+                                        downloadBytesPair = null
                                         downloadFailed = false
                                         scope.launch {
                                             // 点下载时才重拉云端 → 若我在 dialog 显示 0.4 后又发了 0.5，
@@ -300,6 +308,7 @@ class MainActivity : AppCompatActivity() {
                                             } else info
                                             val useUrl = useInfo.apkDownloadUrl ?: apkUrl
                                             val res = appUpdateManager.downloadApk(useUrl, useInfo.apkSizeBytes) { dl, tot ->
+                                                downloadBytesPair = if (tot != null && tot > 0) dl to tot else dl to (useInfo.apkSizeBytes ?: 0L)
                                                 if (tot != null && tot > 0) downloadProgress = dl.toFloat() / tot.toFloat()
                                             }
                                             isDownloading = false
@@ -356,11 +365,7 @@ class MainActivity : AppCompatActivity() {
                     onboarding.completed -> WanXiangNavHost(globalNavigationBus = globalNavigationBus)
                     else -> OnboardingScreen(onboardingViewModel)
                 }
-                // 全局 Git/下载 进度横幅（跨页面可见，用户切 tab 也不丢进度）
-                val apkDownloadProgress by appUpdateManager.downloadProgress.collectAsStateWithLifecycle()
-                apkDownloadProgress?.let { p ->
-                    top.wanxiang.app.ui.common.DownloadProgressBanner(progress = p)
-                }
+                // 下载进度不再挂全局顶部横幅——只呈现在更新对话框内部（用户操作页），见上方 updateInfo dialog。
                 // 全局 git 凭据弹窗宿主：容器 helper 走文件 IPC 请求凭据时，无论在哪个页面都能立即弹出。
                 top.wanxiang.app.ui.chat.GlobalCredentialDialogHost(gitCredentialIpcBridge)
                 }

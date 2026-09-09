@@ -133,6 +133,11 @@ fun GitPanel(
     recentCloneUrls: List<String> = emptyList(),
     onLoadMoreCommits: () -> Unit = {},
     onCommitFileDiff: (String, String) -> Unit = { _, _ -> },
+    gitOp: GitOpMessage = GitOpMessage.Idle,
+    onSwitchWorkspace: (String) -> Unit = {},
+    onRetryCloneClean: (String, String) -> Unit = { _, _ -> },
+    onUndoRename: (String, String) -> Unit = { _, _ -> },
+    onConsumeGitOp: () -> Unit = {},
 ) {
     if (state.diffPath != null) {
         GitDiffView(state, onBack = onClearDiff)
@@ -152,6 +157,52 @@ fun GitPanel(
     var newPatHost by rememberSaveable { mutableStateOf("github.com") }
     var newPatUser by rememberSaveable { mutableStateOf("") }
     var newPatToken by rememberSaveable { mutableStateOf("") }
+
+    // ===== Git 反馈 Snackbar 内嵌面板：用户在哪操作就在哪提示，不打扰背后的聊天页 =====
+    val gitSnackHost = remember { androidx.compose.material3.SnackbarHostState() }
+    val gitSnackContext = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(gitOp) {
+        val snapshot = gitOp
+        val isError: Boolean
+        val message: String
+        val action: GitOpAction?
+        when (snapshot) {
+            is GitOpMessage.Ok -> { isError = false; message = snapshot.message; action = snapshot.action }
+            is GitOpMessage.Error -> { isError = true; message = snapshot.message; action = snapshot.action }
+            else -> return@LaunchedEffect
+        }
+        run {
+            val actionLabel = when (action) {
+                is GitOpAction.SwitchWorkspaceTo -> "切过去"
+                is GitOpAction.RetryWithClean -> "清空再试"
+                is GitOpAction.UndoRename -> "撤销"
+                is GitOpAction.StashPop -> "还原 stash"
+                is GitOpAction.CopyError -> "复制"
+                is GitOpAction.RetrySame -> if (isError) null else "重试"
+                null -> if (isError) "复制错误" else null
+            }
+            val result = if (actionLabel != null) {
+                gitSnackHost.showSnackbar(message, actionLabel = actionLabel, duration = androidx.compose.material3.SnackbarDuration.Long)
+            } else {
+                gitSnackHost.showSnackbar(message, duration = androidx.compose.material3.SnackbarDuration.Long)
+            }
+            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                when (action) {
+                    is GitOpAction.SwitchWorkspaceTo -> onSwitchWorkspace(action.path)
+                    is GitOpAction.RetryWithClean -> onRetryCloneClean(action.url, action.targetDir)
+                    is GitOpAction.UndoRename -> onUndoRename(action.newName, action.oldName)
+                    is GitOpAction.StashPop -> onStashPop()
+                    else -> {}
+                }
+                // 错误（含无 action 兜底）→ 复制原文到剪贴板，方便粘给助手
+                if (isError && (action == null || action is GitOpAction.CopyError)) {
+                    val cm = gitSnackContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("git-error", message))
+                }
+            }
+            onConsumeGitOp()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -240,6 +291,15 @@ fun GitPanel(
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
+                // Git 操作反馈 Snackbar：常驻面板底部（notARepo 时 clone 失败也要看得见），
+                // 仓库态抬高 84dp 避开悬浮栏。
+                androidx.compose.material3.SnackbarHost(
+                    hostState = gitSnackHost,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = if (!state.loading && !state.notARepo && state.branch != null) 84.dp else 16.dp),
+                )
             }
         }
     }

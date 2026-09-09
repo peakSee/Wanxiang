@@ -331,7 +331,9 @@ fun ChatScreen(
     // Git 操作结果（克隆/拉取/推送）Snackbar 反馈：Busy 不显示 snackbar（面板已显 loading），
     // Ok/Error 显示 + 消费回 Idle 避免重播
     val gitOp by viewModel.gitOpMessage.collectAsStateWithLifecycle()
-    LaunchedEffect(gitOp) {
+    LaunchedEffect(gitOp, showGitPanel) {
+        // Git 面板打开时，反馈由面板内嵌 Snackbar 呈现（用户操作页），聊天层不抢。
+        if (showGitPanel) return@LaunchedEffect
         val snapshot = gitOp
         when (snapshot) {
             is top.wanxiang.app.ui.chat.GitOpMessage.Ok -> {
@@ -811,6 +813,11 @@ fun ChatScreen(
             recentCloneUrls = recentCloneUrls,
             onLoadMoreCommits = viewModel::loadMoreCommits,
             onCommitFileDiff = viewModel::loadCommitFileDiff,
+            gitOp = gitOp,
+            onSwitchWorkspace = viewModel::switchWorkspace,
+            onRetryCloneClean = viewModel::retryCloneAfterClean,
+            onUndoRename = viewModel::gitRenameBranch,
+            onConsumeGitOp = viewModel::consumeGitOpMessage,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onRevertAll = viewModel::gitRevertAllUnstaged,
