@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 class EnvironmentRepairer @Inject constructor(
     private val linuxRuntime: LinuxRuntime,
     private val environmentDoctor: EnvironmentDoctor,
+    private val logger: top.wanxiang.app.core.common.logging.AppLogger,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _progress = MutableStateFlow<RepairProgress?>(null)
@@ -62,6 +63,9 @@ class EnvironmentRepairer @Inject constructor(
         val logs = mutableListOf<String>()
 
         fun addLog(message: String) {
+            // 双写：UI 日志列表 + AppLogger（logcat WanXiang tag + 公共 Download/WanXiang/runtime.log）
+            // 让「开发者控制台 → 应用日志抓取」和用户直接拷 runtime.log 都能看到自愈全过程。
+            logger.i("[自愈] $message")
             logs.add(message)
             if (logs.size > 200) {
                 logs.removeAt(0)

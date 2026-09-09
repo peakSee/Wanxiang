@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 class EnvironmentDoctor @Inject constructor(
     @ApplicationContext private val context: Context? = null,
     private val linuxRuntime: LinuxRuntime,
+    private val logger: top.wanxiang.app.core.common.logging.AppLogger,
 ) {
     suspend fun check(): DoctorReport = withContext(Dispatchers.IO) {
         // 宿主侧权限检查：不依赖沙箱状态，两种路径都要展示
@@ -80,6 +81,16 @@ class EnvironmentDoctor @Inject constructor(
             errorCount > 0 -> DoctorStatus.ERROR
             warningCount > 0 -> DoctorStatus.WARNING
             else -> DoctorStatus.HEALTHY
+        }
+
+        // 全量写进 AppLogger（logcat WanXiang tag + 公共 Download/WanXiang/runtime.log）：
+        // 开发者控制台「应用日志抓取」/ 用户直接拷 runtime.log 都能看到体检明细，不必依赖 adb。
+        run {
+            logger.i("[体检] 总体=$overallStatus 健康=$healthyCount 豆=$warningCount 错=$errorCount")
+            items.filter { it.status != DoctorStatus.HEALTHY }.forEach { item ->
+                logger.i("[体检] ${item.title} [${item.status}] ${item.summary}" +
+                    (item.detail?.let { " | $it" } ?: ""))
+            }
         }
 
         DoctorReport(
