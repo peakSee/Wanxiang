@@ -144,14 +144,16 @@ class EnvironmentRepairer @Inject constructor(
                 write_kali() {
                     printf "deb %s kali-rolling main contrib non-free\n" "${'$'}1" > "${'$'}MIRRORS_FILE"
                 }
+                # apt 全程 ForceIPv4（手机 IPv6 半残导致 apt 静默等待是慢的头号元凶）+ 收包超时 15s
+                APTOPT="-o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1"
                 try_apt() {
                     rm -rf /var/lib/apt/lists/* 2>/dev/null || true
                     # 先绕开代理直连（国内镜像绝大多数家用网络可直连；死代理不该拖死 apt）
-                    if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null 2>&1; then
-                        echo "apt update 成功 (直连)"; return 0
+                    if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY DEBIAN_FRONTEND=noninteractive apt-get ${'$'}APTOPT update -y >/dev/null 2>&1; then
+                        echo "apt update 成功 (直连 IPv4)"; return 0
                     fi
                     # 直连不行再走用户代理
-                    if DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null 2>&1; then
+                    if DEBIAN_FRONTEND=noninteractive apt-get ${'$'}APTOPT update -y >/dev/null 2>&1; then
                         echo "apt update 成功 (经代理)"; return 0
                     fi
                     return 1
@@ -160,8 +162,8 @@ class EnvironmentRepairer @Inject constructor(
                     . /etc/os-release
                     if [ "${'$'}ID" = "ubuntu" ]; then
                         CN="${'$'}{VERSION_CODENAME:-noble}"
-                        for m in https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.aliyun.com/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if curl -fsS -m 8 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                        for m in https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
+                            if curl -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}m"
                                 write_ubuntu "${'$'}m" "${'$'}CN"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
@@ -176,7 +178,7 @@ class EnvironmentRepairer @Inject constructor(
                         CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
                             M=${'$'}{pair%% *}; S=${'$'}{pair##* }
-                            if curl -fsS -m 8 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if curl -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
                                 echo "探测可达: ${'$'}M"
                                 write_debian "${'$'}M" "${'$'}CN" "${'$'}S"
                                 if try_apt; then APT_OK="${'$'}M"; break; fi
@@ -185,8 +187,8 @@ class EnvironmentRepairer @Inject constructor(
                         [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败"
                         echo "最终 apt 源: ${'$'}APT_OK"
                     elif [ "${'$'}ID" = "kali" ]; then
-                        for m in https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.aliyun.com/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
-                            if curl -fsS -m 8 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
+                        for m in https://mirrors.aliyun.com/kali https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
+                            if curl -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
                                 write_kali "${'$'}m"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
                             fi
@@ -195,6 +197,8 @@ class EnvironmentRepairer @Inject constructor(
                         echo "最终 apt 源: ${'$'}APT_OK"
                     fi
                 fi
+                # 验证结果落盘：Step 3 据此跳过重复的 apt update（省 20-40s）
+                if [ -n "${'$'}APT_OK" ]; then echo "${'$'}APT_OK" > /tmp/.wanxiang_apt_ok; fi
             """.trimIndent()
             // 探测+逐镜像 apt 实测+官方兜底：最坏情况多个镜像各跑一次 update，给足 12 分钟
             executeCommand(mirrorScript, logs, timeoutMs = 720_000L)
@@ -211,8 +215,16 @@ class EnvironmentRepairer @Inject constructor(
                     logs = logs.toList(),
                 ),
             )
-            addLog("[Step 3/5] 执行 apt-get update 刷新索引")
-            val updateRes = executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive apt-get update -y", logs, timeoutMs = 120_000L)
+            addLog("[Step 3/5] 刷新 APT 索引（Step 2 已实测通过则跳过，节省 20-40s）")
+            // Step 2 的 try_apt 已成功实测过当前源 → 跳过重复 update；仅在 Step 2 未验证成功时补跑
+            val skipUpdate = executeCommand("test -s /tmp/.wanxiang_apt_ok && echo yes", mutableListOf(), timeoutMs = 5_000L)
+            val updateRes = if (skipUpdate.stdout.contains("yes")) {
+                addLog("Step 2 已验证源可用，跳过重复 apt-get update")
+                CommandResult(0, "", "", 0)
+            } else {
+                addLog("Step 2 未验证成功，补跑 apt-get update")
+                executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive apt-get update -y", logs, timeoutMs = 120_000L)
+            }
             if (!updateRes.isSuccess) {
                 addLog("提示: apt-get update 产生部分非致命提示")
             }
@@ -230,7 +242,7 @@ class EnvironmentRepairer @Inject constructor(
                 ),
             )
             addLog("[Step 4/5] 安装 ca-certificates, curl, git, tar, xz-utils, procps")
-            val installToolsCmd = "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl git tar xz-utils procps"
+            val installToolsCmd = "DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps"
             val installToolsRes = executeCommand(installToolsCmd, logs, timeoutMs = 180_000L)
             if (!installToolsRes.isSuccess) {
                 addLog("警告: 基础工具链安装异常: ${installToolsRes.stderr.ifBlank { installToolsRes.stdout }}")
