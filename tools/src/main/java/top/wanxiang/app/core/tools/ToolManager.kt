@@ -482,10 +482,13 @@ class ToolManager @Inject constructor(
                         "flutter" in step -> "正在拉取并配置 Flutter SDK 跨端开发环境..."
                         else -> "正在执行环境准备步骤..."
                     }
-                    // 重型下载型脚本 (SDK 平台包 ~60MB / Gradle ~120MB / Flutter SDK git clone) 放宽超时
+                    // 重型下载型脚本 (SDK 平台包 ~60MB / Gradle ~120MB / Flutter SDK git clone) 放宽超时；
+                    // apt-get install 聚合步（openjdk 等 ~150-200MB）单独 30 分钟档——
+                    // Android 核心环境第 7 步 10 分钟超时不够用（用户实测 timeout）。
                     val stepTimeoutMs = when {
                         "/opt/wanxiang/scripts/" in step ||
                             "setup_android_core.sh" in step || "setup_flutter.sh" in step -> HEAVY_SETUP_STEP_TIMEOUT_MS
+                        "apt-get" in step && " install " in step -> APT_INSTALL_STEP_TIMEOUT_MS
                         else -> DEFAULT_STEP_TIMEOUT_MS
                     }
                     val stepLabel = "[步骤 ${index + 1}/${steps.size}] $shortDesc"
@@ -1108,6 +1111,9 @@ class ToolManager @Inject constructor(
         // unpacking or compiling on slower ARM devices. A three-minute default
         // incorrectly aborts valid installs before the script can finish.
         const val DEFAULT_STEP_TIMEOUT_MS = 10 * 60_000L
+
+        /** apt-get install 聚合步超时：openjdk-17 全家桶 ~150-200MB，慢网络 10 分钟不够（实测超时过） */
+        const val APT_INSTALL_STEP_TIMEOUT_MS = 30 * 60_000L
 
         /** 重型下载型脚本 (Android SDK 平台包 / Gradle / Flutter SDK / JADX) 的超时，与 GenericRecipeInstaller 对齐 */
         const val HEAVY_SETUP_STEP_TIMEOUT_MS = 45 * 60_000L

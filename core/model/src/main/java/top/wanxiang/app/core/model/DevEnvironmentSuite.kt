@@ -209,9 +209,10 @@ object BuiltinPluginBundles {
         //    整批失败时降级为 --ignore-missing，避免个别发行版缺包导致全部装不上）
         if (allAptPackages.isNotEmpty()) {
             val packageArg = allAptPackages.joinToString(" ")
-            // Runtime configures TUNA ubuntu-ports/debian mirrors. Keep apt
+            // Runtime configures domestic mirrors (aliyun default). Keep apt
             // retries bounded so a slow mirror does not stall the whole suite.
-            val aptOpts = "-o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+            // ForceIPv4：手机 IPv6 半残时 apt 静默干等的头号元凶；Languages=en 跳过翻译文件。
+            val aptOpts = "-o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::ForceIPv4=true -o Acquire::Languages=en"
             steps.add("DEBIAN_FRONTEND=noninteractive apt-get $aptOpts update -y || true")
             steps.add("DEBIAN_FRONTEND=noninteractive apt-get $aptOpts install -y --no-install-recommends $packageArg || DEBIAN_FRONTEND=noninteractive apt-get $aptOpts -f install -y --no-install-recommends && DEBIAN_FRONTEND=noninteractive apt-get $aptOpts install -y --no-install-recommends $packageArg")
         }
