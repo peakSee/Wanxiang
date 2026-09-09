@@ -809,6 +809,8 @@ fun ChatScreen(
             progress = gitProgress,
             onCancelProgress = viewModel::cancelGitOp,
             recentCloneUrls = recentCloneUrls,
+            onLoadMoreCommits = viewModel::loadMoreCommits,
+            onCommitFileDiff = viewModel::loadCommitFileDiff,
             onConfigIdentity = viewModel::gitConfigIdentity,
             onRevert = viewModel::gitRevert,
             onRevertAll = viewModel::gitRevertAllUnstaged,

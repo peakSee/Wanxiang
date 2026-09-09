@@ -370,14 +370,13 @@ class ChatViewModel @Inject constructor(
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
             val tags = runGitRead(ws, "git tag --list")
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
-            val commits = runGitRead(ws, "git log --pretty=format:%h%x1f%s%x1f%an%x1f%ar -30")
-                ?.lines()?.filter { it.isNotBlank() } ?: emptyList()
+            val graph = buildFreshGraph(ws)
             val hasIdentity = runGitRead(ws, "git config user.name")?.isNotBlank() == true &&
                 runGitRead(ws, "git config user.email")?.isNotBlank() == true
             val hasRemote = runGitRead(ws, "git remote")?.isNotBlank() == true
             val stashCount = runGitRead(ws, "git stash list")
                 ?.lines()?.count { it.isNotBlank() } ?: 0
-            _gitPanelState.value = GitPanelState(
+            _gitPanelState.value = _gitPanelState.value.copy(
                 loading = false,
                 branch = branch,
                 aheadBehind = aheadBehind,
@@ -388,10 +387,89 @@ class ChatViewModel @Inject constructor(
                 localBranches = localBranches,
                 remoteBranches = remoteBranches,
                 tags = tags,
-                commits = commits,
+                graph = graph,
+                commitFiles = emptyMap(),
                 hasIdentity = hasIdentity,
                 hasRemote = hasRemote,
+                // 与原"新建 GitPanelState"语义一致：刷新清一次性视图态
+                diffPath = null,
+                diffText = null,
+                diffLoading = false,
+                commitDetailHash = null,
+                commitDetailText = null,
+                commitDetailLoading = false,
+                loadingCommit = null,
+                graphLoadingMore = false,
+                pullDirtyConfirm = false,
+                pendingCheckout = null,
+                error = null,
             )
+        }
+    }
+
+    /** 分页游标：已加载的图提交（新→旧）与全量 refs 映射（refresh 时重置）。 */
+    private var loadedGraphCommits: List<top.wanxiang.app.ui.chat.git.GraphCommit> = emptyList()
+    private var graphRefsByCommit: Map<String, List<top.wanxiang.app.ui.chat.git.GitGraphRef>> = emptyMap()
+
+    /** 解析 `git for-each-ref` → hash→refs 映射（本地/远程分支 + 标签，一次命令拿全）。 */
+    private suspend fun loadGraphRefs(ws: String): Map<String, List<top.wanxiang.app.ui.chat.git.GitGraphRef>> {
+        val raw = runGitRead(
+            ws,
+            "git for-each-ref --format=\"%(refname)%09%(objectname)%09%(*objectname)%09%(HEAD)\" refs/heads refs/remotes refs/tags",
+        ) ?: return emptyMap()
+        val map = mutableMapOf<String, MutableList<top.wanxiang.app.ui.chat.git.GitGraphRef>>()
+        for (line in raw.lines()) {
+            val parts = line.split('\t')
+            if (parts.size < 3) continue
+            val full = parts[0]
+            // 附注标签的 objectname 指向 tag 对象，peeled 的 *objectname 才是提交哈希。
+            val hash = parts[2].ifBlank { parts[1] }.trim()
+            if (hash.length < 7) continue
+            val short = full.removePrefix("refs/heads/").removePrefix("refs/remotes/").removePrefix("refs/tags/")
+            val isRemote = full.startsWith("refs/remotes/")
+            val isBranch = full.startsWith("refs/heads/") || isRemote
+            val isCurrent = parts.size > 3 && parts[3] == "*" && full.startsWith("refs/heads/")
+            map.getOrPut(hash) { mutableListOf() } += top.wanxiang.app.ui.chat.git.GitGraphRef(
+                name = short, isBranch = isBranch, isCurrent = isCurrent, isRemote = isRemote,
+            )
+        }
+        return map
+    }
+
+    /** 重拉第一页（30 条）并组装拓扑图；分页游标重置。 */
+    private suspend fun buildFreshGraph(ws: String): top.wanxiang.app.ui.chat.git.GitGraph {
+        val logRaw = runGitRead(ws, "git log --pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%P%x1f%b%x1f%s%x1e -30") ?: ""
+        loadedGraphCommits = top.wanxiang.app.ui.chat.git.GitGraphBuilder.parseGraphCommits(logRaw)
+        graphRefsByCommit = loadGraphRefs(ws)
+        android.util.Log.i(
+            "GitGraph",
+            "fresh ws=$ws rawLen=${logRaw.length} hasSep=${logRaw.contains('\u001f')} commits=${loadedGraphCommits.size} refs=${graphRefsByCommit.size} " +
+                "head=${logRaw.take(40)}",
+        )
+        return top.wanxiang.app.ui.chat.git.GitGraphBuilder.buildGraph(
+            loadedGraphCommits, graphRefsByCommit, hasMore = loadedGraphCommits.size >= 30,
+        )
+    }
+
+    /** 上拉加载更早提交（--skip 分页，AiCode graphAppend 语义）。 */
+    fun loadMoreCommits() {
+        val st = _gitPanelState.value
+        if (st.graphLoadingMore || !st.graph.hasMore) return
+        _gitPanelState.value = st.copy(graphLoadingMore = true)
+        viewModelScope.launch(Dispatchers.IO) {
+            val ws = currentGitWs()
+            val skip = loadedGraphCommits.size
+            val raw = runGitRead(
+                ws,
+                "git log --skip=$skip --pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%P%x1f%b%x1f%s%x1e -30",
+            ) ?: ""
+            val more = top.wanxiang.app.ui.chat.git.GitGraphBuilder.parseGraphCommits(raw)
+            val seen = loadedGraphCommits.mapTo(HashSet()) { it.hash }
+            loadedGraphCommits = loadedGraphCommits + more.filter { it.hash !in seen }
+            val graph = top.wanxiang.app.ui.chat.git.GitGraphBuilder.buildGraph(
+                loadedGraphCommits, graphRefsByCommit, hasMore = more.size >= 30,
+            )
+            _gitPanelState.value = _gitPanelState.value.copy(graph = graph, graphLoadingMore = false)
         }
     }
 
@@ -1113,21 +1191,54 @@ class ChatViewModel @Inject constructor(
     private fun currentGitWs(): String =
         workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
 
+    /**
+     * 打开提交详情（AiCode 弹层语义）：commitFiles 缓存优先，未加载则
+     * `git show --name-status` 拉该提交改动文件清单。
+     */
     fun loadCommitDetail(hash: String) {
-        val ws = workspace.value.ifBlank { "/workspace" }.let { if (it.startsWith("/")) it else "/workspace/$it" }
-        _gitPanelState.value = _gitPanelState.value.copy(commitDetailHash = hash, commitDetailText = null, commitDetailLoading = true)
+        val ws = currentGitWs()
+        _gitPanelState.value = _gitPanelState.value.copy(commitDetailHash = hash, loadingCommit = hash)
+        if (_gitPanelState.value.commitFiles.containsKey(hash)) {
+            _gitPanelState.value = _gitPanelState.value.copy(loadingCommit = null)
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
-            val detail = runGitRead(ws, "git show --stat --format=fuller $hash")
+            val raw = runGitRead(ws, "git show --name-status --format= $hash") ?: ""
+            val files = raw.lines().mapNotNull { line ->
+                val parts = line.trimEnd().split('\t')
+                if (parts.size < 2) return@mapNotNull null
+                val code = parts[0].firstOrNull()?.uppercaseChar() ?: return@mapNotNull null
+                // 重命名 R100 旧路径 新路径：取末段（新路径）
+                GitFileChange(code, parts.last().trim())
+            }
             _gitPanelState.value = _gitPanelState.value.copy(
-                commitDetailHash = hash,
-                commitDetailText = detail ?: "无法读取该提交",
-                commitDetailLoading = false,
+                commitFiles = _gitPanelState.value.commitFiles + (hash to files),
+                loadingCommit = null,
+            )
+        }
+    }
+
+    /** 详情弹层里点文件：进全屏 diff（`git diff <hash>^ <hash> -- path`；根提交回退 git show）。 */
+    fun loadCommitFileDiff(hash: String, path: String) {
+        val ws = currentGitWs()
+        _gitPanelState.value = _gitPanelState.value.copy(diffPath = "$hash · $path", diffText = null, diffLoading = true)
+        viewModelScope.launch(Dispatchers.IO) {
+            var diff = runGitRead(ws, "git diff $hash^ $hash -- ${shellQuote(path)}")
+            if (diff == null || diff.startsWith("fatal:")) {
+                // 根提交没有 hash^，回退 git show
+                diff = runGitRead(ws, "git show $hash --format= -- ${shellQuote(path)}")
+            }
+            _gitPanelState.value = _gitPanelState.value.copy(
+                diffText = diff?.takeIf { it.isNotBlank() } ?: "（无差异输出或为二进制文件）",
+                diffLoading = false,
             )
         }
     }
 
     fun clearCommitDetail() {
-        _gitPanelState.value = _gitPanelState.value.copy(commitDetailHash = null, commitDetailText = null, commitDetailLoading = false)
+        _gitPanelState.value = _gitPanelState.value.copy(
+            commitDetailHash = null, commitDetailText = null, commitDetailLoading = false, loadingCommit = null,
+        )
     }
 
     private fun runGitWrite(cmd: String) {
@@ -2311,7 +2422,14 @@ data class GitPanelState(
     val localBranches: List<String> = emptyList(),
     val remoteBranches: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val commits: List<String> = emptyList(),
+    /** AiCode 风格提交拓扑图（泳道/边/refs）。 */
+    val graph: top.wanxiang.app.ui.chat.git.GitGraph = top.wanxiang.app.ui.chat.git.GitGraph.EMPTY,
+    /** hash → 该提交改动文件清单（点开详情时懒加载缓存）。 */
+    val commitFiles: Map<String, List<GitFileChange>> = emptyMap(),
+    /** 分页拉取更早提交中。 */
+    val graphLoadingMore: Boolean = false,
+    /** 正在加载文件清单的提交 hash。 */
+    val loadingCommit: String? = null,
     val hasIdentity: Boolean = false,
     val hasRemote: Boolean = false,
     /** 当前 `git stash list` 条数（>0 时可 pop）。 */

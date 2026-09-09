@@ -17,7 +17,7 @@ enum class RuntimeIconName {
     // 官方精准品牌与系统/框架 Logo
     Linux, Debian, Ubuntu, Arch, Kali, Fedora, Alpine, Void,
     Android, Flutter,
-    Github, Qq, GitBranch,
+    Github, Qq, GitBranch, Activity, GitCommit, Tag, Cloud,
     Bot, Palette, FontSize, Battery, Bug, Update, Extension, Hub, Mount, OpenInNew, Key, Tune,
     Brain, Sparkles, Vibrate, FolderDownload, Document, SdCard, Server, Compress,
     Prompt, Wrench, Model, Network, Community, FolderOpen, Speed, Cable, Admin, Link,
@@ -88,6 +88,10 @@ fun RuntimeIcon(
         RuntimeIconName.Flutter -> R.drawable.components_ic_logo_flutter
         RuntimeIconName.Github -> R.drawable.components_ic_github
         RuntimeIconName.GitBranch -> R.drawable.components_ic_gitbranch
+        RuntimeIconName.Activity -> R.drawable.components_ic_activity
+        RuntimeIconName.GitCommit -> R.drawable.components_ic_gitcommit
+        RuntimeIconName.Tag -> R.drawable.components_ic_tag
+        RuntimeIconName.Cloud -> R.drawable.components_ic_cloud
         RuntimeIconName.Qq -> R.drawable.components_ic_qq
         RuntimeIconName.Bot -> R.drawable.components_ic_bot
         RuntimeIconName.Palette -> R.drawable.components_ic_palette

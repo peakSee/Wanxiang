@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package top.wanxiang.app.ui.chat
 
 import androidx.activity.compose.BackHandler
@@ -59,7 +61,20 @@ import top.wanxiang.app.ui.components.RuntimeIconButton
 import top.wanxiang.app.ui.components.RuntimeIconName
 import top.wanxiang.app.ui.components.RuntimeOutlinedButton
 import top.wanxiang.app.ui.components.RuntimeTextButton
+import top.wanxiang.app.ui.components.GitTokens
+import top.wanxiang.app.ui.components.gitCardSurface
+import top.wanxiang.app.ui.components.gitSubtleBorder
+import top.wanxiang.app.ui.components.gitSubtleText
 import top.wanxiang.app.ui.components.RuntimeTopBar
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 /**
  * Git 页面（全屏）：RuntimeTopBar 顶栏 + 状态/分支/历史 三 Tab。
@@ -116,17 +131,17 @@ fun GitPanel(
     progress: top.wanxiang.app.ui.chat.GitProgress? = null,
     onCancelProgress: () -> Unit = {},
     recentCloneUrls: List<String> = emptyList(),
+    onLoadMoreCommits: () -> Unit = {},
+    onCommitFileDiff: (String, String) -> Unit = { _, _ -> },
 ) {
-    if (state.commitDetailHash != null) {
-        GitCommitDetailView(state, onBack = onClearCommitDetail)
-        return
-    }
     if (state.diffPath != null) {
         GitDiffView(state, onBack = onClearDiff)
         return
     }
     BackHandler(onBack = onDismiss)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    /** AiCode 布局：凭据/署名从第 4 个 tab 改为顶栏 🔑 图标进入的子页面。 */
+    var showCredentialsPage by rememberSaveable { mutableStateOf(false) }
     var showCredentialDialog by rememberSaveable { mutableStateOf(false) }
     var credentialName by rememberSaveable { mutableStateOf("") }
     var credentialEmail by rememberSaveable { mutableStateOf("") }
@@ -144,48 +159,34 @@ fun GitPanel(
             .background(MaterialTheme.colorScheme.background),
     ) {
         RuntimeTopBar(
-            title = stringResource(R.string.chat_git_panel_title),
-            onBack = onDismiss,
-            statusText = state.branch?.let { b ->
+            title = if (showCredentialsPage) "凭据与署名" else stringResource(R.string.chat_git_panel_title),
+            onBack = { if (showCredentialsPage) showCredentialsPage = false else onDismiss() },
+            statusText = if (showCredentialsPage) null else state.branch?.let { b ->
                 val ab = state.aheadBehind?.let { (a, bh) -> "  ↑$a ↓$bh" } ?: ""
                 val n = state.staged.size + state.unstaged.size + state.untracked.size
                 val badge = if (n > 0) "  ● $n" else ""
                 "$b$ab$badge"
             },
             actions = {
-                RuntimeIconButton(onClick = { showCredentialDialog = true }) {
-                    RuntimeIcon(RuntimeIconName.Key, Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                RuntimeIconButton(onClick = onRefresh, enabled = !state.loading) {
-                    RuntimeIcon(RuntimeIconName.Refresh, Modifier.size(18.dp), MaterialTheme.colorScheme.primary)
+                if (!showCredentialsPage) {
+                    RuntimeIconButton(onClick = { showCredentialsPage = true }) {
+                        RuntimeIcon(RuntimeIconName.Key, Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    RuntimeIconButton(onClick = onRefresh, enabled = !state.loading) {
+                        RuntimeIcon(RuntimeIconName.Refresh, Modifier.size(18.dp), MaterialTheme.colorScheme.primary)
+                    }
                 }
             },
         )
 
-        TabRow(selectedTabIndex = selectedTab, containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("状态") })
-            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("分支") })
-            Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("历史") })
-            Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("凭证") })
-        }
-        // Git 流式进度内嵌在面板顶部（用户在 panel 里点 clone/pull/push，不用回 chat 主页面看）
-        progress?.let { p ->
-            GitProgressBanner(progress = p, onCancel = onCancelProgress)
-        }
-
-        // 横向 Pager：左右滑切换 4 页；TabRow 与 Pager 双向同步。
-        // 每一页自己处理"仓库状态不足"分支（凭证页永远可用；其它三页无仓库时显示 NotARepoView）
-        val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = selectedTab) { 4 }
-        LaunchedEffect(pagerState.currentPage) { selectedTab = pagerState.currentPage }
-        LaunchedEffect(selectedTab) {
-            if (pagerState.currentPage != selectedTab) pagerState.animateScrollToPage(selectedTab)
-        }
-        androidx.compose.foundation.pager.HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-        ) { page ->
-            when (page) {
-                3 -> CredentialsTab(
+        if (showCredentialsPage) {
+            // 凭据子页：署名配置卡 + PAT 列表（AiCode「凭据与署名」页等价物）
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                IdentityCard(
+                    hasIdentity = state.hasIdentity,
+                    onEdit = { showCredentialDialog = true },
+                )
+                CredentialsTab(
                     credentials = credentials,
                     onAdd = { showAddPatDialog = true },
                     onDelete = onDeleteCredential,
@@ -193,18 +194,51 @@ fun GitPanel(
                     onVerify = onVerifyCredential,
                     onVerifyAll = onVerifyAllCredentials,
                 )
-                else -> when {
-                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+            }
+        } else {
+            // Git 流式进度内嵌在面板顶部（用户在 panel 里点 clone/pull/push，不用回 chat 主页面看）
+            progress?.let { p ->
+                GitProgressBanner(progress = p, onCancel = onCancelProgress)
+            }
+
+            // AiCode 布局：3 页 HorizontalPager + 底部悬浮 FloatingTabBar（状态/分支/提交）
+            val panelScope = rememberCoroutineScope()
+            val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = selectedTab.coerceAtMost(2)) { 3 }
+            LaunchedEffect(pagerState.currentPage) { selectedTab = pagerState.currentPage }
+            LaunchedEffect(selectedTab) {
+                if (pagerState.currentPage != selectedTab) pagerState.animateScrollToPage(selectedTab)
+            }
+            Box(Modifier.fillMaxSize()) {
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
+                    when {
+                        state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+                        }
+                        state.notARepo || state.branch == null -> NotARepoView(
+                            onInit = onInitRepo,
+                            onOpenClone = { showCloneDialog = true },
+                        )
+                        state.error != null -> CenterHint(state.error, isError = true)
+                        page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate, onStash, onStashPop)
+                        page == 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
+                        page == 2 -> LogTab(state, onCommitDetail = onCommitDetail, onCloseCommit = onClearCommitDetail, onCommitFileDiff = onCommitFileDiff, onLoadMore = onLoadMoreCommits)
                     }
-                    state.notARepo || state.branch == null -> NotARepoView(
-                        onInit = onInitRepo,
-                        onOpenClone = { showCloneDialog = true },
+                }
+                if (!state.loading && !state.notARepo && state.branch != null) {
+                    top.wanxiang.app.ui.components.FloatingTabBar(
+                        selected = pagerState.currentPage,
+                        onSelect = { panelScope.launch { pagerState.animateScrollToPage(it) } },
+                        items = listOf(
+                            top.wanxiang.app.ui.components.FloatingTabItem(top.wanxiang.app.ui.components.RuntimeIconName.Activity, "状态"),
+                            top.wanxiang.app.ui.components.FloatingTabItem(top.wanxiang.app.ui.components.RuntimeIconName.GitBranch, "分支"),
+                            top.wanxiang.app.ui.components.FloatingTabItem(top.wanxiang.app.ui.components.RuntimeIconName.GitCommit, "提交"),
+                        ),
+                        maskColor = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.align(Alignment.BottomCenter),
                     )
-                    state.error != null -> CenterHint(state.error, isError = true)
-                    page == 0 -> StatusTab(state, onFileDiff, onStage, onUnstage, onStageAll, onUnstageAll, onCommit, onPull, onPush, onRevert, onRevertAll, onDeleteUntracked, aiCommit, onAiGenerate, onStash, onStashPop)
-                    page == 1 -> BranchesTab(state, onCheckout, onCreateBranch, onDeleteBranch, onRenameBranch, onDeleteRemoteBranch, onCreateTag, onDeleteTag)
-                    page == 2 -> LogTab(state, onCommitDetail)
                 }
             }
         }
@@ -586,23 +620,6 @@ private fun GitDiffView(state: GitPanelState, onBack: () -> Unit) {
             }
         } else {
             DiffText(state.diffText ?: "")
-        }
-    }
-}
-
-@Composable
-private fun GitCommitDetailView(state: GitPanelState, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
-    Column(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-    ) {
-        RuntimeTopBar(title = state.commitDetailHash ?: "", onBack = onBack)
-        if (state.commitDetailLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                RuntimeCircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
-            }
-        } else {
-            DiffText(state.commitDetailText ?: "")
         }
     }
 }
@@ -1114,93 +1131,434 @@ private fun BranchesTab(
     }
 }
 
-// ======================= 历史 Tab =======================
+// ======================= 提交 Tab（AiCode 拓扑图版） =======================
 
 @Composable
-private fun LogTab(state: GitPanelState, onCommitDetail: (String) -> Unit) {
-    if (state.commits.isEmpty()) {
-        CenterHint("还没有提交历史", icon = RuntimeIconName.GitBranch)
+private fun LogTab(
+    state: GitPanelState,
+    onCommitDetail: (String) -> Unit,
+    onCloseCommit: () -> Unit,
+    onCommitFileDiff: (String, String) -> Unit,
+    onLoadMore: () -> Unit,
+) {
+    val graph = state.graph
+    val commits = graph.commits
+    if (commits.isEmpty()) {
+        CenterHint("还没有提交历史", icon = RuntimeIconName.GitCommit)
         return
     }
-    LazyColumn(Modifier.fillMaxSize()) {
-        itemsIndexed(state.commits) { index, commit ->
-            val parts = commit.split('\u001f')
-            val hash = parts.getOrNull(0) ?: ""
-            val subject = parts.getOrNull(1) ?: ""
-            val author = parts.getOrNull(2) ?: ""
-            val date = parts.getOrNull(3) ?: ""
-            val avatarColor = colorForAuthor(author)
-            val isLast = index == state.commits.lastIndex
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { onCommitDetail(hash) }.padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // 左侧：竖线 + 头像圆点
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier.width(30.dp).fillMaxHeight(),
-                    contentAlignment = Alignment.TopCenter,
+    val laneColors = remember(graph.maxLane) {
+        (0..graph.maxLane).map { GitTokens.laneColors[it % GitTokens.laneColors.size] }
+    }
+    val edgesByCommit = remember(graph) { groupEdgesByCommit(graph) }
+    // 线性历史收紧泳道宽度；有分叉每泳道 16dp（AiCode 同参数）。
+    val laneWidth = if (graph.maxLane == 0) 10.dp else 16.dp
+    val canvasWidth = laneWidth * (graph.maxLane + 1) + 8.dp
+    val rowHeight = 72.dp
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // 预拉取：滑到剩 20 项时后台取下一页（AiCode 同阈值）。
+    val shouldLoadMore by remember {
+        androidx.compose.runtime.derivedStateOf {
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItems = listState.layoutInfo.totalItemsCount
+            totalItems > 0 && lastVisible >= totalItems - 20
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore && graph.hasMore && !state.graphLoadingMore) onLoadMore()
+    }
+    val cardColor = gitCardSurface()
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            "提交记录 (${commits.size})",
+            style = MaterialTheme.typography.labelLarge,
+            color = gitSubtleText(),
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
+        )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            state = listState,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 70.dp),
+        ) {
+            itemsIndexed(commits, key = { _, c -> c.hash }) { index, c ->
+                val shape = when {
+                    index == 0 && commits.size == 1 && !graph.hasMore -> RoundedCornerShape(14.dp)
+                    index == 0 -> RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
+                    index == commits.lastIndex && !graph.hasMore -> RoundedCornerShape(bottomStart = 14.dp, bottomEnd = 14.dp)
+                    else -> androidx.compose.ui.graphics.RectangleShape
+                }
+                Surface(
+                    color = cardColor,
+                    shape = shape,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (!isLast) {
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .offset(y = 28.dp)
-                                .width(2.dp)
-                                .height(60.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        ) {}
-                    }
-                    Surface(
-                        modifier = Modifier.size(24.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = avatarColor,
+                    GraphCommitRow(
+                        commit = c,
+                        lane = graph.lanes[c.hash] ?: 0,
+                        edges = edgesByCommit[index].orEmpty(),
+                        activeTopLanes = graph.activeTopLanes[c.hash].orEmpty(),
+                        activeBottomLanes = graph.activeBottomLanes[c.hash].orEmpty(),
+                        laneColors = laneColors,
+                        canvasWidth = canvasWidth,
+                        laneWidth = laneWidth,
+                        rowHeight = rowHeight,
+                        refs = graph.refs[c.hash].orEmpty(),
+                        isTopTerminal = index == 0,
+                        onOpen = { onCommitDetail(c.hash) },
+                    )
+                }
+            }
+            item(key = "footer") {
+                Surface(
+                    color = cardColor,
+                    shape = RoundedCornerShape(bottomStart = 14.dp, bottomEnd = 14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        if (graph.hasMore) {
+                            if (state.graphLoadingMore) {
+                                CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("上拉加载更早提交", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        } else {
+                            Text("没有更多了", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 提交详情弹层（不打断列表布局，泳道保持完整）
+    state.commitDetailHash?.let { hash ->
+        val commit = graph.commits.find { it.hash == hash }
+        if (commit != null) {
+            CommitDetailSheet(
+                commit = commit,
+                files = state.commitFiles[hash],
+                loading = state.loadingCommit == hash && state.commitFiles[hash] == null,
+                onDismiss = onCloseCommit,
+                onFileDiff = { path -> onCommitFileDiff(commit.hash, path) },
+            )
+        }
+    }
+}
+
+@androidx.compose.material3.ExperimentalMaterial3Api
+@Composable
+private fun CommitDetailSheet(
+    commit: top.wanxiang.app.ui.chat.git.GraphCommit,
+    files: List<GitFileChange>?,
+    loading: Boolean,
+    onDismiss: () -> Unit,
+    onFileDiff: (String) -> Unit,
+) {
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState()
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(commit.message, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            if (commit.body.isNotBlank()) {
+                Text(commit.body.trim(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(
+                "${commit.author} · ${commit.date}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    commit.hash,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+                RuntimeTextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(commit.shortHash)) }) {
+                    Text("复制短哈希", style = MaterialTheme.typography.labelMedium)
+                }
+                RuntimeTextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(commit.hash)) }) {
+                    Text("复制完整哈希", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            if (commit.isMerge) {
+                Text("合并提交", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+            }
+            Spacer(Modifier.height(4.dp))
+            when {
+                loading -> Text("正在加载改动文件…", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                files == null -> Unit
+                files.isEmpty() -> Text("该提交无文件改动", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> {
+                    Text("改动 ${files.size} 个文件", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    files.forEach { file ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onFileDiff(file.path) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StatusChip(file.status)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    file.path.substringAfterLast('/'),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                                val dir = file.path.substringBeforeLast('/', "")
+                                if (dir.isNotEmpty()) {
+                                    Text(
+                                        dir,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = gitSubtleBorder(), thickness = 0.5.dp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GraphCommitRow(
+    commit: top.wanxiang.app.ui.chat.git.GraphCommit,
+    lane: Int,
+    edges: List<top.wanxiang.app.ui.chat.git.GraphEdge>,
+    activeTopLanes: List<Int>,
+    activeBottomLanes: List<Int>,
+    laneColors: List<Color>,
+    canvasWidth: androidx.compose.ui.unit.Dp,
+    laneWidth: androidx.compose.ui.unit.Dp,
+    rowHeight: androidx.compose.ui.unit.Dp,
+    refs: List<top.wanxiang.app.ui.chat.git.GitGraphRef>,
+    isTopTerminal: Boolean,
+    onOpen: () -> Unit,
+) {
+    val nodeColor = laneColors.getOrElse(lane) { Color.Gray }
+    Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                .heightIn(min = rowHeight)
+                .clickable(onClick = onOpen),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GraphCanvas(
+                edges = edges,
+                activeTopLanes = activeTopLanes,
+                activeBottomLanes = activeBottomLanes,
+                lane = lane,
+                isMerge = commit.isMerge,
+                laneColors = laneColors,
+                canvasWidth = canvasWidth,
+                laneWidth = laneWidth,
+                suppressTopLane = isTopTerminal,
+                modifier = Modifier.width(canvasWidth).fillMaxHeight(),
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 8.dp)
+                    .padding(end = 16.dp),
+            ) {
+                if (refs.isNotEmpty()) {
+                    RefPills(refs = refs)
+                    Spacer(Modifier.height(4.dp))
+                }
+                Row(verticalAlignment = Alignment.Top) {
+                    RuntimeIcon(
+                        RuntimeIconName.ChevronRight,
+                        Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            commit.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(color = nodeColor.copy(alpha = 0.15f), shape = RoundedCornerShape(999.dp)) {
+                                Text(
+                                    commit.shortHash,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = nodeColor,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    maxLines = 1,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
                             Text(
-                                author.take(1).uppercase().ifBlank { "?" },
-                                color = Color.White,
+                                commit.author,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                commit.date,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
                             )
                         }
                     }
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            }
+        }
+        HorizontalDivider(
+            color = gitSubtleBorder(),
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(start = canvasWidth + 12.dp),
+        )
+    }
+}
+
+/** 拓扑图 Canvas：分段竖线 + 跨列贝塞尔 + 节点（合并双圈）。AiCode 原版移植。 */
+@Composable
+private fun GraphCanvas(
+    edges: List<top.wanxiang.app.ui.chat.git.GraphEdge>,
+    activeTopLanes: List<Int>,
+    activeBottomLanes: List<Int>,
+    lane: Int,
+    isMerge: Boolean,
+    laneColors: List<Color>,
+    canvasWidth: androidx.compose.ui.unit.Dp,
+    laneWidth: androidx.compose.ui.unit.Dp,
+    suppressTopLane: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    val nodeColor = laneColors.getOrElse(lane) { Color.Gray }
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val lanePx = laneWidth.toPx()
+        val padPx = 4.dp.toPx()
+        val centerX = lane * lanePx + lanePx / 2f + padPx
+        val centerY = size.height / 2f
+        val stroke = 2.5.dp.toPx()
+
+        val allLanes = (activeTopLanes + activeBottomLanes + lane).toSet()
+        val crossEdgeToLanes = edges.filter { it.fromLane != it.toLane }.map { it.toLane }.toSet()
+        val curveBotLanes = crossEdgeToLanes.filterNot { it in activeTopLanes }.toSet()
+
+        for (l in allLanes) {
+            val inTop = l in activeTopLanes
+            val inBot = l in activeBottomLanes && l !in curveBotLanes
+            val color = laneColors.getOrElse(l) { Color.Gray }
+            val x = l * lanePx + lanePx / 2f + padPx
+            if (inTop && inBot) {
+                if (suppressTopLane) {
+                    drawLine(color, Offset(x, centerY), Offset(x, size.height.toFloat()), strokeWidth = stroke, cap = StrokeCap.Round)
+                } else {
+                    drawLine(color, Offset(x, 0f), Offset(x, size.height.toFloat()), strokeWidth = stroke, cap = StrokeCap.Round)
+                }
+            } else if (inTop) {
+                if (!suppressTopLane) {
+                    drawLine(color, Offset(x, 0f), Offset(x, centerY), strokeWidth = stroke, cap = StrokeCap.Round)
+                }
+            } else if (inBot) {
+                drawLine(color, Offset(x, centerY), Offset(x, size.height.toFloat()), strokeWidth = stroke, cap = StrokeCap.Round)
+            }
+        }
+
+        for (edge in edges) {
+            if (edge.fromLane == edge.toLane) continue
+            val color = laneColors.getOrElse(edge.lane) { Color.Gray }
+            val fromX = edge.fromLane * lanePx + lanePx / 2f + padPx
+            val toX = edge.toLane * lanePx + lanePx / 2f + padPx
+            val midY = centerY + (size.height - centerY) * 0.5f
+            val path = androidx.compose.ui.graphics.Path().apply {
+                if (edge.isMergeIn) {
+                    moveTo(toX, size.height.toFloat())
+                    cubicTo(toX, midY, fromX, midY, fromX, centerY)
+                } else {
+                    moveTo(fromX, centerY)
+                    cubicTo(fromX, midY, toX, midY, toX, size.height.toFloat())
+                }
+            }
+            drawPath(path, color, style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        }
+
+        val nodeRadius = if (isMerge) 7.dp.toPx() else 5.dp.toPx()
+        if (isMerge) {
+            drawCircle(nodeColor, radius = nodeRadius, center = Offset(centerX, centerY), style = Stroke(width = 2.5.dp.toPx()))
+            drawCircle(nodeColor, radius = nodeRadius / 2f, center = Offset(centerX, centerY))
+        } else {
+            drawCircle(nodeColor, radius = nodeRadius, center = Offset(centerX, centerY))
+        }
+    }
+}
+
+/** 引用 pill 行：当前分支 primary、分支 secondaryContainer、标签 tertiaryContainer。 */
+@Composable
+private fun RefPills(refs: List<top.wanxiang.app.ui.chat.git.GitGraphRef>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        refs.forEach { ref ->
+            val bg = if (ref.isCurrent) MaterialTheme.colorScheme.primary
+                else if (ref.isBranch) MaterialTheme.colorScheme.secondaryContainer
+                else MaterialTheme.colorScheme.tertiaryContainer
+            val fg = if (ref.isCurrent) MaterialTheme.colorScheme.onPrimary
+                else if (ref.isBranch) MaterialTheme.colorScheme.onSecondaryContainer
+                else MaterialTheme.colorScheme.onTertiaryContainer
+            Surface(color = bg, shape = RoundedCornerShape(4.dp)) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    RuntimeIcon(
+                        when {
+                            ref.isRemote -> RuntimeIconName.Cloud
+                            ref.isBranch -> RuntimeIconName.GitBranch
+                            else -> RuntimeIconName.Tag
+                        },
+                        Modifier.size(11.dp),
+                        tint = fg,
+                    )
                     Text(
-                        subject.ifBlank { "(无提交信息)" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        ref.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = fg,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            author.ifBlank { "?" },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        )
-                        Text("·", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                        Text(
-                            date,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(4.dp),
-                ) {
-                    Text(
-                        hash,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
                     )
                 }
             }
@@ -1208,17 +1566,62 @@ private fun LogTab(state: GitPanelState, onCommitDetail: (String) -> Unit) {
     }
 }
 
-/** 根据作者字符串哈希出一个稳定色，用于头像圆点。 */
-private val authorPalette = listOf(
-    Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFD84315), Color(0xFF6A1B9A),
-    Color(0xFF00838F), Color(0xFFC62828), Color(0xFF558B2F), Color(0xFF4527A0),
-    Color(0xFF00695C), Color(0xFFEF6C00),
-)
-private fun colorForAuthor(author: String): Color {
-    if (author.isBlank()) return Color(0xFF757575)
-    return authorPalette[(author.hashCode() and 0x7FFFFFFF) % authorPalette.size]
+/** 状态码彩色小药丸（AiCode StatusChip 等价：32x20 pill）。 */
+@Composable
+private fun StatusChip(status: Char) {
+    Surface(
+        color = statusColor(status),
+        shape = RoundedCornerShape(999.dp),
+        modifier = Modifier.size(width = 32.dp, height = 20.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = status.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace,
+                color = Color.White,
+            )
+        }
+    }
 }
 
+/** 把 graph.edges 按来源提交索引分组（每提交 parents.size 条边，扁平有序）。AiCode 原版。 */
+private fun groupEdgesByCommit(graph: top.wanxiang.app.ui.chat.git.GitGraph): Map<Int, List<top.wanxiang.app.ui.chat.git.GraphEdge>> {
+    val result = mutableMapOf<Int, List<top.wanxiang.app.ui.chat.git.GraphEdge>>()
+    var edgeIdx = 0
+    graph.commits.forEachIndexed { commitIdx, commit ->
+        val n = if (commit.parents.isEmpty()) 0 else commit.parents.size
+        val list = mutableListOf<top.wanxiang.app.ui.chat.git.GraphEdge>()
+        repeat(n) {
+            if (edgeIdx < graph.edges.size) list.add(graph.edges[edgeIdx++])
+        }
+        result[commitIdx] = list
+    }
+    return result
+}
+
+/** 签名卡（凭据与署名子页顶部）：显示当前署名状态，点击编辑。 */
+@Composable
+private fun IdentityCard(hasIdentity: Boolean, onEdit: () -> Unit) {
+    RuntimeCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            RuntimeIcon(RuntimeIconName.Edit, Modifier.size(18.dp), MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f)) {
+                Text("Git 署名（user.name / user.email）", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                Text(
+                    if (hasIdentity) "已配置，可正常提交" else "未配置，提交前需填写",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (hasIdentity) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                )
+            }
+            RuntimeIcon(RuntimeIconName.ChevronRight, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
 // ======================= 状态配色 =======================
 
 /** 时间戳 → "（2 分钟前）"；0 或近未来返回空串。 */
