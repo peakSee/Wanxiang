@@ -158,16 +158,19 @@ class EnvironmentRepairer @Inject constructor(
                     printf "deb %s kali-rolling main contrib non-free\n" "${'$'}1" > "${'$'}MIRRORS_FILE"
                 }
                 # apt 全程 ForceIPv4（手机 IPv6 半残导致 apt 静默等待是慢的头号元凶）+ 收包超时 15s
-                APTOPT="-o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1"
+                APTOPT="-o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 -o Acquire::Languages=en"
                 try_apt() {
-                    rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+                    # 不清 /var/lib/apt/lists：换源后 apt 只增量拉当前源的索引，
+                    # 全删会把 36MB 元数据重下一遍（334s 慢案根因之一）
                     # 先绕开代理直连（国内镜像绝大多数家用网络可直连；死代理不该拖死 apt）
                     if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY DEBIAN_FRONTEND=noninteractive apt-get ${'$'}APTOPT update -y >/dev/null 2>&1; then
                         echo "apt update 成功 (直连 IPv4)"; return 0
                     fi
-                    # 直连不行再走用户代理
-                    if DEBIAN_FRONTEND=noninteractive apt-get ${'$'}APTOPT update -y >/dev/null 2>&1; then
-                        echo "apt update 成功 (经代理)"; return 0
+                    # 直连不行且确实配了代理才走代理路（无代理网络省一轮超时）
+                    if [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ]; then
+                        if DEBIAN_FRONTEND=noninteractive apt-get ${'$'}APTOPT update -y >/dev/null 2>&1; then
+                            echo "apt update 成功 (经代理)"; return 0
+                        fi
                     fi
                     return 1
                 }
@@ -176,7 +179,7 @@ class EnvironmentRepairer @Inject constructor(
                     if [ "${'$'}ID" = "ubuntu" ]; then
                         CN="${'$'}{VERSION_CODENAME:-noble}"
                         for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/ubuntu-ports https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null || { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; }; then
                                 echo "探测可达: ${'$'}m"
                                 write_ubuntu "${'$'}m" "${'$'}CN"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
@@ -191,7 +194,7 @@ class EnvironmentRepairer @Inject constructor(
                         CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
                             M=${'$'}{pair%% *}; S=${'$'}{pair##* }
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null || { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; }; then
                                 echo "探测可达: ${'$'}M"
                                 write_debian "${'$'}M" "${'$'}CN" "${'$'}S"
                                 if try_apt; then APT_OK="${'$'}M"; break; fi
@@ -201,7 +204,7 @@ class EnvironmentRepairer @Inject constructor(
                         echo "最终 apt 源: ${'$'}APT_OK"
                     elif [ "${'$'}ID" = "kali" ]; then
                         for m in ${'$'}{STICKY:+${'$'}STICKY} https://mirrors.aliyun.com/kali https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
-                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null || curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
+                            if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null || { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsS -m 4 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; }; then
                                 write_kali "${'$'}m"
                                 if try_apt; then APT_OK="${'$'}m"; break; fi
                             fi
@@ -236,7 +239,7 @@ class EnvironmentRepairer @Inject constructor(
                 CommandResult(0, "", "", 0)
             } else {
                 addLog("Step 2 未验证成功，补跑 apt-get update")
-                executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get update -y || DEBIAN_FRONTEND=noninteractive apt-get update -y", logs, timeoutMs = 150_000L)
+                executeCommand("rm -rf /var/lib/dpkg/updates/* /var/lib/dpkg/lock* 2>/dev/null || true; DEBIAN_FRONTEND=noninteractive dpkg --configure -a 2>/dev/null || true; env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::Languages=en -o Acquire::http::Timeout=15 -o Acquire::Retries=1 update -y || { [ -n \"${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}\" ] && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Languages=en -o Acquire::http::Timeout=15 -o Acquire::Retries=1 update -y; }", logs, timeoutMs = 150_000L)
             }
             if (!updateRes.isSuccess) {
                 addLog("提示: apt-get update 产生部分非致命提示")
@@ -255,7 +258,7 @@ class EnvironmentRepairer @Inject constructor(
                 ),
             )
             addLog("[Step 4/5] 安装 ca-certificates, curl, git, tar, xz-utils, procps")
-            val installToolsCmd = "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps || DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps"
+            val installToolsCmd = "env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 -o Acquire::Languages=en -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps || { [ -n \"${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}\" ] && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true -o Acquire::http::Timeout=15 -o Acquire::Languages=en -o Acquire::Retries=1 install -y --no-install-recommends ca-certificates curl git tar xz-utils procps; }"
             val installToolsRes = executeCommand(installToolsCmd, logs, timeoutMs = 180_000L)
             if (!installToolsRes.isSuccess) {
                 addLog("警告: 基础工具链安装异常: ${installToolsRes.stderr.ifBlank { installToolsRes.stdout }}")
@@ -279,13 +282,13 @@ class EnvironmentRepairer @Inject constructor(
                 if [ -z "${'$'}NODE_VER" ] || [ "${'$'}NODE_VER" -lt 20 ]; then
                     echo "检测到 Node.js 缺失或版本较低 (当前: ${'$'}{NODE_VER:-未安装})，正在下载安装 Node.js v22 (LTS ARM64)..."
                     mkdir -p /tmp/node_setup
-                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
-                    curl -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
-                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
-                    curl -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || true
+                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
+                    { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz; } || \
+                    env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz || \
+                    { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-arm64.tar.xz -o /tmp/node_setup/node.tar.xz; } || true
                     if [ ! -f /tmp/node_setup/node.tar.xz ]; then
                         env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.gz -o /tmp/node_setup/node.tar.gz || \
-                        curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.gz -o /tmp/node_setup/node.tar.gz || true
+                        { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && curl --ipv4 -fsSL --connect-timeout 6 --max-time 180 https://npmmirror.com/mirrors/node/v22.14.0/node-v22.14.0-linux-arm64.tar.gz -o /tmp/node_setup/node.tar.gz; } || true
                     fi
                     if [ -f /tmp/node_setup/node.tar.xz ]; then
                         tar -xJf /tmp/node_setup/node.tar.xz -C /usr/local --strip-components=1
@@ -298,7 +301,7 @@ class EnvironmentRepairer @Inject constructor(
                     else
                         echo "预编译包拉取受限，尝试通过系统包管理器就绪基础 Node..."
                         env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm || \
-                        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm || true
+                        { [ -n "${'$'}{http_proxy:-${'$'}{HTTPS_PROXY:-}}" ] && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm; } || true
                     fi
                 fi
                 which npm >/dev/null 2>&1 && npm config set registry https://registry.npmmirror.com || true
@@ -401,14 +404,14 @@ EOF
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .take(50)
-            .forEach { logs.add(it) }
+            .forEach { logs.add(it); logger.i("[自愈][沙箱] $it") }
 
         if (!result.isSuccess) {
             result.stderr.lineSequence()
                 .map { it.trim() }
                 .filter { it.isNotBlank() }
                 .take(30)
-                .forEach { logs.add("ERR: $it") }
+                .forEach { logs.add("ERR: $it"); logger.i("[自愈][沙箱] ERR: $it") }
         }
 
         return result
