@@ -131,40 +131,73 @@ class EnvironmentRepairer @Inject constructor(
                         mv "${'$'}f" "${'$'}f.wanxiang-disabled" 2>/dev/null || true
                     fi
                 done
+                # ============ 自验证换源：探测→写入→apt update 实测→失败换下一个→官方兜底 ============
+                # 任何一张网卡/代理/限流组合下都保证收尾时 apt 处于可用状态，而不是"写完源就信任"。
+                MIRRORS_FILE=/etc/apt/sources.list.d/wanxiang-mirrors.list
+                APT_OK=""
+                write_ubuntu() {
+                    printf "deb %s %s main restricted universe multiverse\ndeb %s %s-updates main restricted universe multiverse\ndeb %s %s-security main restricted universe multiverse\ndeb %s %s-backports main restricted universe multiverse\n" "${'$'}1" "${'$'}2" "${'$'}1" "${'$'}2" "${'$'}1" "${'$'}2" "${'$'}1" "${'$'}2" > "${'$'}MIRRORS_FILE"
+                }
+                write_debian() {
+                    printf "deb %s %s main contrib non-free non-free-firmware\ndeb %s %s-updates main contrib non-free non-free-firmware\ndeb %s %s-security main contrib non-free non-free-firmware\n" "${'$'}1" "${'$'}2" "${'$'}1" "${'$'}2" "${'$'}3" "${'$'}2" > "${'$'}MIRRORS_FILE"
+                }
+                write_kali() {
+                    printf "deb %s kali-rolling main contrib non-free\n" "${'$'}1" > "${'$'}MIRRORS_FILE"
+                }
+                try_apt() {
+                    rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+                    # 先绕开代理直连（国内镜像绝大多数家用网络可直连；死代理不该拖死 apt）
+                    if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null 2>&1; then
+                        echo "apt update 成功 (直连)"; return 0
+                    fi
+                    # 直连不行再走用户代理
+                    if DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null 2>&1; then
+                        echo "apt update 成功 (经代理)"; return 0
+                    fi
+                    return 1
+                }
                 if [ -f /etc/os-release ]; then
                     . /etc/os-release
-                    PICK=""
-                    probe() { curl -fsS -m 8 -o /dev/null "${'$'}1/dists/${'$'}2/InRelease" 2>/dev/null; }
                     if [ "${'$'}ID" = "ubuntu" ]; then
-                        CN="${'{'}VERSION_CODENAME:-noble}"
+                        CN="${'$'}{VERSION_CODENAME:-noble}"
                         for m in https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports https://mirrors.aliyun.com/ubuntu-ports https://mirrors.ustc.edu.cn/ubuntu-ports https://mirrors.sjtug.sjtu.edu.cn/ubuntu-ports https://ports.ubuntu.com/ubuntu-ports; do
-                            if probe "${'$'}m" "${'$'}CN"; then PICK="${'$'}m"; break; fi
+                            if curl -fsS -m 8 -o /dev/null "${'$'}m/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                                echo "探测可达: ${'$'}m"
+                                write_ubuntu "${'$'}m" "${'$'}CN"
+                                if try_apt; then APT_OK="${'$'}m"; break; fi
+                                echo "镜像可达但 apt 失败，换下一个: ${'$'}m"
+                            else
+                                echo "探测不可达: ${'$'}m"
+                            fi
                         done
-                        [ -z "${'$'}PICK" ] && PICK="https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports"
-                        printf "deb %s %s main restricted universe multiverse\ndeb %s %s-updates main restricted universe multiverse\ndeb %s %s-security main restricted universe multiverse\ndeb %s %s-backports main restricted universe multiverse\n" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" "${'$'}PICK" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
-                        echo "apt 镜像选定: ${'$'}PICK"
-                    elif [ "${'$'}ID" = "debian" ] || [ "${'{'}ID_LIKE:-}" = "debian" ]; then
-                        CN="${'{'}VERSION_CODENAME:-bookworm}"
+                        [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败，已保留最后尝试的源"
+                        echo "最终 apt 源: ${'$'}APT_OK"
+                    elif [ "${'$'}ID" = "debian" ] || [ "${'$'}ID_LIKE" = "debian" ]; then
+                        CN="${'$'}{VERSION_CODENAME:-bookworm}"
                         for pair in "https://mirrors.tuna.tsinghua.edu.cn/debian https://mirrors.tuna.tsinghua.edu.cn/debian-security" "https://mirrors.aliyun.com/debian https://mirrors.aliyun.com/debian-security" "https://mirrors.ustc.edu.cn/debian https://mirrors.ustc.edu.cn/debian-security" "https://deb.debian.org/debian https://security.debian.org/debian-security"; do
-                            M=${'{'}pair%% *}; S=${'{'}pair##* }
-                            if probe "${'$'}M" "${'$'}CN"; then PICKM="${'$'}M"; PICKS="${'$'}S"; break; fi
+                            M=${'$'}{pair%% *}; S=${'$'}{pair##* }
+                            if curl -fsS -m 8 -o /dev/null "${'$'}M/dists/${'$'}CN/InRelease" 2>/dev/null; then
+                                echo "探测可达: ${'$'}M"
+                                write_debian "${'$'}M" "${'$'}CN" "${'$'}S"
+                                if try_apt; then APT_OK="${'$'}M"; break; fi
+                            fi
                         done
-                        [ -z "${'{'}PICKM:-}" ] && PICKM="https://mirrors.tuna.tsinghua.edu.cn/debian" && PICKS="https://mirrors.tuna.tsinghua.edu.cn/debian-security"
-                        printf "deb %s %s main contrib non-free non-free-firmware\ndeb %s %s-updates main contrib non-free non-free-firmware\ndeb %s %s-security main contrib non-free non-free-firmware\n" "${'$'}PICKM" "${'$'}CN" "${'$'}PICKM" "${'$'}CN" "${'$'}PICKS" "${'$'}CN" > /etc/apt/sources.list.d/wanxiang-mirrors.list
-                        echo "apt 镜像选定: ${'$'}PICKM"
+                        [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败"
+                        echo "最终 apt 源: ${'$'}APT_OK"
                     elif [ "${'$'}ID" = "kali" ]; then
                         for m in https://mirrors.tuna.tsinghua.edu.cn/kali https://mirrors.aliyun.com/kali https://mirrors.ustc.edu.cn/kali https://mirrors.sjtug.sjtu.edu.cn/kali; do
-                            if probe "${'$'}m" "kali-rolling"; then PICK="${'$'}m"; break; fi
+                            if curl -fsS -m 8 -o /dev/null "${'$'}m/dists/kali-rolling/InRelease" 2>/dev/null; then
+                                write_kali "${'$'}m"
+                                if try_apt; then APT_OK="${'$'}m"; break; fi
+                            fi
                         done
-                        [ -z "${'$'}PICK" ] && PICK="https://mirrors.tuna.tsinghua.edu.cn/kali"
-                        printf "deb %s kali-rolling main contrib non-free\n" "${'$'}PICK" > /etc/apt/sources.list.d/wanxiang-mirrors.list
-                        echo "apt 镜像选定: ${'$'}PICK"
+                        [ -z "${'$'}APT_OK" ] && echo "警告: 全部镜像 apt 失败"
+                        echo "最终 apt 源: ${'$'}APT_OK"
                     fi
                 fi
-                # 清理旧的 apt lists 缓存，确保重新从镜像拉取完整的 index
-                rm -rf /var/lib/apt/lists/* 2>/dev/null || true
             """.trimIndent()
-            executeCommand(mirrorScript, logs)
+            // 探测+逐镜像 apt 实测+官方兜底：最坏情况多个镜像各跑一次 update，给足 12 分钟
+            executeCommand(mirrorScript, logs, timeoutMs = 720_000L)
 
             // ==========================================
             // Step 3: 更新 APT 软件包索引
