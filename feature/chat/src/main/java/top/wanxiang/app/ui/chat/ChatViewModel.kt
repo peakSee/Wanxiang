@@ -364,9 +364,11 @@ class ChatViewModel @Inject constructor(
                     y != ' ' -> unstaged += GitFileChange(y, path)
                 }
             }
-            val localBranches = runGitRead(ws, "git branch --format=%(refname:short)")
+            // 注意：%(refname:short) 的括号必须引号包裹——裸括号会被 dash 当语法错误，
+            // 整个命令 exit 2 → 分支列表恒空（E2E 实锤）。
+            val localBranches = runGitRead(ws, "git branch --format='%(refname:short)'")
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
-            val remoteBranches = runGitRead(ws, "git branch -r --format=%(refname:short)")
+            val remoteBranches = runGitRead(ws, "git branch -r --format='%(refname:short)'")
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
             val tags = runGitRead(ws, "git tag --list")
                 ?.lines()?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()

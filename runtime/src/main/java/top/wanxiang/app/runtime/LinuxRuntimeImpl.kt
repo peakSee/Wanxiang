@@ -1200,14 +1200,24 @@ class LinuxRuntimeImpl @Inject constructor(
         )
         val home = pathManager.homeDir(distroId)
         home.mkdirs()
-        File(home, ".gitconfig").writeText(
-            """
-            [safe]
-            	directory = *
-            [http]
-            	version = HTTP/1.1
-            """.trimIndent() + "\n",
-        )
+        // .gitconfig 合并式写入：writeText 全量覆盖会抹掉用户 [user] 署名段（E2E 实锤：
+        // 用户配好署名→重启 App→git 提交报"未配置署名"）。保留用户已有 section，只确保
+        // 万象管理的 safe.directory / http.version 两个键存在。credential.helper 由
+        // GitCredentialIpcBootstrap 自己用 git config 追加（天然合并，不碰这里）。
+        val gitconfig = File(home, ".gitconfig")
+        val existing = runCatching { if (gitconfig.isFile) gitconfig.readText() else "" }.getOrDefault("")
+        val merged = buildString {
+            append(existing.trimEnd())
+            if (!existing.contains("[safe]")) {
+                append(if (existing.isNotBlank()) "\n" else "")
+                append("[safe]\n\tdirectory = *\n")
+            }
+            if (!existing.contains("[http]")) {
+                append("\n[http]\n\tversion = HTTP/1.1\n")
+            }
+        }
+        runCatching { gitconfig.writeText(merged) }
+            .onFailure { logger.w("写 .gitconfig 失败（不影响启动）: ${it.message}") }
         // 安装 HostBridge 沙箱脚本与密钥
         installHostBridgeScripts(distroId)
     }

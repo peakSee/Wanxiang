@@ -532,8 +532,10 @@ private fun CredentialsTab(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .fillMaxWidth()
+            // 不自带 verticalScroll：本页只作为「凭据与署名」子页 outer Column（已有滚动）的
+            // 内容块。曾嵌套两层 verticalScroll → 内层收到无限 maxHeight → 点 Key 图标必崩
+            // （IllegalStateException: Vertically scrollable ... infinity，真机复现 2 次）。
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
