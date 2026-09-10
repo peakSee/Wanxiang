@@ -18,6 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import top.wanxiang.app.core.model.CloudAnnouncement
 import top.wanxiang.app.ui.components.RuntimeAlertDialog
 import top.wanxiang.app.ui.components.RuntimeTextButton
@@ -57,6 +62,8 @@ fun HomeAnnouncementDialog(
 private fun AnnouncementCard(a: CloudAnnouncement) {
     val isNotice = a.type != 2
     val typeColor = if (isNotice) Color(0xFF1976D2) else Color(0xFFB45309)
+    var expanded by androidx.compose.runtime.remember(a.id) { mutableStateOf(false) }
+    val content = stripHtml(a.content)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(12.dp),
@@ -80,13 +87,27 @@ private fun AnnouncementCard(a: CloudAnnouncement) {
                     modifier = Modifier.weight(1f),
                 )
             }
-            Text(
-                stripHtml(a.content).ifBlank { "(无内容)" },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // 逐行渲染（富文本换行保真）+ 行距；超过 4 行给「展开/收起」而不是硬截断
+            val lines = content.lines().filter { it.isNotBlank() }
+            if (lines.isEmpty()) {
+                Text("(无内容)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    val shown = if (expanded) lines else lines.take(4)
+                    shown.forEach { line ->
+                        Text(
+                            line,
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    if (lines.size > 4) {
+                        RuntimeTextButton(onClick = { expanded = !expanded }) {
+                            Text(if (expanded) "收起" else "展开全文（共 ${lines.size} 行）", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
             Text(
                 formatRelativeTime(a.createTime),
                 style = MaterialTheme.typography.labelSmall,
@@ -112,10 +133,12 @@ private fun formatRelativeTime(millis: Long): String {
 
 private fun stripHtml(html: String): String = html
     .replace(Regex("<br\\s*/?>"), "\n")
-    .replace(Regex("</p>"), "\n")
+    .replace(Regex("</p>|</div>|</li>|</h[1-6]>"), "\n")
     .replace(Regex("<[^>]*>"), "")
     .replace("&nbsp;", " ")
     .replace("&amp;", "&")
     .replace("&lt;", "<")
     .replace("&gt;", ">")
+    .replace(Regex("\n{3,}"), "\n\n")
+    .lines().map { it.trim() }.joinToString("\n")
     .trim()

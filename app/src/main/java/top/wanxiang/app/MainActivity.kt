@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -252,11 +253,24 @@ class MainActivity : AppCompatActivity() {
                                         shape = RoundedCornerShape(10.dp),
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
-                                        Text(
-                                            text = info.releaseNotes,
-                                            style = MaterialTheme.typography.bodySmall,
+                                        // 更新说明逐行呈现：数据带 \n 按行拆；旧数据一整句用「；」
+                                        // 分隔时按分句拆行——不再挤成一坨
+                                        val noteLines = if (info.releaseNotes.contains('\n')) {
+                                            info.releaseNotes.lines()
+                                        } else {
+                                            info.releaseNotes.split('；')
+                                        }.map { it.trim() }.filter { it.isNotBlank() }
+                                        Column(
                                             modifier = Modifier.padding(12.dp),
-                                        )
+                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                        ) {
+                                            noteLines.forEach { line ->
+                                                Text(
+                                                    text = line,
+                                                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 if (isDownloading) {
