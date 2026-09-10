@@ -42,6 +42,10 @@ interface HarnessSessionDao {
     @Query("UPDATE harness_sessions SET updatedAt = :updatedAt WHERE id = :id")
     suspend fun touch(id: String, updatedAt: Long)
 
+    /** 会话工作区随切换持久化（重启后 loadSession 恢复到上次绑定的目录，不再回默认）。 */
+    @Query("UPDATE harness_sessions SET workspace = :workspace WHERE id = :id")
+    suspend fun updateWorkspace(id: String, workspace: String)
+
     @Query("UPDATE harness_sessions SET title = :title, updatedAt = :updatedAt WHERE id = :id")
     suspend fun rename(id: String, title: String, updatedAt: Long)
 

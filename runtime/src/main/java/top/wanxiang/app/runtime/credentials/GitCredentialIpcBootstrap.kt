@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -55,16 +56,19 @@ class GitCredentialIpcBootstrap @Inject constructor(
         installHelperScript(ipcDir)
         observeAndMirrorCredentials(File(ipcDir, "git-credentials"))
         bridge.start()
-        // git config 需要沙箱在跑；沙箱未就绪时会失败，用带退避的重试直到成功（每 5s 一次，最多 20 次 = 100s）。
+        // git config 需要沙箱在跑。旧版是 20×5s 盲重试：沙箱没就绪时白烧 100 秒还刷日志。
+        // 现在挂起等 RuntimeState.Ready 再注册（零空转）；就绪后仍失败才短重试几次
+        // （冷启动瞬间 apt/dpkg 锁竞争等）。永不 Ready（用户没开沙箱）则安静等待，无副作用。
         scope.launch {
-            var ok = false
-            repeat(20) { attempt ->
-                if (configured.get()) { ok = true; return@repeat }
-                runCatching { ensureGitConfigured() }.onSuccess { if (configured.get()) ok = true }
-                if (ok) return@repeat
-                delay(5_000L)
-                if (attempt == 19) logger.w("credential.helper 注册重试 20 次仍失败；UI git 命令会走手动 wrap 兜底")
+            linuxRuntime.state.first { it is top.wanxiang.app.core.model.RuntimeState.Ready }
+            var attempts = 0
+            while (!configured.get() && attempts < 6) {
+                runCatching { ensureGitConfigured() }
+                if (configured.get()) break
+                delay(3_000L)
+                attempts++
             }
+            if (!configured.get()) logger.w("credential.helper 注册失败（沙箱就绪后 6 次重试仍不通）；UI git 命令会走手动 wrap 兜底")
         }
     }
 

@@ -27,6 +27,7 @@ interface HarnessSessionRepository {
     suspend fun findById(id: String): HarnessSessionEntity?
     suspend fun upsert(session: HarnessSessionEntity)
     suspend fun touch(id: String, updatedAt: Long)
+    suspend fun updateWorkspace(id: String, workspace: String)
     suspend fun rename(id: String, title: String, updatedAt: Long)
     suspend fun setApprovalMode(id: String, approvalMode: String, updatedAt: Long)
     suspend fun setApprovalModeForAll(approvalMode: String, updatedAt: Long)
@@ -194,6 +195,7 @@ class RoomHarnessSessionRepository @Inject constructor(private val dao: HarnessS
     override suspend fun findById(id: String) = dao.findById(id)
     override suspend fun upsert(session: HarnessSessionEntity) = dao.upsert(session)
     override suspend fun touch(id: String, updatedAt: Long) = dao.touch(id, updatedAt)
+    override suspend fun updateWorkspace(id: String, workspace: String) = dao.updateWorkspace(id, workspace)
     override suspend fun rename(id: String, title: String, updatedAt: Long) = dao.rename(id, title, updatedAt)
     override suspend fun setApprovalMode(id: String, approvalMode: String, updatedAt: Long) = dao.setApprovalMode(id, approvalMode, updatedAt)
     override suspend fun setApprovalModeForAll(approvalMode: String, updatedAt: Long) = dao.setApprovalModeForAll(approvalMode, updatedAt)

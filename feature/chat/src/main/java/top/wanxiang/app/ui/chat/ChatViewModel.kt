@@ -1706,6 +1706,15 @@ class ChatViewModel @Inject constructor(
             }
             _initializing.value = false
         }
+        // 工作区变更随会话落库：修复重启后 Git 面板要重新绑定（loadSession 此前只能
+        // 恢复到会话创建时的旧值——switchWorkspace 只改内存 StateFlow 从不回写 DB）。
+        viewModelScope.launch(Dispatchers.IO) {
+            combine(harnessLoop.currentSessionId, harnessLoop.workspace) { sid, ws -> sid to ws }
+                .distinctUntilChanged()
+                .collect { (sid, ws) ->
+                    if (sid.isNotBlank()) runCatching { sessionDao.updateWorkspace(sid, ws) }
+                }
+        }
     }
 
     fun onInputChanged(value: String) {
