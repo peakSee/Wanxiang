@@ -96,7 +96,9 @@ class WanxiangCloudClient @Inject constructor(
     }
 
     companion object {
-        // 生产环境基址（wanxiang.babm.cn，宝塔 Nginx 反代到 yudao 后端）
-        const val BASE_URL = "http://wanxiang.babm.cn"
+        // 生产环境基址（wanxiang.babm.cn，宝塔 Nginx 反代到 yudao 后端）。
+        // 2026-09-10 起 Let's Encrypt 证书启用（acme.sh 自动续期），强制 https：
+        // APK 更新包走明文 http 可被中间人替换（供应链风险），公告/配置同理。
+        const val BASE_URL = "https://wanxiang.babm.cn"
     }
 }
