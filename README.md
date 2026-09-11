@@ -81,13 +81,44 @@
 
 ---
 
+## 🛠️ 从源码构建
+
+### 环境要求
+
+- **JDK**：Java 17 或 Java 21（推荐 Android Studio JBR）
+- **Android SDK**：compileSdk 37 / targetSdk 37 / minSdk 29
+- **Android NDK**：`30.0.15729638`
+- **CMake**：`3.22.1`
+- **构建系统**：Gradle 9.7.0 / AGP 9.3.1 / Kotlin 2.4.10
+
+### 构建步骤
+
+```powershell
+# 1. 首次检出仓库后，准备 PRoot ARM64 原生运行时预编译包
+.\tools\prepare-proot-runtime.ps1
+
+# 2. 配置 JDK 路径并执行架构合规检查与单元测试
+$env:JAVA_HOME="C:\Program Files\Android\Studio\jbr"
+.\gradlew.bat architectureCheck --console=plain
+.\gradlew.bat testDebugUnitTest --console=plain
+
+# 3. 编译 Debug APK
+.\gradlew.bat assembleDebug --console=plain
+```
+
+构建产物位于：`app/build/outputs/apk/debug/wanxiang-v0.13.35-debug.apk`
+
+> ☁️ **免本地环境**：本仓库已内置 GitHub Actions 工作流 `.github/workflows/android-apk.yml`——在仓库 **Actions** 页手动运行 `Android APK 构建`，几分钟后在产物（Artifacts）区直接下载未签名 Debug APK，无需本地装任何工具链。
+
+---
+
 ## ⚠️ 边界与已知限制
 
 - **ABI 架构**：当前仅适配 `arm64-v8a` 架构；其他架构设备将在初始化阶段拦截并终止。
 - **用户态沙箱**：PRoot 是基于 `ptrace` 的用户态系统调用拦截与路径重写机制，不是硬件虚拟化或完整 KVM 虚拟机，不提供 Root 特权或底层内核模块加载能力。
 - **环境兼容性**：复杂 TUI（如部分全屏 curses 应用）、特定软键盘组合键及重型 C/C++ 交叉编译仍需依据具体 ARM64 设备性能与内存情况调优。
 - **网络安全**：模型 API 及远程下载端点强制遵循安全传输协议；请妥善保管私有 API Key 与凭据。
-- **许可说明**：本仓库是万象的**公开快照存档**，供交流与学习参考；当前版本的持续开发在私有仓库进行，App 以安装包形式分发。
+- **许可说明**：万象为**闭源软件**，本仓库页面仅作产品介绍与分发引导之用。
 
 ---
 
@@ -98,3 +129,11 @@
 限制从未真正消失；但自由可以来自身处限制之中，仍有能力去构筑、去验证属于自己的世界。
 
 欢迎加入官方 QQ 群 **905971993**，分享你的真机使用记录！
+
+---
+
+## 🔗 上游
+
+本项目 fork 自开源项目 **太墟 · TaiXu**，并在此之上持续演进（Git 可视化工作台、可视化工作流引擎、环境体检自愈、云控分发等）。感谢上游以 GPL-3.0 协议开源。
+
+- 上游仓库：**[wkbin/taixu](https://github.com/wkbin/taixu)** —— 掌中归墟，万象可期。
