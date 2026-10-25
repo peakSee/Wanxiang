@@ -37,6 +37,8 @@ extensions.configure<ApplicationExtension> {
         versionName = appVersionName
         // 应用名统一走 manifest placeholder：WanXiangDev 构建显示 "WanXiangDev"，其余显示 "万象"。
         manifestPlaceholders["appLabel"] = if (wanxiangDevBuild) "WanXiangDev" else "万象"
+        // WanXiangDev 预览构建：注入构建标记，供 Application 默认锁定英文界面。
+        buildConfigField("boolean", "IS_DEV_BUILD", if (wanxiangDevBuild) "true" else "false")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters += "arm64-v8a"
@@ -121,6 +123,7 @@ extensions.configure<ApplicationExtension> {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

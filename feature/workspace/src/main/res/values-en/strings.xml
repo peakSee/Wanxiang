@@ -325,4 +325,6 @@
     <!-- Template variable validation -->
     <string name="template_variable_required">%1$s is required</string>
     <string name="template_variable_invalid_format">%1$s has an invalid format</string>
+    <string name="workspace_git_clone_in_progress" formatted="false">Cloning project from GitHub</string>
+    <string name="workspace_git_clone_connecting" formatted="false">Connecting to repository…</string>
 </resources>

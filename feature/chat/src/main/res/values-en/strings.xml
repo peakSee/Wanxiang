@@ -411,4 +411,52 @@
     <string name="chat_floating_idle">Ready</string>
     <string name="chat_floating_thinking">🧠 Thinking…</string>
     <string name="chat_floating_running">⚡ Executing…</string>
+    <string name="chat_generating_content" formatted="false">Generating content</string>
+    <string name="chat_generating_content_hint" formatted="false">Image models may take a moment. Please wait.</string>
+    <string name="chat_receiving_image" formatted="false">Receiving image…</string>
+    <string name="chat_image_preview" formatted="false">Image preview</string>
+    <string name="chat_save_image" formatted="false">Save image</string>
+    <string name="chat_image_saved" formatted="false">Saved to gallery (Pictures/WanXiang)</string>
+    <string name="chat_image_save_failed" formatted="false">Failed to save image</string>
+    <string name="chat_context_system_tokens" formatted="false">System prompt tokens</string>
+    <string name="chat_context_dialogue_tokens" formatted="false">Dialogue context tokens</string>
+    <string name="chat_context_tool_tokens" formatted="false">Tool call/output tokens</string>
+    <string name="chat_context_compacted_active" formatted="false">History compaction active</string>
+    <string name="chat_onboarding_sandbox" formatted="false">Only the Linux sandbox is available right now. Want the Agent to control phone apps and system settings? Grant Shizuku or Root access on the settings page.</string>
+    <string name="chat_onboarding_unlockable" formatted="false">This device supports Shizuku / Root privileges. Switch the execution mode to unlock phone-level actions like opening apps, setting alarms, and freezing apps.</string>
+    <string name="chat_onboarding_shizuku" formatted="false">Shizuku is ready: try asking me to open an app, set an alarm, freeze a power-hungry app, or use device_status to check battery and the foreground app.</string>
+    <string name="chat_onboarding_root" formatted="false">Root is active: all phone-level actions are available, plus stronger system-level operations — make only the minimal changes the task requires.</string>
+    <string name="chat_plan_board_header" formatted="false">Task execution plan</string>
+    <string name="chat_plan_board_progress" formatted="false">%1$d / %2$d</string>
+    <string name="chat_plan_bar_all_done" formatted="false">All plan steps completed</string>
+    <string name="chat_approval_expires_minutes" formatted="false">Expires in about %1$d minutes; it will lapse automatically afterward</string>
+    <string name="chat_approval_expires_soon" formatted="false">Expiring soon</string>
+    <string name="chat_compaction_banner" formatted="false">Folded %1$d earlier messages into the context summary. Tap to see what the model still remembers.</string>
+    <string name="chat_memory_pill_title" formatted="false">Memory</string>
+    <string name="chat_memory_count" formatted="false">%1$d memories</string>
+    <string name="chat_memory_pill_subtitle" formatted="false">%1$d memories · %2$d drafts</string>
+    <string name="chat_memory_sheet_title" formatted="false">Session working memory</string>
+    <string name="chat_memory_section" formatted="false">Long-term memory (%1$d)</string>
+    <string name="chat_memory_empty" formatted="false">No memories yet. When you express preferences or important facts in a conversation, the model records them here via the memory tool.</string>
+    <string name="chat_scratchpad_section" formatted="false">Task drafts (%1$d)</string>
+    <string name="chat_scratchpad_empty" formatted="false">No drafts yet. On complex tasks the model keeps intermediate conclusions here via the scratchpad tool.</string>
+    <string name="chat_scratchpad_clear" formatted="false">Clear this session\'s drafts</string>
+    <string name="chat_tl_round" formatted="false">Round %1$d</string>
+    <string name="chat_tl_model_response" formatted="false">Model response</string>
+    <string name="chat_tl_lifecycle" formatted="false">Session lifecycle</string>
+    <string name="chat_tl_args" formatted="false">Request arguments</string>
+    <string name="chat_tl_result" formatted="false">Execution result</string>
+    <string name="chat_tl_response" formatted="false">Response text</string>
+    <string name="chat_tl_reasoning" formatted="false">Reasoning process</string>
+    <string name="chat_tl_running" formatted="false">Running…</string>
+    <string name="chat_open_git" formatted="false">Git</string>
+    <string name="chat_git_panel_title" formatted="false">Git · current session</string>
+    <string name="chat_git_loading" formatted="false">Reading Git status…</string>
+    <string name="chat_git_no_repo" formatted="false">This session is not bound to a Git repository</string>
+    <string name="chat_git_no_changes" formatted="false">Working tree clean, no changes</string>
+    <string name="chat_git_branch_label" formatted="false">Branch</string>
+    <string name="chat_artifact_export" formatted="false">Export to external storage</string>
+    <string name="chat_artifact_export_short" formatted="false">Export</string>
+    <string name="chat_artifact_export_success" formatted="false">Saved to the external directory successfully</string>
+    <string name="chat_artifact_export_failed" formatted="false">Export failed: %1$s</string>
 </resources>

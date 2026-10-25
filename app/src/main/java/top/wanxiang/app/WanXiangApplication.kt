@@ -43,6 +43,7 @@ class WanXiangApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        applyDevDefaultEnglishLocale()
         configureCursorWindowSize()
         crashReporter.install()
         appScope.launch(Dispatchers.IO) {
@@ -127,6 +128,28 @@ class WanXiangApplication : Application() {
     override fun onTerminate() {
         appScope.cancel()
         super.onTerminate()
+    }
+
+    /**
+     * WanXiangDev 预览构建默认锁定英文界面。
+     *
+     * 仅在 dev 构建（BuildConfig.IS_DEV_BUILD = true）且用户尚未手动选择过语言时，
+     * 将 per-app locale 设为 en。一旦用户在「设置 → 外观 → 语言」中手动选择，
+     * AppCompatDelegate 会持久化其选择，此处不再覆盖，尊重用户意图。
+     * 正式版（top.wanxiang.app）不受影响，仍跟随系统语言。
+     */
+    private fun applyDevDefaultEnglishLocale() {
+        if (!BuildConfig.IS_DEV_BUILD) return
+        runCatching {
+            val current = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales()
+            if (current.isEmpty) {
+                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.forLanguageTags("en"),
+                )
+            }
+        }.onFailure {
+            android.util.Log.w("WanXiangApp", "Failed to apply dev default English locale", it)
+        }
     }
 
     /**

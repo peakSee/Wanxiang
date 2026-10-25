@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="harness_prompt_tool_call_disabled">## Tool Disabled\nTool calling is disabled for this session: answer the user\'s question directly and do not attempt to call any tools (read / write / edit / base, etc. are all unavailable).</string>
+    <string name="harness_prompt_thinking_language_zh">## Thinking Language Policy\nImportant: Your internal reasoning and thinking process must be conducted strictly in English.</string>
+    <string name="harness_prompt_thinking_language_en">## Thinking Language Policy\nImportant: Your internal reasoning and thinking process must be conducted strictly in English.</string>
+    <string name="harness_prompt_subagent_none">## Subagent Delegation\nNo subagent roles are currently enabled; do not call invoke_subagent.</string>
+    <string name="harness_prompt_subagent_lane_system">You are a subagent running in an isolated Lane. Focus on the assigned task and do not dispatch further subagents.</string>
+    <string name="harness_prompt_subagent_trigger_manual">Call invoke_subagent only when the user explicitly asks for parallel processing, split checks, or subagents; otherwise complete the task directly as the main agent.</string>
+    <string name="harness_prompt_privilege_unavailable">## Android Host Privileges\nPrivilege status is temporarily unavailable; do not call host exec. Call host(status) first.</string>
+    <string name="harness_prompt_privilege_proot">## Android Host Privileges\nThe effective mode is PRoot / ordinary app permissions. host exec is unavailable; do not fake host operations (system settings, pm, input, etc.) with base — you may prompt the user to grant Shizuku or Root access in settings. For logcat, use wireless ADB directly (host logcat or logcat-grabber); Shizuku/Root is not required.</string>
+    <string name="harness_prompt_privilege_render_failed">## Android Host Privileges\nFailed to load the privileged-capability section; actual availability is unknown. Call host(status) to test first; if it errors, tell the user to re-grant Shizuku or Root access on the settings page. Do not run host commands with base.</string>
+</resources>
